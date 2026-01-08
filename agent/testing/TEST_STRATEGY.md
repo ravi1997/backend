@@ -23,3 +23,15 @@
 - Repro steps recorded
 - Regression test added (where feasible)
 - Tests pass locally/CI
+
+---
+
+## Standard Test Report Format
+Every feature implementation or fix must include a detailed test summary:
+
+1.  **Iterative Verification Phase**: Summary of tests run after each small change.
+2.  **App-Scoped Correctness**: Explicit confirmation that all errors in `@app` were identified and resolved.
+3.  **Final Test Run**: Full suite execution results.
+4.  **Evidence**: Logs, screenshots, or terminal output showing 100% pass rate.
+
+**Rule**: No push allowed until the Standard Test Report is verified and `Gate 2` is passed.

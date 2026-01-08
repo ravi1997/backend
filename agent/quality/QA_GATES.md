@@ -16,12 +16,13 @@ Every unit of work (feature, bugfix, hotfix) must pass these 5 gates before merg
 - **Verification:** `exit code 0` from build command.
 
 ### Gate 2: Tests
-- **Requirement:** All tests must pass.
-- **Scope:**
+- **Requirement**: All tests must pass.
+- **Strict Mode**: Iterative testing required after every smaller change, feature implementation, or fix.
+- **Scope**:
     - Unit Tests: 100% pass rate.
     - Integration Tests: 100% pass rate (if env available).
-- **Metric:** Maintain or improve code coverage (do not decrease it).
-- **Verification:** `exit code 0` from test runner.
+- **Metric**: Maintain or improve code coverage (do not decrease it).
+- **Verification**: `exit code 0` from test runner.
 
 ### Gate 3: Linting & Formatting
 - **Requirement:** Code must adhere to style guides.
@@ -40,7 +41,8 @@ Every unit of work (feature, bugfix, hotfix) must pass these 5 gates before merg
 - **Checklist:**
     - [ ] `README.md` or specialized doc updated if behaviors changed.
     - [ ] `CHANGELOG.md` entry added (if applicable).
-    - [ ] Rollback strategy confirmed (database migrations are reversible, feature flags exists, or artifacts differ).
+    - [ ] **Standard Test Report**: Detailed summary of all tests run and errors resolved in `@app`.
+    - [ ] Rollback strategy confirmed.
 
 ---
 

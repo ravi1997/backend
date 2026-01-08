@@ -72,3 +72,7 @@ Always add:
 - health endpoints: `/healthz` and `/readyz`
 - request-id propagation at proxy and app
 - tests + lint as standard gates
+- **Iterative Testing**: Run tests after every smaller change or feature implementation/fix.
+- **Zero Errors in @app**: Ensure all errors are resolved in the `app/` directory (excluding vendor/ignored parts).
+- **Blocking Push**: Features must be pushed only after the testing and error-fixing phase is fully complete.
+

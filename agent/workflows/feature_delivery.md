@@ -99,12 +99,13 @@ Execute the subflow for your detected stack.
 [`_stack/[stack]_feature_delivery.md`](_stack/)
 
 **Key Actions:**
-1.  **Build:** Run build commands from subflow.
-2.  **Test:** Run test commands from subflow.
-3.  **Lint:** Run lint commands from subflow.
+1.  **Build**: Run build commands from subflow.
+2.  **Test**: Run test commands from subflow.
+    - **Policy**: Iterative testing required after every smaller change or fix.
+3.  **Lint**: Run lint commands from subflow.
 
 > [!IMPORTANT]
-> If a step fails in the subflow, **STOP** and fix it before returning here.
+> If a step fails in the subflow, **STOP** and fix it before returning here. Ensure all errors in `@app` are resolved.
 
 ---
 
@@ -144,9 +145,10 @@ Before merging, the Reviewer must confirm:
 - [ ] **Evidence:** Screenshots/Logs attached?
 - [ ] **Backwards Comp:** No breaking changes without major bump.
 
-1.  **PR Summary:** Generate `artifacts/pr_summary.md`.
-2.  **Create PR:** Submit for code review.
-3.  **Merge:** Squash and merge after approval.
+1.  **Standard Test Report**: Generate a detailed summary of all tests run and errors resolved in `@app`.
+2.  **PR Summary**: Generate `artifacts/pr_summary.md`. Attach the Test Report.
+3.  **Create PR**: Submit for code review. **NO PUSH** until testing phase is verified.
+4.  **Merge**: Squash and merge after approval.
 4.  **Release:** Follow `deploy_and_migrate.md`.
 
 ---
