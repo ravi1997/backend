@@ -1,0 +1,14 @@
+# AI Agent Folder Rules
+
+This folder contains the "Brain" and "Operating System" for AI agents working on this project.
+
+## Instructions
+- **Never modify** these files unless explicitly asked to "update agent skills/flows".
+- **Reference everything**: Use `REFERENCE_MAP.md` to find the correct tags and files.
+- **Stay Universal**: When adding new skills or workflows, avoid hardcoding technological assumptions. Refer to `01_PROJECT_CONTEXT.md` for project-specific variables.
+
+## Key Directories
+- `artifacts/`: Templates for all agent outputs.
+- `flows/`: Decision trees for complex tasks.
+- `skills/`: Procedural knowledge and automation scripts.
+- `workflows/`: Step-by-step operational guides.

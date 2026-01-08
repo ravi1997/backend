@@ -1,0 +1,157 @@
+from ast import Str
+from typing import Required
+from mongoengine import (
+    Document, EmbeddedDocument,
+    StringField, ListField, EmbeddedDocumentField,
+    ReferenceField, DateTimeField, IntField, BooleanField,
+    DictField, UUIDField
+)
+import uuid
+from datetime import datetime, timezone
+
+from app.models.enumerations import FIELD_API_CALL_CHOICES, FIELD_TYPE_CHOICES,FORM_STATUS_CHOICES,ui_TYPE_CHOICES
+
+# --- Response Template model ---
+class ResponseTemplate(EmbeddedDocument):
+    name = StringField(required=True)
+    description = StringField()
+    structure = StringField()  # JSON schema or HTML maybe, depending on use case
+    tags = ListField(StringField())  # Tags for categorization
+    meta_data = DictField()
+
+class Option(EmbeddedDocument):
+    id = UUIDField(primary_key=True, binary=False, default=uuid.uuid4)
+    description = StringField()
+    is_default = BooleanField(default=False)
+    is_disabled = BooleanField(default=False)
+    option_label = StringField(max_length=255, required=True)
+    option_value = StringField(max_length=255, required=True)
+    order = IntField(default=0)
+    followup_visibility_condition = StringField()
+    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+
+class Question(EmbeddedDocument):
+    id = UUIDField(primary_key=True, binary=False, default=uuid.uuid4)
+    label = StringField(required=True)
+    field_type = StringField(choices=FIELD_TYPE_CHOICES, required=True)  # e.g., "text", "number", "radio", etc.
+    is_required = BooleanField(default=False)
+    help_text = StringField()
+    default_value = StringField()
+    order = IntField()
+    visibility_condition = StringField()
+    validation_rules = StringField()
+    is_repeatable_question = BooleanField(default=False)
+    repeat_min = IntField(default=0)
+    repeat_max = IntField()
+
+    onChange = StringField()
+    calculated_value = StringField()
+    is_disabled = BooleanField(default=False)
+    
+    visible_header = BooleanField(default=False)
+    visible_name = StringField()
+
+    # New additions
+    response_templates = ListField(EmbeddedDocumentField(ResponseTemplate))
+    options = ListField(EmbeddedDocumentField(Option))
+
+    field_api_call = StringField(choices=FIELD_API_CALL_CHOICES)
+    custom_script = StringField()  # Custom script for field behavior
+
+    meta_data = DictField()
+
+    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    updated_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+
+# --- Section model ---
+class Section(EmbeddedDocument):
+    id = UUIDField(primary_key=True, binary=False, default=uuid.uuid4)
+    title = StringField(required=True)
+    description = StringField()
+    order = IntField()  # Optional: for ordering
+    visibility_condition = StringField()
+    validation_rules = StringField()
+    is_disabled = BooleanField(default=False)
+    ui = StringField(choices=ui_TYPE_CHOICES, default="flex")
+
+    is_repeatable_section = BooleanField(default=False)
+    repeat_min = IntField(default=0)
+    repeat_max = IntField()
+
+    # New additions
+    questions = ListField(EmbeddedDocumentField(Question))
+    response_templates = ListField(EmbeddedDocumentField(ResponseTemplate))
+
+    meta_data = DictField()
+    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    updated_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+
+class FormVersion(EmbeddedDocument):
+    version=StringField(default="1.0",required=True)
+    created_by = StringField()
+    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    sections = ListField(EmbeddedDocumentField(Section))
+
+# --- Main Form model ---
+class Form(Document):
+    meta = {'collection': 'forms'}
+
+    id = UUIDField(primary_key=True, binary=False, default=uuid.uuid4)
+    title = StringField(max_length=255, required=True)
+    description = StringField()
+    slug = StringField(max_length=255, required=True, unique=True)
+    created_by = StringField(required=True)
+    status = StringField(choices=FORM_STATUS_CHOICES, default="draft")
+    ui = StringField(choices=ui_TYPE_CHOICES, default="flex")
+    submit_scripts = StringField()
+
+    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    updated_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+
+    is_public= BooleanField(default=False)
+    versions = ListField(EmbeddedDocumentField(FormVersion))
+
+    # New additions
+    tags = ListField(StringField())
+    response_templates = ListField(EmbeddedDocumentField(ResponseTemplate))
+
+    # Permissions
+    editors = ListField(StringField())         # Users who can edit
+    uiers = ListField(StringField())         # Users who can ui/read
+    submitters = ListField(StringField())      # Users who can submit responses
+
+# --- Individual Response model ---
+class FormResponse(Document):
+    meta = {
+        'collection': 'form_responses',
+        'indexes': [
+            'form',
+            'submitted_by',
+            'submitted_at',
+            ('form', 'submitted_at'),         # for sorting/pagination
+            ('form', 'submitted_by'),         # for user filtering
+            'deleted',
+        ]
+    }
+    id = UUIDField(primary_key=True, binary=False, default=uuid.uuid4)
+    form = ReferenceField('Form', required=True, reverse_delete_rule=2)  # CASCADE
+    data = DictField()  # JSON or stringified object
+    submitted_by = StringField()
+    submitted_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    
+    updated_by = StringField()
+    updated_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    
+    deleted = BooleanField(default=False)
+    deleted_by = StringField()
+    deleted_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    
+    metadata = DictField()  # IP, browser, device, etc.
+
+
+class SavedSearch(Document):
+    user_id = StringField(required=True)
+    form = ReferenceField(Form)
+    name = StringField(required=True)
+    filters = DictField()
+    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))

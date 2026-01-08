@@ -1,0 +1,19 @@
+# AI Agent Instructions (Root)
+
+This project contains a comprehensive AI Agent configuration in the `agent/` directory.
+
+## CRITICAL: Discovery
+Before taking any action, you MUST:
+1. Read `agent/00_INDEX.md` - This is the main router for all tasks.
+2. Read `agent/00_SYSTEM.md` - This contains your role and non-negotiable policies.
+3. Read `agent/01_PROJECT_CONTEXT.md` - This identifies the technology stack and environment.
+
+## Workflow Integration
+- Always route requests through the logic in `agent/00_INDEX.md`.
+- Use the specialized checklists in `agent/checklists/` before proposing fixes.
+- Follow the quality gates in `agent/gates/` before marking tasks as complete.
+- Use the templates in `agent/artifacts/` for all outputs (PRs, reports, etc.).
+
+## Transferability
+If you copy the `agent/` folder to a new project, run the auto-setup skill immediately:
+`SKILL:PROJECT_AUTO_SETUP` → `agent/skills/project_auto_setup.md`
