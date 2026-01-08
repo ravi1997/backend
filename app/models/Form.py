@@ -40,6 +40,7 @@ class Question(EmbeddedDocument):
     order = IntField()
     visibility_condition = StringField()
     validation_rules = StringField()
+    required_condition = StringField()  # Condition to make internal field mandatory
     is_repeatable_question = BooleanField(default=False)
     repeat_min = IntField(default=0)
     repeat_max = IntField()
@@ -59,6 +60,7 @@ class Question(EmbeddedDocument):
     custom_script = StringField()  # Custom script for field behavior
 
     meta_data = DictField()
+    required_condition = StringField()  # Field-level required condition
 
     created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
     updated_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
@@ -121,6 +123,8 @@ class Form(Document):
     uiers = ListField(StringField())         # Users who can ui/read
     submitters = ListField(StringField())      # Users who can submit responses
 
+    webhooks = ListField(DictField())          # List of webhook configs: {url, event, secret}
+
 # --- Individual Response model ---
 class FormResponse(Document):
     meta = {
@@ -151,6 +155,23 @@ class FormResponse(Document):
     
     metadata = DictField()  # IP, browser, device, etc.
 
+
+class ResponseHistory(Document):
+    meta = {
+        'collection': 'response_history',
+        'indexes': ['response_id', 'form_id', 'changed_at']
+    }
+    id = UUIDField(primary_key=True, binary=False, default=uuid.uuid4)
+    response_id = UUIDField(required=True)
+    form_id = UUIDField(required=True)
+    
+    data_before = DictField()
+    data_after = DictField()
+    
+    changed_by = StringField(required=True)
+    changed_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    change_type = StringField(choices=('create', 'update', 'delete', 'restore'))
+    version = StringField()
 
 class SavedSearch(Document):
     user_id = StringField(required=True)

@@ -16,8 +16,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Email notifications
 - Webhook integration
 - AI-powered form generation
+## [1.4.0] - 2026-01-08
+
+### Added
+- **Response Edit History**:
+  - Implemented `ResponseHistory` model to track changes.
+  - Added audit trail for updates and deletions (`data_before` vs `data_after`).
+  - Added API endpoint to retrieve history logs.
+- **Advanced Conditional Logic**:
+  - Enhanced `Conditional Required` fields logic.
+  - Implemented `safe_eval` for robust condition parsing.
+- **Webhook Integration**:
+  - Added webhook configuration to Form model.
+  - Implemented HMAC-signed triggers for `submitted`, `updated`, and `deleted` events.
+
+### Fixed
+- **Submission Versioning**: Added `version` field to `FormResponse` to track form version at time of submission.
+- **Soft Delete Refactor**: Unified soft delete logic across all response endpoints.
+- **Permission Bug**: Fixed `has_form_permission` to correctly handle UUID objects.
 
 ---
+
+
+## [1.3.1] - 2026-01-08
+
+### Added
+- **Conditional Required Fields**:
+  - Added `required_condition` to Question model to make fields mandatory based on logic.
+  - Implemented shared validation service `validate_form_submission`.
+  - Added UUID sanitization for safe evaluation of conditions.
+
+### Fixed
+- **Public Submission Validation**:
+  - Integrated validation service into `public_submit` endpoint to prevent invalid data from anonymous users.
+
+---
+
 
 ## [1.3.0] - 2026-01-08
 
@@ -128,6 +162,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.4.0 | 2026-01-08 | Advanced Features (History, Webhooks, Logic) |
+| 1.3.1 | 2026-01-08 | Conditional Required Fields |
 | 1.3.0 | 2026-01-08 | Backend Test Suite & Critical Fixes |
 | 1.2.0 | 2026-01-08 | Security & Saved Search |
 | 1.1.0 | 2026-01-08 | Documentation & Roadmap Phase |

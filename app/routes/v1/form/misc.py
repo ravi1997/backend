@@ -9,6 +9,7 @@ from app.models import Form
 from app.utils.decorator import require_roles
 from app.models.Form import Form, FormResponse
 from flask import json
+from app.utils.webhooks import trigger_webhooks
 
 
 # -------------------- Form Analytics --------------------
@@ -51,14 +52,27 @@ def submit_public_response(form_id):
         if not form.is_public:
             return jsonify({"error": "Form is not public"}), 403
 
+        from app.routes.v1.form.validation import validate_form_submission
+        submitted_data = data.get("data", {})
+        validation_errors = validate_form_submission(form, submitted_data, current_app.logger)
+
+        if validation_errors:
+            current_app.logger.warning(
+                f"Public validation failed: {validation_errors}")
+            return jsonify({"error": "Validation failed", "details": validation_errors}), 422
+
         response = FormResponse(
             form=form,
             submitted_by="anonymous",
-            data=data.get("data"),
+            data=submitted_data,
             submitted_at=datetime.now(timezone.utc),
             version=form.versions[-1].version if form.versions else "1.0"
         )
         response.save()
+        
+        # Trigger Webhook
+        trigger_webhooks(form, "submitted", response.to_mongo().to_dict())
+        
         return jsonify({"message": "Response submitted anonymously", "response_id": response.id}), 201
     except DoesNotExist:
         return jsonify({"error": "Form not found"}), 404

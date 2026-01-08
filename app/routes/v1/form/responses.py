@@ -4,14 +4,15 @@ from app.routes.v1.form import form_bp
 from flask import current_app, request, jsonify
 from flask_jwt_extended import jwt_required
 from mongoengine import DoesNotExist
-from app.models import Form
 from app.models.User import User
 from app.models.User import Role
 from app.utils.decorator import require_roles
-from app.models.Form import Form, FormResponse, SavedSearch
+from app.models.Form import Form, FormResponse, SavedSearch, ResponseHistory
 from datetime import datetime, timezone
+import uuid
 from mongoengine.queryset.visitor import Q
 from app.utils.file_handler import save_uploaded_file
+from app.utils.webhooks import trigger_webhooks
 # -------------------- Responses --------------------
 
 
@@ -91,171 +92,8 @@ def submit_response(form_id):
                 f"User {current_user.id} unauthorized to submit form {form_id}")
             return jsonify({"error": "Unauthorized to submit"}), 403
 
-        validation_errors = []
-
-        def safe_eval(expr, context):
-            try:
-                return eval(expr, {"__builtins__": {}}, context)
-            except Exception as err:
-                current_app.logger.warning(
-                    f"Visibility eval failed: {expr}, context={context}, error={err}")
-                return False
-
-        for section in form.versions[-1].sections:
-            sid = str(section.id)
-            section_data = submitted_data.get(sid)
-            current_app.logger.info(
-                f"Processing section: {sid}, repeatable={section.is_repeatable_section}")
-
-            if section.is_repeatable_section:
-                if not isinstance(section_data, list) and section_data is not None:
-                    msg = "Expected a list of entries for repeatable section"
-                    validation_errors.append({"section_id": sid, "error": msg})
-                    current_app.logger.warning(f"{sid}: {msg}")
-                    continue
-
-                if section.repeat_min and len(section_data) < section.repeat_min:
-                    msg = f"At least {section.repeat_min} entries required"
-                    validation_errors.append({"section_id": sid, "error": msg})
-                    current_app.logger.warning(f"{sid}: {msg}")
-
-                if section.repeat_max and len(section_data) > section.repeat_max:
-                    msg = f"No more than {section.repeat_max} entries allowed"
-                    validation_errors.append({"section_id": sid, "error": msg})
-                    current_app.logger.warning(f"{sid}: {msg}")
-
-                entries = section_data
-            else:
-                if not isinstance(section_data, dict):
-                    current_app.logger.warning(
-                        f"{sid}: Non-dict data in non-repeatable section, skipping.")
-                    continue
-                entries = [section_data]
-
-            if entries is not None:
-                for entry in entries:
-                    for question in section.questions:
-                        qid = str(question.id)
-                        answer = entry.get(qid)
-                        current_app.logger.debug(
-                            f"Checking question {qid}, label={question.label}")
-
-                        # Evaluate visibility
-                        is_visible = True
-                        if question.visibility_condition:
-                            flat_context = {
-                                k: repr(v) for e in entries for k, v in e.items()}
-                            is_visible = safe_eval(
-                                question.visibility_condition, flat_context)
-                            current_app.logger.debug(
-                                f"Visibility of {qid}: {is_visible}")
-
-                        if not is_visible:
-                            continue
-
-                        # Checkbox normalization
-                        if question.field_type == "checkbox" and not isinstance(answer, list):
-                            answer = [answer] if answer else []
-
-                        # Handle repeatable questions
-                        if question.is_repeatable_question:
-                            if not isinstance(answer, list) and answer is not None:
-                                msg = "Expected list of answers for repeatable question"
-                                validation_errors.append({"id": qid, "error": msg})
-                                current_app.logger.warning(f"{qid}: {msg}")
-                                continue
-                            if question.repeat_min and len(answer) < question.repeat_min:
-                                msg = f"At least {question.repeat_min} entries required"
-                                validation_errors.append({"id": qid, "error": msg})
-                                current_app.logger.warning(f"{qid}: {msg}")
-                            if question.repeat_max and len(answer) > question.repeat_max:
-                                msg = f"No more than {question.repeat_max} entries allowed"
-                                validation_errors.append({"id": qid, "error": msg})
-                                current_app.logger.warning(f"{qid}: {msg}")
-                        else:
-                            answer = [answer]
-
-                        for val in answer:
-                            if question.is_required and (val is None or val == ""):
-                                msg = "Required field missing"
-                                validation_errors.append({"id": qid, "error": msg})
-                                current_app.logger.warning(f"{qid}: {msg}")
-                                continue
-                            if val in (None, ""):
-                                continue
-
-                            # Type checks
-                            if question.field_type == "checkbox" and not isinstance(val, list):
-                                msg = "Expected a list for checkbox"
-                                validation_errors.append({"id": qid, "error": msg})
-                                current_app.logger.warning(f"{qid}: {msg}")
-                            elif question.field_type in ("text", "textarea") and not isinstance(val, str):
-                                msg = "Expected a string for text/textarea"
-                                validation_errors.append({"id": qid, "error": msg})
-                                current_app.logger.warning(f"{qid}: {msg}")
-                            elif question.field_type == "radio":
-                                if not isinstance(val, str):
-                                    msg = "Expected a string for radio"
-                                    validation_errors.append(
-                                        {"id": qid, "error": msg})
-                                    current_app.logger.warning(f"{qid}: {msg}")
-                                elif val not in [opt.option_value for opt in question.options]:
-                                    msg = "Invalid option selected"
-                                    validation_errors.append(
-                                        {"id": qid, "error": msg})
-                                    current_app.logger.warning(f"{qid}: {msg}")
-                            elif question.field_type == "file_upload":
-                                # For file uploads, validate that the uploaded file meets requirements
-                                if isinstance(val, dict) and 'filepath' in val:
-                                    # File was successfully uploaded, validation passes
-                                    pass
-                                elif isinstance(val, list):
-                                    # Multiple files uploaded
-                                    for file_info in val:
-                                        if not isinstance(file_info, dict) or 'filepath' not in file_info:
-                                            msg = "Invalid file upload"
-                                            validation_errors.append({"id": qid, "error": msg})
-                                            current_app.logger.warning(f"{qid}: {msg}")
-                                else:
-                                    msg = "Expected file upload for file_upload field type"
-                                    validation_errors.append({"id": qid, "error": msg})
-                                    current_app.logger.warning(f"{qid}: {msg}")
-
-                            # Custom validation rules
-                            if question.validation_rules:
-                                try:
-                                    rules = json.loads(question.validation_rules)
-                                    if isinstance(val, str):
-                                        if "min_length" in rules and len(val) < rules["min_length"]:
-                                            msg = f"Minimum length is {rules['min_length']}"
-                                            validation_errors.append(
-                                                {"id": qid, "error": msg})
-                                            current_app.logger.warning(
-                                                f"{qid}: {msg}")
-                                        if "max_length" in rules and len(val) > rules["max_length"]:
-                                            msg = f"Maximum length is {rules['max_length']}"
-                                            validation_errors.append(
-                                                {"id": qid, "error": msg})
-                                            current_app.logger.warning(
-                                                f"{qid}: {msg}")
-                                    if question.field_type == "checkbox" and isinstance(val, list):
-                                        if "min_selections" in rules and len(val) < rules["min_selections"]:
-                                            msg = f"Select at least {rules['min_selections']} options"
-                                            validation_errors.append(
-                                                {"id": qid, "error": msg})
-                                            current_app.logger.warning(
-                                                f"{qid}: {msg}")
-                                        if "max_selections" in rules and len(val) > rules["max_selections"]:
-                                            msg = f"Select no more than {rules['max_selections']} options"
-                                            validation_errors.append(
-                                                {"id": qid, "error": msg})
-                                            current_app.logger.warning(
-                                                f"{qid}: {msg}")
-                                except Exception as ve:
-                                    msg = f"Invalid validation rules: {str(ve)}"
-                                    validation_errors.append(
-                                        {"id": qid, "error": msg})
-                                    current_app.logger.error(f"{qid}: {msg}")
+        from app.routes.v1.form.validation import validate_form_submission
+        validation_errors = validate_form_submission(form, submitted_data, current_app.logger)
 
         if validation_errors:
             current_app.logger.warning(
@@ -271,6 +109,10 @@ def submit_response(form_id):
         )
         response.save()
         current_app.logger.info(f"Submission saved: response_id={response.id}")
+        
+        # Trigger Webhook
+        trigger_webhooks(form, "submitted", response.to_mongo().to_dict())
+        
         return jsonify({"message": "Response submitted", "response_id": response.id}), 201
 
     except DoesNotExist:
@@ -310,18 +152,68 @@ def get_response(form_id, response_id):
     except DoesNotExist:
         return jsonify({"error": "Response not found"}), 404
 
+# -------------------- Get History --------------------
+@form_bp.route("/<form_id>/responses/<response_id>/history", methods=["GET"])
+@jwt_required()
+def get_response_history(form_id, response_id):
+    try:
+        current_user = get_current_user()
+        form = Form.objects.get(id=form_id)
+        if not has_form_permission(current_user, form, "view"):
+            return jsonify({"error": "Unauthorized"}), 403
+            
+        history = ResponseHistory.objects(response_id=response_id).order_by("-changed_at")
+        return jsonify([h.to_mongo().to_dict() for h in history]), 200
+    except DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+
 # -------------------- Update Submission --------------------
 @form_bp.route("/<form_id>/responses/<response_id>", methods=["PUT"])
 @jwt_required()
 def update_submission(form_id, response_id):
     data = request.get_json()
+    
     try:
-        form = Form.objects.get(id=form_id)
-        response = FormResponse.objects.get(id=response_id, form=form)
         current_user = get_current_user()
+    except DoesNotExist:
+        current_app.logger.error(f"User not found for token")
+        return jsonify({"error": "User not found"}), 404
+
+    try:
+        current_app.logger.info(f"Updating submission form={form_id} resp={response_id}")
+        form = Form.objects.get(id=form_id)
+    except DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+
+    try:
+        response = FormResponse.objects.get(id=response_id, form=form)
+    except DoesNotExist:
+        return jsonify({"error": "Response not found"}), 404
+
+    try:
         if response.submitted_by != str(current_user.id):
             return jsonify({"error": "Unauthorized to update this submission"}), 403
+        # 📜 History Tracking: Before
+        data_before = response.to_mongo().to_dict()
+        
         response.update(**data)
+        # Manually reload to ensure we have latest data
+        response = FormResponse.objects.get(id=response.id)
+
+        # 📜 History Tracking: Record
+        ResponseHistory(
+            response_id=response.id,
+            form_id=form.id,
+            data_before=data_before.get("data"),
+            data_after=response.data,
+            changed_by=str(current_user.id),
+            change_type="update",
+            version=response.version
+        ).save()
+
+        # 🔔 Webhook
+        trigger_webhooks(form, "updated", response.to_mongo().to_dict())
+
         return jsonify({"message": "Response updated"}), 200
     except DoesNotExist:
         return jsonify({"error": "Form or response not found"}), 404
@@ -338,11 +230,29 @@ def delete_response(form_id, response_id):
         current_user = get_current_user()
         if not has_form_permission(current_user, form, "edit"):
             return jsonify({"error": "Unauthorized to delete response"}), 403
+        # 📜 History Tracking: Before
+        data_before = response.to_mongo().to_dict()
+
         response.update(
             set__deleted=True, 
             set__deleted_at=datetime.now(timezone.utc),
             set__deleted_by=str(current_user.id)
         )
+        
+        # 📜 History Tracking: Record
+        ResponseHistory(
+            response_id=response.id,
+            form_id=form.id,
+            data_before=data_before.get("data"),
+            data_after=None,
+            changed_by=str(current_user.id),
+            change_type="delete",
+            version=response.version
+        ).save()
+
+        # 🔔 Webhook
+        trigger_webhooks(form, "deleted", {"response_id": str(response.id), "deleted_by": str(current_user.id)})
+
         return jsonify({"message": "Response deleted"}), 200
     except DoesNotExist:
         return jsonify({"error": "Form or response not found"}), 404
