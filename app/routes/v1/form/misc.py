@@ -55,7 +55,8 @@ def submit_public_response(form_id):
             form=form,
             submitted_by="anonymous",
             data=data.get("data"),
-            submitted_at=datetime.now(timezone.utc)
+            submitted_at=datetime.now(timezone.utc),
+            version=form.versions[-1].version if form.versions else "1.0"
         )
         response.save()
         return jsonify({"message": "Response submitted anonymously", "response_id": response.id}), 201

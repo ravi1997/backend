@@ -44,7 +44,9 @@ def require_roles(*allowed_roles: str, require_all: bool = False):
 
                 return func(*args, **kwargs)
             except Exception as e:
-                current_app.logger.error(f"Error in access control: {str(e)}")
-                return jsonify({'error': 'Internal server error'}), 500
+                import traceback
+                error_trace = traceback.format_exc()
+                current_app.logger.error(f"Error in access control: {str(e)}\n{error_trace}")
+                return jsonify({'error': 'Internal server error', 'message': str(e)}), 500
         return wrapper
     return decorator

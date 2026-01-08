@@ -21,7 +21,15 @@ def set_form_expiration(form_id):
         expiration_date = data.get("expires_at")
         if not expiration_date:
             return jsonify({"error": "Expiration date is required"}), 400
-        form.update(set__expires_at=expiration_date)
+        
+        # Convert string to aware datetime
+        try:
+            exp_dt = datetime.fromisoformat(expiration_date.replace('Z', '+00:00'))
+            if exp_dt.tzinfo is None:
+                exp_dt = exp_dt.replace(tzinfo=timezone.utc)
+            form.update(set__expires_at=exp_dt)
+        except ValueError:
+            return jsonify({"error": "Invalid date format, use ISO 8601"}), 400
         return jsonify({"message": "Form expiration updated"}), 200
     except DoesNotExist:
         return jsonify({"error": "Form not found"}), 404

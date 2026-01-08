@@ -10,14 +10,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Form status validation on submit (block draft/archived)
-- Soft delete for responses
 - Response edit history
 - Conditional required fields
 - Approval workflow
 - Email notifications
 - Webhook integration
 - AI-powered form generation
+
+---
+
+## [1.3.0] - 2026-01-08
+
+### Added
+- **Backend Test Suite**: 
+  - Implemented 30 comprehensive tests using `pytest` and `mongomock`.
+  - Covered Authentication, User Management, Form CRUD, Responses, Analytics, and API Integrations.
+  - Configured `conftest.py` for fully isolated database testing.
+- **Improved Data Filtering**: Added global filtering for archived/deleted responses in listing and search endpoints.
+
+### Fixed
+- **Authentication Resilience**: Fixed `AttributeError` for `request.current_user` by switching to `get_current_user()` helper.
+- **Model Security**: Resolved datetime comparison `TypeError` in `User` model by ensuring consistent timezone-aware objects.
+- **User Management**: Fixed manual `User` instantiation in `create_user` route that caused 500 errors.
+- **Response Management**: Standardized archive logic to use `deleted` field across all routes.
+- **API Integrations**: Fixed internal routing prefix for form-to-form search and response JSON parsing.
+- **Validation Stability**: Fixed `IndexError` in form creation by ensuring `versions` list is always present and valid.
 
 ---
 
@@ -111,6 +128,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.3.0 | 2026-01-08 | Backend Test Suite & Critical Fixes |
+| 1.2.0 | 2026-01-08 | Security & Saved Search |
 | 1.1.0 | 2026-01-08 | Documentation & Roadmap Phase |
 | 1.0.0 | 2026-01-08 | Core Feature Release |
 | 0.1.0 | 2025-12-15 | Initial Setup |

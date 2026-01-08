@@ -147,6 +147,8 @@ class FormResponse(Document):
     deleted_by = StringField()
     deleted_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
     
+    version = StringField()  # Track which form version was used
+    
     metadata = DictField()  # IP, browser, device, etc.
 
 

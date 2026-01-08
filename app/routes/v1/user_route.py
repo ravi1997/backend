@@ -20,7 +20,7 @@ user_bp = Blueprint("user_bp", __name__)
 @jwt_required()
 def change_password():
     data = request.json or {}
-    user = request.current_user
+    user = get_current_user()
     if not user.check_password(data.get("current_password", "")):
         return jsonify({"message": "Current password incorrect"}), 400
     user.set_password(data.get("new_password"))
@@ -92,7 +92,8 @@ def get_user(user_id):
 def create_user():
     data = request.json or {}
     try:
-        user = User(**data)
+        user_data = {k: v for k, v in data.items() if k != "password"}
+        user = User(**user_data)
         if data.get("password"):
             user.set_password(data["password"])
         user.save()

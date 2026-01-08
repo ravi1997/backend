@@ -92,14 +92,14 @@ def handleAPI(form_id, section_id, question_id):
                     "Authorization": request.headers.get("Authorization")  # Forward the JWT
                 }
                 response = current_app.test_client().post(
-                    f"/api/v1/form/{form_id}/responses/search",
+                    f"/form/api/v1/form/{form_id}/responses/search",
                     data=json.dumps(search_payload),
                     content_type="application/json",
                     headers=headers
                 )
                 if response.status_code == 200:
                     current_app.logger.info(f"Form data retrieved successfully for user {current_user.username} (ID: {current_user.id})")
-                    return jsonify({"data": response.json()["responses"]}), 200
+                    return jsonify({"data": response.get_json()["responses"]}), 200
                 else:
                     current_app.logger.error(f"Failed to retrieve form data for user {current_user.username} (ID: {current_user.id}): {response.text}")
                     return jsonify({"error": "Failed to retrieve form data"}), response.status_code

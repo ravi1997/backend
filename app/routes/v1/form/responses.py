@@ -266,7 +266,8 @@ def submit_response(form_id):
             form=form,
             submitted_by=str(current_user.id),
             data=submitted_data,
-            submitted_at=datetime.now(timezone.utc)
+            submitted_at=datetime.now(timezone.utc),
+            version=form.versions[-1].version if form.versions else "1.0"
         )
         response.save()
         current_app.logger.info(f"Submission saved: response_id={response.id}")
@@ -289,7 +290,7 @@ def list_responses(form_id):
         if not has_form_permission(current_user, form, "view"):
             return jsonify({"error": "Unauthorized to view responses"}), 403
 
-        responses = FormResponse.objects(form=form)
+        responses = FormResponse.objects(form=form, deleted=False)
         return jsonify([r.to_mongo().to_dict() for r in responses]), 200
     except DoesNotExist:
         return jsonify({"error": "Form not found"}), 404
@@ -337,7 +338,11 @@ def delete_response(form_id, response_id):
         current_user = get_current_user()
         if not has_form_permission(current_user, form, "edit"):
             return jsonify({"error": "Unauthorized to delete response"}), 403
-        response.delete()
+        response.update(
+            set__deleted=True, 
+            set__deleted_at=datetime.now(timezone.utc),
+            set__deleted_by=str(current_user.id)
+        )
         return jsonify({"message": "Response deleted"}), 200
     except DoesNotExist:
         return jsonify({"error": "Form or response not found"}), 404
@@ -355,8 +360,9 @@ def list_paginated_responses(form_id):
         page = int(request.args.get("page", 1))
         limit = int(request.args.get("limit", 10))
         skip = (page - 1) * limit
-        responses = FormResponse.objects(form=form).skip(skip).limit(limit)
-        total = FormResponse.objects(form=form).count()
+        responses = FormResponse.objects(form=form, deleted=False).skip(skip).limit(limit)
+        query = FormResponse.objects(form=form, deleted=False)
+        total = query.count()
         return jsonify({
             "total": total,
             "page": page,
@@ -376,8 +382,32 @@ def archive_response(form_id, response_id):
         current_user = get_current_user()
         if response.submitted_by != str(current_user.id) and not has_form_permission(current_user, form, "edit"):
             return jsonify({"error": "Unauthorized to archive this response"}), 403
-        response.update(set__status="archived")
+        response.update(
+            set__deleted=True, 
+            set__deleted_at=datetime.now(timezone.utc),
+            set__deleted_by=str(current_user.id)
+        )
         return jsonify({"message": "Response archived"}), 200
+    except DoesNotExist:
+        return jsonify({"error": "Form or response not found"}), 404
+
+
+# -------------------- Restore Specific Response --------------------
+@form_bp.route("/<form_id>/responses/<response_id>/restore", methods=["PATCH"])
+@jwt_required()
+def restore_response(form_id, response_id):
+    try:
+        form = Form.objects.get(id=form_id)
+        response = FormResponse.objects.get(id=response_id, form=form)
+        current_user = get_current_user()
+        if not has_form_permission(current_user, form, "edit"):
+            return jsonify({"error": "Unauthorized to restore this response"}), 403
+        response.update(
+            set__deleted=False,
+            unset__deleted_at=True,
+            unset__deleted_by=True
+        )
+        return jsonify({"message": "Response restored"}), 200
     except DoesNotExist:
         return jsonify({"error": "Form or response not found"}), 404
 
@@ -408,7 +438,7 @@ def search_responses(form_id):
         direction = filters.get("direction", "next")
         cursor = filters.get("cursor")
 
-        base_query = Q(form=form)
+        base_query = Q(form=form, deleted=False)
 
         # 🔁 Build question_id → section_id map
         qid_to_sid = {

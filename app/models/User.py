@@ -83,7 +83,12 @@ class User(Document):
     # -------------------- Security Methods --------------------
 
     def is_locked(self) -> bool:
-        return self.lock_until and datetime.now(timezone.utc) < self.lock_until
+        if not self.lock_until:
+            return False
+        lock_until = self.lock_until
+        if lock_until.tzinfo is None:
+            lock_until = lock_until.replace(tzinfo=timezone.utc)
+        return datetime.now(timezone.utc) < lock_until
 
     def lock_account(self):
         self.lock_until = datetime.now(
@@ -165,7 +170,12 @@ class User(Document):
             return False
 
     def is_password_expired(self) -> bool:
-        return self.password_expiration and datetime.now(timezone.utc) > self.password_expiration
+        if not self.password_expiration:
+            return False
+        pw_exp = self.password_expiration
+        if pw_exp.tzinfo is None:
+            pw_exp = pw_exp.replace(tzinfo=timezone.utc)
+        return datetime.now(timezone.utc) > pw_exp
 
     # -------------------- Roles --------------------
 
