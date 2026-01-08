@@ -564,3 +564,62 @@ def search_responses(form_id):
     except Exception as e:
         current_app.logger.error(f"Search error: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500
+
+
+# -------------------- Saved Searches --------------------
+
+@form_bp.route("/<form_id>/saved-search", methods=["POST"])
+@jwt_required()
+def create_saved_search(form_id):
+    try:
+        form = Form.objects.get(id=form_id)
+        current_user = get_current_user()
+        if not has_form_permission(current_user, form, "view"):
+            return jsonify({"error": "Unauthorized"}), 403
+            
+        data = request.get_json()
+        saved = SavedSearch(
+            user_id=str(current_user.id),
+            form=form,
+            name=data.get("name"),
+            filters=data.get("filters")
+        )
+        saved.save()
+        return jsonify({"message": "Saved search created", "id": str(saved.id)}), 201
+    except DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@form_bp.route("/<form_id>/saved-search", methods=["GET"])
+@jwt_required()
+def list_saved_searches(form_id):
+    try:
+        form = Form.objects.get(id=form_id)
+        current_user = get_current_user()
+        if not has_form_permission(current_user, form, "view"):
+            return jsonify({"error": "Unauthorized"}), 403
+            
+        searches = SavedSearch.objects(form=form, user_id=str(current_user.id))
+        return jsonify([{
+            "id": str(s.id), 
+            "name": s.name, 
+            "filters": s.filters, 
+            "created_at": s.created_at.isoformat()
+        } for s in searches]), 200
+    except DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+
+
+@form_bp.route("/<form_id>/saved-search/<search_id>", methods=["DELETE"])
+@jwt_required()
+def delete_saved_search(form_id, search_id):
+    try:
+        form = Form.objects.get(id=form_id)
+        current_user = get_current_user()
+        saved = SavedSearch.objects.get(id=search_id, form=form, user_id=str(current_user.id))
+        saved.delete()
+        return jsonify({"message": "Saved search deleted"}), 200
+    except DoesNotExist:
+        return jsonify({"error": "Saved search not found"}), 404

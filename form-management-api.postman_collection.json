@@ -1,0 +1,483 @@
+{
+	"info": {
+		"_postman_id": "7f8c0e2a-1234-4567-890a-bcdef1234567",
+		"name": "Form Management System API",
+		"description": "Comprehensive API collection for Form Management System with success, failure, and error test cases.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"email\": \"test@example.com\",\n    \"password\": \"Password123!\",\n    \"employee_id\": \"EMP001\",\n    \"user_type\": \"employee\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/form/api/v1/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"form",
+								"api",
+								"v1",
+								"auth",
+								"register"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 201 or 409\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    pm.test(\"Success message returned\", function () {",
+									"        pm.expect(pm.response.json().message).to.equal(\"User registered\");",
+									"    });",
+									"} else if (pm.response.code === 409) {",
+									"    pm.test(\"Conflict message returned\", function () {",
+									"        pm.expect(pm.response.json().message).to.be.oneOf([\"Email already exists\", \"Employee ID already exists\"]);",
+									"    });",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Login (Employee)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"identifier\": \"testuser\",\n    \"password\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/form/api/v1/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"form",
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code handle success/fail\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 401, 403]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    pm.test(\"Access token present\", function () {",
+									"        var jsonData = pm.response.json();",
+									"        pm.expect(jsonData.access_token).to.not.be.undefined;",
+									"        pm.environment.set(\"accessToken\", jsonData.access_token);",
+									"    });",
+									"} else {",
+									"    pm.test(\"Error message present\", function () {",
+									"        pm.expect(pm.response.json().msg).to.not.be.undefined;",
+									"    });",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Generate OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"mobile\": \"1234567890\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/form/api/v1/auth/generate-otp",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"form",
+								"api",
+								"v1",
+								"auth",
+								"generate-otp"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code handles mobile exists/not\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 404, 400]);",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "User Management",
+			"item": [
+				{
+					"name": "List Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/form/api/v1/user/users",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"form",
+								"api",
+								"v1",
+								"user",
+								"users"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Admin success or Unauthorized\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 403]);",
+									"});",
+									"if (pm.response.code === 200) {",
+									"    pm.test(\"Return array of users\", function () {",
+									"        pm.expect(pm.response.json()).to.be.an('array');",
+									"    });",
+									"}"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Form Operations",
+			"item": [
+				{
+					"name": "Create Form",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Postman Test Form\",\n    \"slug\": \"postman-test-form-{{$timestamp}}\",\n    \"versions\": [\n        {\n            \"version\": \"1.0\",\n            \"sections\": [\n                {\n                    \"id\": \"sec1\",\n                    \"title\": \"Initial Section\",\n                    \"questions\": [\n                        {\n                            \"id\": \"q1\",\n                            \"label\": \"What is your name?\",\n                            \"field_type\": \"text\",\n                            \"is_required\": true\n                        }\n                    ]\n                }\n            ]\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/form/api/v1/form/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"form",
+								"api",
+								"v1",
+								"form",
+								""
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Form created or Unauthorized\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([201, 403, 400]);",
+									"});",
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"formId\", jsonData.form_id);",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Form",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/form/api/v1/form/{{formId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"form",
+								"api",
+								"v1",
+								"form",
+								"{{formId}}"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Success or Not Found\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 404, 403]);",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Responses",
+			"item": [
+				{
+					"name": "Submit Response",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"data\": {\n        \"sec1\": {\n            \"q1\": \"John Doe\"\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/form/api/v1/form/{{formId}}/responses",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"form",
+								"api",
+								"v1",
+								"form",
+								"{{formId}}",
+								"responses"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Success, Validation Fail, or Unauthorized\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([201, 422, 403, 404]);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Search Responses",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"data\": {\n        \"q1\": {\n            \"value\": \"John\",\n            \"type\": \"string\",\n            \"fuzzy\": true\n        }\n    },\n    \"limit\": 10\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/form/api/v1/form/{{formId}}/responses/search",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"form",
+								"api",
+								"v1",
+								"form",
+								"{{formId}}",
+								"responses",
+								"search"
+							]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Search Success\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"    pm.expect(pm.response.json().responses).to.be.an('array');",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Misc & Analytics",
+			"item": [
+				{
+					"name": "Get Analytics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/form/api/v1/form/{{formId}}/analytics",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"form",
+								"api",
+								"v1",
+								"form",
+								"{{formId}}",
+								"analytics"
+							]
+						}
+					}
+				},
+				{
+					"name": "Public Submit",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"data\": {\n        \"sec1\": {\n            \"q1\": \"Anonymous User\"\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/form/api/v1/form/{{formId}}/public-submit",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"form",
+								"api",
+								"v1",
+								"form",
+								"{{formId}}",
+								"public-submit"
+							]
+						}
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "formId",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

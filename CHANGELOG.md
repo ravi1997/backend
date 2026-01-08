@@ -11,7 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - Form status validation on submit (block draft/archived)
-- Permission check fix (UUID string comparison)
 - Soft delete for responses
 - Response edit history
 - Conditional required fields
@@ -19,6 +18,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Email notifications
 - Webhook integration
 - AI-powered form generation
+
+---
+
+## [1.2.0] - 2026-01-08
+
+### Added
+- **Security Enhancements**: 
+  - Implemented account locking check in login flow.
+  - Implemented password expiration check in login flow.
+  - Added failed login attempt tracking logic.
+- **New Features**:
+  - **Saved Search**: Added endpoints to create, list, and delete saved searches for form responses.
+- **Core Fixes**:
+  - Fixed P0 permission resolution bug (UUID string comparison in `has_form_permission`).
+  - Improved permission logic to ensure form creators always have full access.
 
 ---
 

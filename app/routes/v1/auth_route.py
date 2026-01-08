@@ -87,9 +87,20 @@ def login():
             if not user:
                 current_app.logger.warning(f"Login failed: No user found for identifier {identifier}")
                 return _htmx_or_json_error("Invalid credentials", 401)
+
+            if user.is_locked():
+                current_app.logger.warning(f"Login failed: User {identifier} is locked until {user.lock_until}")
+                return _htmx_or_json_error(f"Account is locked until {user.lock_until}", 403)
+
             if not user.check_password(password):
+                user.increment_failed_logins()
                 current_app.logger.warning(f"Login failed: Incorrect password for user {identifier}")
                 return _htmx_or_json_error("Invalid credentials", 401)
+
+            if user.is_password_expired():
+                current_app.logger.warning(f"Login failed: Password expired for user {identifier}")
+                return _htmx_or_json_error("Password expired. Please reset your password.", 403)
+
             current_app.logger.info(f"Login successful for employee user {identifier}")
 
     # --- OTP LOGIN ---
@@ -99,9 +110,16 @@ def login():
         if not user:
             current_app.logger.warning(f"Login failed: No user found for mobile {mobile}")
             return _htmx_or_json_error("Invalid OTP", 401)
+
+        if user.is_locked():
+            current_app.logger.warning(f"Login failed: User {mobile} is locked until {user.lock_until}")
+            return _htmx_or_json_error(f"Account is locked until {user.lock_until}", 403)
+
         if not user.verify_otp(otp):
+            user.increment_failed_logins()
             current_app.logger.warning(f"Login failed: Invalid OTP for mobile {mobile}")
             return _htmx_or_json_error("Invalid OTP", 401)
+
         if user.user_type == 'general' and password:
             current_app.logger.warning(f"General user attempted password login for mobile {mobile}")
             return _htmx_or_json_error("General users must log in with OTP only", 403)
