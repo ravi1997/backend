@@ -69,6 +69,19 @@ def submit_response(form_id):
 
     try:
         form = Form.objects.get(id=form_id)
+
+        # Check if form is published
+        if form.status != "published":
+            current_app.logger.warning(
+                f"Attempted submission to non-published form {form_id} (status: {form.status})")
+            return jsonify({"error": f"Form is {form.status}, not accepting submissions"}), 403
+
+        # Check if form has expired
+        if form.expires_at and datetime.now(timezone.utc) > form.expires_at.replace(tzinfo=timezone.utc):
+            current_app.logger.warning(
+                f"Attempted submission to expired form {form_id} (expired at: {form.expires_at})")
+            return jsonify({"error": "Form has expired"}), 403
+
         current_user = get_current_user()
         current_app.logger.info(
             f"Current user: {current_user.id}, Form title: {form.title}")

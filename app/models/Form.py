@@ -107,6 +107,7 @@ class Form(Document):
 
     created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
     updated_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    expires_at = DateTimeField()
 
     is_public= BooleanField(default=False)
     versions = ListField(EmbeddedDocumentField(FormVersion))

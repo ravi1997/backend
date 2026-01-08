@@ -1,3 +1,9 @@
 /.env
 /env
 /logs
+
+app/__pycache__
+app/api/__pycache__
+app/api/v1/__pycache__
+app/api/v1/auth/__pycache__
+app/models/__pycache__
