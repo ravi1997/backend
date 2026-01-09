@@ -55,5 +55,6 @@
     - [x] Implement **AI-Powered Smart Search** (`POST /ai/<id>/search`)
     - [x] Implement **Anomaly Detection** (`POST /ai/<id>/anomalies`)
     - [x] Implement **Deep Content Moderation** (PII, PHI, Profanity, Injection)
+    - [x] Implement **Automated Security Scanning** (`POST /ai/<id>/security-scan`)
     - [x] Create dedicated AI blueprint and results storage
-    - [x] Add AI test suite (`tests/test_ai_analysis.py`, `tests/test_ai_generation.py`, `tests/test_ai_templates.py`, `tests/test_ai_search.py`, `tests/test_ai_anomalies.py`, `tests/test_ai_moderation.py`)
+    - [x] Add AI test suite (`tests/test_ai_analysis.py`, `tests/test_ai_generation.py`, `tests/test_ai_templates.py`, `tests/test_ai_search.py`, `tests/test_ai_anomalies.py`, `tests/test_ai_moderation.py`, `tests/test_ai_security_scan.py`)

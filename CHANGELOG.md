@@ -27,6 +27,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `POST /form/<id>/section/<sid>/question/<qid>/options/import` endpoint for populating question options from a CSV file.
   - Support for replacing or appending to existing options.
 
+## [1.21.0] - 2026-01-09
+
+### Added
+- **Automated AI Security Audit**:
+  - Scanning engine for form definitions to proactively identify vulnerabilities.
+  - **Exposure Detection**: Flags sensitive fields (SSN, Passwords) configured in publicly accessible forms.
+  - **Spam Vulnerability Check**: Recommends validation rules for forms with high ratios of open text fields.
+  - **Privacy Score**: Mathematical scoring (0-100) based on configuration safety.
+  - **Remediation Engine**: Provides specific actionable advice for each finding.
+  - New endpoint: `POST /ai/<form_id>/security-scan`.
+
 ## [1.20.0] - 2026-01-09
 
 ### Added
@@ -344,6 +355,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.21.0 | 2026-01-09 | Automated Form Security Audit |
 | 1.20.0 | 2026-01-09 | Deep Content Moderation |
 | 1.19.0 | 2026-01-09 | AI Anomaly Detection |
 | 1.18.0 | 2026-01-09 | Enhanced Sentiment & Bulk Trends |

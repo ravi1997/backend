@@ -602,3 +602,89 @@ def detect_form_anomalies(form_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+@ai_bp.route("/<form_id>/security-scan", methods=["POST"])
+@jwt_required()
+def scan_form_security_ai(form_id):
+    """
+    Automated Security Scanning for Form Definitions.
+    Analyzes questions, settings, and permissions for vulnerabilities.
+    """
+    try:
+        current_user = get_current_user()
+        form = Form.objects.get(id=form_id)
+        if not has_form_permission(current_user, form, "edit"):
+             return jsonify({"error": "Unauthorized"}), 403
+
+        findings = []
+        recommendations = []
+        score = 100
+
+        # 1. Public Access Check
+        is_public = getattr(form, 'is_public', False)
+        
+        # 2. Section/Question Scan
+        sensitive_keywords = {"ssn", "password", "credit card", "pin", "otp", "medical", "health", "bank"}
+        text_fields_without_validation = 0
+        sensitive_fields_found = []
+
+        for section in form.versions[-1].sections:
+            for question in section.questions:
+                label_lower = question.label.lower()
+                
+                # Identify sensitive fields
+                if any(kw in label_lower for kw in sensitive_keywords):
+                    sensitive_fields_found.append(question.label)
+                    if is_public:
+                        findings.append({
+                            "severity": "HIGH",
+                            "issue": f"Sensitive field '{question.label}' exposed on Public Form",
+                            "detail": "Asking for sensitive information on a form without authentication is a significant privacy risk."
+                        })
+                        score -= 20
+
+                # Spam risk check
+                if question.field_type in ["input", "textarea"]:
+                    # Check if any validation exists (required or regex rules)
+                    has_validation = question.is_required or getattr(question, 'validation_rules', None)
+                    if not has_validation:
+                        text_fields_without_validation += 1
+
+        if text_fields_without_validation > 3:
+            findings.append({
+                "severity": "MEDIUM",
+                "issue": "High Spam Risk",
+                "detail": f"{text_fields_without_validation} open text fields found without validation rules."
+            })
+            score -= 10
+            recommendations.append("Add regex or length constraints to open text fields to prevent automated spam.")
+
+        # 3. Custom Script Scan
+        custom_script = getattr(form, 'custom_script', None)
+        if custom_script:
+            findings.append({
+                "severity": "LOW",
+                "issue": "Active Custom Script",
+                "detail": "Custom scripts can execute server-side logic. Ensure this script is audited for security."
+            })
+            recommendations.append("Regularly review custom scripts for potential injection or data leakage vulnerabilities.")
+
+        # Final Score Logic
+        score = max(0, score)
+        status = "PASSED" if score >= 80 else "WARNING" if score >= 50 else "FAILED"
+
+        report = {
+            "form_id": form_id,
+            "security_score": score,
+            "status": status,
+            "findings": findings,
+            "recommendations": recommendations,
+            "scanned_at": datetime.utcnow().isoformat()
+        }
+
+        # Store report in form if necessary (optional)
+        # form.update(set__security_report=report)
+
+        return jsonify(report), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
