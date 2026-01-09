@@ -27,6 +27,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `POST /form/<id>/section/<sid>/question/<qid>/options/import` endpoint for populating question options from a CSV file.
   - Support for replacing or appending to existing options.
 
+## [1.17.0] - 2026-01-09
+
+### Added
+- **AI Form Template Generation**:
+  - New catalog of industry-standard form templates (HR, Medical, Safety, events).
+  - New endpoints: `GET /ai/templates` (list) and `GET /ai/templates/<id>` (fetch).
+  - Automated ID generation for all template components for immediate database compatibility.
+- **Improved AI Blueprint**:
+  - Centralized simulated AI logic for content generation and assistance.
+
 ## [1.16.0] - 2026-01-09
 
 ### Added
@@ -304,6 +314,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.17.0 | 2026-01-09 | AI Form Template Generation |
 | 1.16.0 | 2026-01-09 | Advanced Workflow & AI Analysis |
 | 1.15.0 | 2026-01-09 | Response Management & Form Versioning |
 | 1.14.0 | 2026-01-09 | Bulk Export/Import Enhancements |

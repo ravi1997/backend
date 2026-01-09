@@ -213,3 +213,73 @@ def get_field_suggestions():
         }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+@ai_bp.route("/templates", methods=["GET"])
+@jwt_required()
+def list_ai_templates():
+    """
+    List available AI form templates.
+    """
+    templates = [
+        {"id": "patient_reg", "name": "Patient Registration", "category": "Medical"},
+        {"id": "emp_boarding", "name": "Employee Onboarding", "category": "HR"},
+        {"id": "survey_feedback", "name": "Survey/Feedback", "category": "General"},
+        {"id": "event_reg", "name": "Event Registration", "category": "Events"},
+        {"id": "app_form", "name": "Application Form", "category": "General"},
+        {"id": "incident_report", "name": "Incident Report", "category": "Safety"}
+    ]
+    return jsonify({"templates": templates}), 200
+
+@ai_bp.route("/templates/<template_id>", methods=["GET"])
+@jwt_required()
+def get_ai_template(template_id):
+    """
+    Get a specific AI template structure.
+    """
+    import uuid
+    
+    # Base structure
+    template = {
+        "title": template_id.replace("_", " ").title(),
+        "sections": []
+    }
+
+    if template_id == "patient_reg":
+        template["sections"] = [
+            {"title": "Patient Info", "questions": [
+                {"label": "Name", "field_type": "input"},
+                {"label": "DOB", "field_type": "date"},
+                {"label": "Insurance ID", "field_type": "input"}
+            ]}
+        ]
+    elif template_id == "emp_boarding":
+        template["sections"] = [
+            {"title": "Job Details", "questions": [
+                {"label": "Department", "field_type": "select", "options": [{"option_label": "IT", "option_value": "it"}, {"option_label": "HR", "option_value": "hr"}]},
+                {"label": "Start Date", "field_type": "date"}
+            ]}
+        ]
+    elif template_id == "incident_report":
+        template["sections"] = [
+            {"title": "Incident Details", "questions": [
+                {"label": "Date of Incident", "field_type": "date"},
+                {"label": "Location", "field_type": "input"},
+                {"label": "Describe what happened", "field_type": "textarea"}
+            ]}
+        ]
+    else:
+        # Generic Template
+        template["sections"] = [
+            {"title": "Section 1", "questions": [{"label": "Sample Question", "field_type": "input"}]}
+        ]
+
+    # Assign UUIDs
+    for sec in template["sections"]:
+        sec["id"] = str(uuid.uuid4())
+        for q in sec["questions"]:
+            q["id"] = str(uuid.uuid4())
+            if "options" in q:
+                for opt in q["options"]:
+                    opt["id"] = str(uuid.uuid4())
+
+    return jsonify({"template": template}), 200

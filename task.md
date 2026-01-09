@@ -50,5 +50,7 @@
     - [x] Implement **Response Sentiment Analysis**
     - [x] Implement **PII Scanning** (Emails, Phones)
     - [x] Implement **Natural Language Form Generation** (`POST /ai/generate`)
+    - [x] Implement **Smart Field Suggestions** (`POST /ai/suggestions`)
+    - [x] Implement **Form Template Generation** (`GET /ai/templates`)
     - [x] Create dedicated AI blueprint and results storage
-    - [x] Add `tests/test_ai_analysis.py` and `tests/test_ai_generation.py`
+    - [x] Add AI test suite (`tests/test_ai_analysis.py`, `tests/test_ai_generation.py`, `tests/test_ai_templates.py`)
