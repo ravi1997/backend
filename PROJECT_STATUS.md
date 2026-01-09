@@ -176,8 +176,8 @@ The Form Management System backend is **100% complete** based on the SRS v1.0 sp
 |-------|---------|--------|---------------|-------|
 | FR-DASH-001 | Create Dashboard | ✅ DONE | ✅ test_dashboard_lifecycle | Basic CRUD implemented |
 | FR-DASH-002 | View Dashboard/Widgets | ✅ DONE | ✅ test_dashboard_lifecycle | Data resolving implemented |
-| FR-WORK-001 | Configure Workflow | 🔴 PENDING | ❌ | Defined in PLAN.md |
-| FR-WORK-002 | Workflow Execution | 🔴 PENDING | ❌ | Defined in PLAN.md |
+| FR-WORK-001 | Configure Workflow | ✅ DONE | ✅ test_workflow_crud | Implemented `FormWorkflow` models |
+| FR-WORK-002 | Workflow Execution | ✅ DONE | ✅ test_workflow_execution | Implemented `script_engine` and response integration |
 
 ---
 

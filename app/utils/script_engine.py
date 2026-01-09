@@ -13,13 +13,14 @@ ALLOWED_MODULES = {
     're': re
 }
 
-def execute_safe_script(script, input_data=None):
+def execute_safe_script(script, input_data=None, additional_globals=None):
     """
     Executes a custom python script in a restricted environment.
     
     Args:
         script (str): The python script to execute.
         input_data (dict): Data to be accessible in the script as 'input'.
+        additional_globals (dict): Additional variables to inject into global scope.
         
     Returns:
         dict: The local scope variables after execution.
@@ -82,6 +83,9 @@ def execute_safe_script(script, input_data=None):
     
     # 2. Add safe modules
     safe_globals.update(ALLOWED_MODULES)
+    
+    if additional_globals:
+        safe_globals.update(additional_globals)
     
     # 3. Define local scope to capture output
     local_scope = {}

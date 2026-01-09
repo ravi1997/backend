@@ -159,7 +159,7 @@ class FormResponse(Document):
         ]
     }
     id = UUIDField(primary_key=True, binary=False, default=uuid.uuid4)
-    form = UUIDField(required=True)  # Using UUID directly to avoid dereference issues
+    form = UUIDField(required=True, binary=False)  # Using UUID directly to avoid dereference issues
     data = DictField()  # JSON or stringified object
     submitted_by = StringField()
     submitted_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
@@ -191,8 +191,8 @@ class ResponseHistory(Document):
         'indexes': ['response_id', 'form_id', 'changed_at']
     }
     id = UUIDField(primary_key=True, binary=False, default=uuid.uuid4)
-    response_id = UUIDField(required=True)
-    form_id = UUIDField(required=True)
+    response_id = UUIDField(required=True, binary=False)
+    form_id = UUIDField(required=True, binary=False)
     
     data_before = DictField()
     data_after = DictField()

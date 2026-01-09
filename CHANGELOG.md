@@ -17,6 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Webhook integration
 - AI-powered form generation
 
+## [1.23.0] - 2026-01-09
+
+### Added
+- **Workflow Engine (Phase 2)**:
+  - **Form Workflows**: Create and manage conditional logic between forms (`FR-WORK-001`).
+  - **CRUD API**: Endpoints for creating, listing, updating, and deleting workflows.
+  - **Condition Evaluator**: Secure pythonic execution environment for complex trigger conditions.
+  - **Response Integration**: `submit_response` now evaluates active workflows and returns `workflow_action`.
+  - **Next-Step Actions**: Support for `redirect_to_form` with data mapping instructions.
+  - New endpoints: `CRUD /workflows`.
+
 ## [1.22.0] - 2026-01-09
 
 ### Added

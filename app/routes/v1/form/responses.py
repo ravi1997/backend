@@ -14,6 +14,9 @@ from mongoengine.queryset.visitor import Q
 from app.utils.file_handler import save_uploaded_file
 from app.utils.webhooks import trigger_webhooks
 from app.utils.email_helper import send_email_notification
+from app.models.Workflow import FormWorkflow
+from app.utils.script_engine import execute_safe_script
+
 # -------------------- Responses --------------------
 
 
@@ -155,7 +158,84 @@ def submit_response(form_id):
                 send_email_notification(form.notification_emails, subject, body)
         
         msg = "Draft saved" if is_draft else "Response submitted"
-        return jsonify({"message": msg, "response_id": response.id}), 201
+        
+        # -------------------- Workflow Evaluation --------------------
+        workflow_action = None
+        if not is_draft:
+            try:
+                # 1. Find active workflows for this form
+                fid_str = str(form.id)
+                workflows = FormWorkflow.objects(trigger_form_id=fid_str, is_active=True)
+                
+                # Flatten cleaned_data for easier access in scripts (merging all sections)
+                flat_answers = {}
+                for sid, s_val in cleaned_data.items():
+                    if isinstance(s_val, dict):
+                        flat_answers.update(s_val)
+                    # Note: We skip repeatable sections/lists for now in simple global context
+                
+                for wf in workflows:
+                    try:
+                        # Evaluate condition
+                        condition = wf.trigger_condition
+                        if not condition or condition.strip() == "":
+                             condition = "True"
+                        
+                        if condition != "True":
+                            # Wrap condition to result
+                            script = f"result = {condition}"
+                            context = {"answers": flat_answers, "data": flat_answers}
+                            
+                            res = execute_safe_script(script, input_data=flat_answers, additional_globals=context)
+                            
+                            if res.get('result'):
+                                # Match
+                                actions_payload = []
+                                for act in wf.actions:
+                                    action_data = {
+                                        "type": act.type,
+                                        "target_form_id": act.target_form_id,
+                                        "data_mapping": act.data_mapping,
+                                        "assign_to_user_field": act.assign_to_user_field
+                                    }
+                                    actions_payload.append(action_data)
+                                    
+                                workflow_action = {
+                                    "workflow_id": str(wf.id),
+                                    "workflow_name": wf.name,
+                                    "actions": actions_payload
+                                }
+                                break
+                        else:
+                             # Condition is True (default) -> Match
+                             actions_payload = []
+                             for act in wf.actions:
+                                action_data = {
+                                    "type": act.type,
+                                    "target_form_id": act.target_form_id,
+                                    "data_mapping": act.data_mapping,
+                                    "assign_to_user_field": act.assign_to_user_field
+                                }
+                                actions_payload.append(action_data)
+                                
+                             workflow_action = {
+                                "workflow_id": str(wf.id),
+                                "workflow_name": wf.name,
+                                "actions": actions_payload
+                             }
+                             break
+
+                    except Exception as e:
+                        current_app.logger.warning(f"Workflow condition failed: {e}")
+                        
+            except Exception as e:
+                current_app.logger.error(f"Error evaluating workflows: {e}")
+
+        response_payload = {"message": msg, "response_id": response.id}
+        if workflow_action:
+            response_payload["workflow_action"] = workflow_action
+            
+        return jsonify(response_payload), 201
 
     except DoesNotExist:
         current_app.logger.error(f"Form {form_id} not found.")
