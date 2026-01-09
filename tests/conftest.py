@@ -21,7 +21,7 @@ def clean_db(app):
         disconnect()
         if app.config.get('TESTING'):
             import mongomock
-            conn = connect(db_name, host='mongodb://localhost?uuidRepresentation=standard', mongo_client_class=mongomock.MongoClient)
+            conn = connect(db_name, host='mongodb://localhost', mongo_client_class=mongomock.MongoClient, uuidRepresentation='standard')
         else:
             conn = connect(db_name, host=app.config['MONGODB_SETTINGS']['host'], port=app.config['MONGODB_SETTINGS']['port'], uuidRepresentation='standard')
             

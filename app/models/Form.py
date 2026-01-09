@@ -18,7 +18,7 @@ class ResponseTemplate(EmbeddedDocument):
     meta_data = DictField()
 
 class ApprovalStep(EmbeddedDocument):
-    id = UUIDField(default=uuid.uuid4)
+    id = UUIDField(default=uuid.uuid4, binary=False)
     name = StringField(required=True)
     required_role = StringField(required=True) # Role required to approve this step
     order = IntField(default=0)

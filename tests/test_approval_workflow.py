@@ -37,12 +37,10 @@ def test_approval_workflow(client):
     mheaders = {"Authorization": f"Bearer {mtoken}"}
 
     # 1. Create a form with 2-step approval
-    form_id = str(uuid.uuid4())
     s1_id = str(uuid.uuid4())
     q1_id = str(uuid.uuid4())
     
-    client.post("/form/api/v1/form/", json={
-        "id": form_id,
+    create_res = client.post("/form/api/v1/form/", json={
         "title": "Approval Form",
         "slug": f"app-test-{uuid.uuid4().hex[:6]}",
         "status": "published",
@@ -61,11 +59,14 @@ def test_approval_workflow(client):
             }]
         }]
     }, headers=aheaders)
+    assert create_res.status_code == 201
+    form_id = create_res.get_json()["form_id"]
 
     # 2. Submit Response
     res = client.post(f"/form/api/v1/form/{form_id}/responses", 
                       json={"data": {s1_id: {q1_id: "Submit"}}}, 
                       headers=mheaders)
+    assert res.status_code in [200, 201]
     rid = res.get_json()["response_id"]
 
     # 3. Check status (should be pending)
