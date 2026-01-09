@@ -93,6 +93,7 @@ class FormVersion(EmbeddedDocument):
     created_by = StringField()
     created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
     sections = ListField(EmbeddedDocumentField(Section))
+    custom_validations = ListField(DictField()) # [{expression, error_message}]
 
 # --- Main Form model ---
 class Form(Document):
@@ -112,6 +113,7 @@ class Form(Document):
     expires_at = DateTimeField()
     publish_at = DateTimeField()  # Optional: Auto-publish / available from this date
 
+    is_template = BooleanField(default=False)
     is_public= BooleanField(default=False)
     versions = ListField(EmbeddedDocumentField(FormVersion))
 
@@ -177,6 +179,18 @@ class ResponseHistory(Document):
     changed_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
     change_type = StringField(choices=('create', 'update', 'delete', 'restore'))
     version = StringField()
+
+class ResponseComment(Document):
+    meta = {
+        'collection': 'response_comments',
+        'indexes': ['response', 'created_at']
+    }
+    id = UUIDField(primary_key=True, binary=False, default=uuid.uuid4)
+    response = ReferenceField(FormResponse, required=True, reverse_delete_rule=2) # CASCADE
+    user_id = StringField(required=True)
+    user_name = StringField()
+    content = StringField(required=True)
+    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
 
 class SavedSearch(Document):
     user_id = StringField(required=True)

@@ -16,6 +16,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Email notifications
 - Webhook integration
 - AI-powered form generation
+## [1.10.0] - 2026-01-09
+
+### Added
+- **Advanced Validation**:
+  - Implemented form-level `custom_validations` for cross-field logic (e.g. `start_date < end_date`).
+  - Added expression evaluation in `validate_form_submission`.
+- **Collaboration**:
+  - Added `ResponseComment` model and endpoints for discussion threads on responses.
+  - `POST /responses/<id>/comments` to add feedback.
+- **Usability**:
+  - Added **Form Cloning** (`POST /forms/<id>/clone`) to duplicate form structure.
+  - Added **Form Templates** support (`is_template` flag) and filtering in list API.
+
 ## [1.9.0] - 2026-01-09
 
 ### Added
@@ -211,6 +224,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.10.0 | 2026-01-09 | Collaboration, Validation, Usability (Comments, Cloning) |
 | 1.9.0 | 2026-01-09 | Analytics & Insights (Dashboard Metrics) |
 | 1.8.0 | 2026-01-09 | Data Integrity & Export (Cleaning, Flattened CSV) |
 | 1.7.0 | 2026-01-09 | Lifecycle Enhancements (Scheduled Publishing) |

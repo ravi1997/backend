@@ -83,6 +83,8 @@ class TestingConfig(Config):
         'db': os.getenv("TEST_MONGODB_DB", "testdb"),
         'host': os.getenv("TEST_MONGODB_HOST", "localhost"),
         'port': int(os.getenv("TEST_MONGODB_PORT", 27017)),
+        'username': os.getenv("TEST_MONGODB_USER", None),
+        'password': os.getenv("TEST_MONGODB_PASS", None),
     }
 
     ADMIN_USERNAME = os.getenv("TEST_ADMIN_USERNAME", "test_admin")

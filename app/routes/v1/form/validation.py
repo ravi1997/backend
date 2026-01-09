@@ -247,4 +247,38 @@ def validate_form_submission(form, submitted_data, logger):
             if cleaned_section_entries:
                 cleaned_data[sid] = cleaned_section_entries[0]
 
+    # --- Phase 7: Global Custom Validation ---
+    if hasattr(latest_version, 'custom_validations') and latest_version.custom_validations:
+        # Build Global Context
+        # Flatten all non-repeatable fields from cleaned_data
+        global_context_entries = []
+        for sid, s_data in cleaned_data.items():
+            if isinstance(s_data, dict):
+                global_context_entries.append(s_data)
+        
+        # We can pass multiple dictionaries to prepare_eval_context logic 
+        # but my function takes a list of entries and merges them.
+        # Wait, prepare_eval_context merges keys from ALL entries in the list?
+        # Let's check prepare_eval_context definition.
+        # "creates a context... keys are sanitized UUIDs... for entry in entries.. for k,v in entry.items()... context[k]=v"
+        # Yes, it overwrites if duplicates exist, but otherwise merges. This is what we want.
+        
+        global_context = prepare_eval_context(global_context_entries)
+        
+        for rule in latest_version.custom_validations:
+            expr = rule.get("expression")
+            err_msg = rule.get("error_message", "Validation failed")
+            
+            if expr:
+                try:
+                    is_valid = evaluate_condition(expr, global_context, logger)
+                    # We assume expression MUST be True.
+                    if not is_valid:
+                        validation_errors.append({"global": True, "error": err_msg})
+                        logger.warning(f"Global validation failed: {expr}")
+                except Exception as e:
+                    logger.error(f"Error evaluating global rule {expr}: {e}")
+                    # Decide if error in rule should block submission? Yes.
+                    validation_errors.append({"global": True, "error": f"Rule error: {err_msg}"})
+
     return validation_errors, cleaned_data

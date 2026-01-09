@@ -52,14 +52,37 @@ def create_form():
 @jwt_required()
 def list_forms():
     current_user = get_current_user()
+    
+    is_template = request.args.get('is_template', 'false').lower() == 'true'
+    
     # Forms where user is editor or creator
-    forms = Form.objects(__raw__={
+    query = {
         '$or': [
             {'created_by': str(current_user.id)},
             {'editors': str(current_user.id)}
         ]
-    })
-    return jsonify([f.to_mongo().to_dict() for f in forms]), 200
+    }
+    
+    # If explicitly asking for templates, we filter for them.
+    # Otherwise, default behavior might be to show EVERYTHING or just non-templates?
+    # Usually "Forms" list implies real forms. "Templates" implies templates.
+    # But let's support filtering. 
+    if is_template:
+        query['is_template'] = True
+    else:
+        # If not asking for templates, maybe show non-templates? 
+        # Or show all? Let's show all for backward compatibility, unless specified.
+        # SRS D.1 says "Form Templates" is a feature.
+        pass
+
+    forms = Form.objects(__raw__=query)
+    result = []
+    for f in forms:
+        item = f.to_mongo().to_dict()
+        if '_id' in item:
+            item['id'] = str(item.pop('_id'))
+        result.append(item)
+    return jsonify(result), 200
 
 
 @form_bp.route("/<form_id>", methods=["GET"])
@@ -131,3 +154,73 @@ def delete_form(form_id):
         return jsonify({"message": "Form deleted"}), 200
     except DoesNotExist:
         return jsonify({"error": "Form not found"}), 404
+# -------------------- Cloning --------------------
+
+@form_bp.route("/<form_id>/clone", methods=["POST"])
+@jwt_required()
+def clone_form(form_id):
+    try:
+        current_user = get_current_user()
+        original_form = Form.objects.get(id=form_id)
+        
+        if not has_form_permission(current_user, original_form, "view"):
+            return jsonify({"error": "Unauthorized to clone"}), 403
+            
+        data = request.get_json() or {}
+        
+        # New Slug
+        import uuid
+        new_slug = data.get("slug") or f"{original_form.slug}-copy-{uuid.uuid4().hex[:6]}"
+        
+        # New Title
+        new_title = data.get("title") or f"Copy of {original_form.title}"
+        
+        # Is Template Override
+        new_is_template = data.get("is_template", original_form.is_template)
+        
+        # Prepare Versions: Take latest only
+        new_versions = []
+        if original_form.versions:
+            latest = original_form.versions[-1]
+            # Create a copy of the structure (via mongo/dict conversion to avoid object reference issues)
+            # We must use proper Schema or dict.
+            # Using mongoengine's to_mongo().to_dict() is safest.
+            latest_dict = latest.to_mongo().to_dict()
+            latest_dict["version"] = "1.0"
+            latest_dict["created_at"] = datetime.now(timezone.utc)
+            latest_dict["created_by"] = str(current_user.id)
+            new_versions.append(latest_dict)
+            
+        new_form = Form(
+            title=new_title,
+            slug=new_slug,
+            description=original_form.description,
+            created_by=str(current_user.id),
+            status="draft", # reset to draft
+            ui=original_form.ui,
+            is_template=new_is_template,
+            is_public=False, # reset to private
+            versions=new_versions, # Only latest
+            tags=original_form.tags,
+            editors=[str(current_user.id)],
+            # Copy other settings?
+            notification_emails=original_form.notification_emails,
+            webhooks=original_form.webhooks
+        )
+        
+        new_form.save()
+        
+        current_app.logger.info(f"Form {original_form.id} cloned to {new_form.id} by {current_user.username}")
+        
+        return jsonify({
+            "message": "Form cloned",
+            "form_id": str(new_form.id),
+            "slug": new_slug
+        }), 201
+        
+    except DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        current_app.logger.error(f"Clone error: {str(e)}\n{error_trace}")
+        return jsonify({"error": str(e)}), 400

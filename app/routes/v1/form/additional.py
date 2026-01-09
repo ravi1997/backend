@@ -31,29 +31,6 @@ def check_slug():
     return jsonify({"available": not exists}), 200
 
 
-@form_bp.route("/<form_id>/clone", methods=["POST"])
-@jwt_required()
-def clone_form(form_id):
-    try:
-        original = Form.objects.get(id=form_id)
-        current_user = get_current_user()
-        new_form = Form(
-            title=original.title + " (Clone)",
-            description=original.description,
-            slug=original.slug + "-copy",
-            created_by=str(current_user.id),
-            editors=[str(current_user.id)],
-            view=original.view,
-            sections=original.sections,
-            response_templates=original.response_templates,
-            is_public=False,
-        )
-        new_form.save()
-        return jsonify({"message": "Form cloned", "new_form_id": new_form.id}), 201
-    except DoesNotExist:
-        return jsonify({"error": "Original form not found"}), 404
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
 
 
 @form_bp.route("/<form_id>/share", methods=["POST"])

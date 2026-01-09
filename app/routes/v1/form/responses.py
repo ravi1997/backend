@@ -7,7 +7,7 @@ from mongoengine import DoesNotExist
 from app.models.User import User
 from app.models.User import Role
 from app.utils.decorator import require_roles
-from app.models.Form import Form, FormResponse, SavedSearch, ResponseHistory
+from app.models.Form import Form, FormResponse, SavedSearch, ResponseHistory, ResponseComment
 from datetime import datetime, timezone
 import uuid
 from mongoengine.queryset.visitor import Q
@@ -645,3 +645,64 @@ def delete_saved_search(form_id, search_id):
         return jsonify({"message": "Saved search deleted"}), 200
     except DoesNotExist:
         return jsonify({"error": "Saved search not found"}), 404
+
+# -------------------- Comments --------------------
+
+@form_bp.route("/<form_id>/responses/<response_id>/comments", methods=["GET"])
+@jwt_required()
+def get_response_comments(form_id, response_id):
+    try:
+        form = Form.objects.get(id=form_id)
+        current_user = get_current_user()
+        
+        if not has_form_permission(current_user, form, "view"):
+            return jsonify({"error": "Unauthorized"}), 403
+            
+        # Ensure response belongs to form
+        try:
+            response = FormResponse.objects.get(id=response_id, form=form)
+        except DoesNotExist:
+            return jsonify({"error": "Response not found"}), 404
+            
+        comments = ResponseComment.objects(response=response).order_by("created_at")
+        
+        return jsonify([json.loads(c.to_json()) for c in comments]), 200
+        
+    except DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+
+@form_bp.route("/<form_id>/responses/<response_id>/comments", methods=["POST"])
+@jwt_required()
+def add_response_comment(form_id, response_id):
+    try:
+        form = Form.objects.get(id=form_id)
+        current_user = get_current_user()
+        
+        # 'view' permission is enough to comment for internal collaborators
+        if not has_form_permission(current_user, form, "view"):
+            return jsonify({"error": "Unauthorized"}), 403
+            
+        try:
+            response = FormResponse.objects.get(id=response_id, form=form)
+        except DoesNotExist:
+            return jsonify({"error": "Response not found"}), 404
+            
+        data = request.get_json()
+        content = data.get("content")
+        
+        if not content:
+            return jsonify({"error": "Content required"}), 400
+            
+        comment = ResponseComment(
+            response=response,
+            user_id=str(current_user.id),
+            user_name=current_user.username or "Unknown",
+            content=content
+        )
+        comment.save()
+        
+        # Log if needed? Or just return
+        return jsonify(json.loads(comment.to_json())), 201
+        
+    except DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
