@@ -27,6 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `POST /form/<id>/section/<sid>/question/<qid>/options/import` endpoint for populating question options from a CSV file.
   - Support for replacing or appending to existing options.
 
+## [1.18.0] - 2026-01-09
+
+### Added
+- **Enhanced AI Response Analysis**:
+  - **Bulk Sentiment Trends**: Aggregate sentiment distribution (Positive/Negative/Neutral) and average scoring for all form responses.
+  - **Expanded Sentiment Dictionary**: Integration of 30+ new emotional keywords (e.g., "helpful", "useless", "efficient", "difficult").
+  - New endpoint: `GET /ai/<form_id>/sentiment`.
+
 ## [1.17.0] - 2026-01-09
 
 ### Added
@@ -314,6 +322,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.18.0 | 2026-01-09 | Enhanced Sentiment & Bulk Trends |
 | 1.17.0 | 2026-01-09 | AI Form Template Generation |
 | 1.16.0 | 2026-01-09 | Advanced Workflow & AI Analysis |
 | 1.15.0 | 2026-01-09 | Response Management & Form Versioning |

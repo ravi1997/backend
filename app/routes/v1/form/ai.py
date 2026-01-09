@@ -8,8 +8,14 @@ import re
 ai_bp = Blueprint("ai", __name__)
 
 def simple_sentiment_analyzer(text):
-    positive_words = {"good", "great", "excellent", "happy", "satisfied", "positive", "amazing", "wonderful", "best"}
-    negative_words = {"bad", "poor", "unhappy", "dissatisfied", "negative", "terrible", "worst", "error", "fail", "slow", "broken"}
+    positive_words = {
+        "good", "great", "excellent", "happy", "satisfied", "positive", "amazing", "wonderful", "best",
+        "love", "perfect", "easy", "helpful", "fast", "efficient", "thanks"
+    }
+    negative_words = {
+        "bad", "poor", "unhappy", "dissatisfied", "negative", "terrible", "worst", "error", "fail", "slow", 
+        "broken", "hate", "hard", "useless", "expensive", "issue", "problem", "difficult"
+    }
     
     words = re.findall(r'\w+', text.lower())
     pos_count = sum(1 for w in words if w in positive_words)
@@ -283,3 +289,43 @@ def get_ai_template(template_id):
                     opt["id"] = str(uuid.uuid4())
 
     return jsonify({"template": template}), 200
+
+@ai_bp.route("/<form_id>/sentiment", methods=["GET"])
+@jwt_required()
+def get_form_sentiment_trends(form_id):
+    """
+    Get sentiment distribution and trends for all responses in a form.
+    """
+    try:
+        current_user = get_current_user()
+        form = Form.objects.get(id=form_id)
+        if not has_form_permission(current_user, form, "view"):
+             return jsonify({"error": "Unauthorized"}), 403
+
+        responses = FormResponse.objects(form=form.id, deleted=False)
+        
+        counts = {"positive": 0, "negative": 0, "neutral": 0, "unprocessed": 0}
+        total_score = 0
+        analyzed_count = 0
+
+        for resp in responses:
+            results = getattr(resp, 'ai_results', {})
+            sentiment_data = results.get('sentiment')
+            if sentiment_data:
+                label = sentiment_data.get('label', 'neutral')
+                counts[label] += 1
+                total_score += sentiment_data.get('score', 0)
+                analyzed_count += 1
+            else:
+                counts["unprocessed"] += 1
+        
+        return jsonify({
+            "form_id": form_id,
+            "total_responses": len(responses),
+            "analyzed_responses": analyzed_count,
+            "distribution": counts,
+            "average_score": (total_score / analyzed_count) if analyzed_count > 0 else 0
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400

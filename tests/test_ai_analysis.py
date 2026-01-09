@@ -66,3 +66,10 @@ def test_ai_analysis(client):
     resp_data = get_res.get_json()
     assert "ai_results" in resp_data
     assert resp_data["ai_results"]["sentiment"]["label"] == "positive"
+
+    # 7. Verify Bulk Sentiment
+    bulk_res = client.get(f"/form/api/v1/ai/{form_id}/sentiment", headers=headers)
+    assert bulk_res.status_code == 200
+    bulk_data = bulk_res.get_json()
+    assert bulk_data["distribution"]["positive"] == 1
+    assert bulk_data["average_score"] > 0
