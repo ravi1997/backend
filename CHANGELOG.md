@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented secure server-side script execution for fields (`FR-API-004`).
   - Added `execute_safe_script` utility with restricted globals and allowed modules (math, random, datetime, json, re).
   - Updated API route to handle `custom` field type with input parameters.
+- **Form Builder API**:
+  - Added `PATCH /forms/<id>/reorder-sections` to reorder form sections.
+  - Added `PATCH /forms/<id>/section/<sid>/reorder-questions` to reorder questions inside a section.
+
 
 ## [1.10.0] - 2026-01-09
 

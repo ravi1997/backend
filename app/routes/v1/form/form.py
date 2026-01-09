@@ -224,3 +224,109 @@ def clone_form(form_id):
         error_trace = traceback.format_exc()
         current_app.logger.error(f"Clone error: {str(e)}\n{error_trace}")
         return jsonify({"error": str(e)}), 400
+
+
+# -------------------- Reordering --------------------
+
+@form_bp.route("/<form_id>/reorder-sections", methods=["PATCH"])
+@jwt_required()
+def reorder_sections(form_id):
+    try:
+        current_user = get_current_user()
+        form = Form.objects.get(id=form_id)
+        
+        if not has_form_permission(current_user, form, "edit"):
+            return jsonify({"error": "Unauthorized to edit form"}), 403
+            
+        data = request.get_json()
+        new_order = data.get("order") # List of section IDs
+        
+        if not new_order or not isinstance(new_order, list):
+            return jsonify({"error": "Invalid order list"}), 400
+            
+        if not form.versions:
+            return jsonify({"error": "Form has no versions"}), 400
+            
+        latest_version = form.versions[-1]
+        existing_sections = {str(s.id): s for s in latest_version.sections}
+        
+        if len(new_order) != len(existing_sections):
+            return jsonify({"error": "Order list length mismatch"}), 400
+            
+        # Verify all IDs exist
+        for sid in new_order:
+            if sid not in existing_sections:
+                return jsonify({"error": f"Section ID {sid} not found in form"}), 400
+        
+        # Reconstruct sections list in new order
+        reordered_sections = [existing_sections[sid] for sid in new_order]
+        
+        # Update each section's order field (optional but good practice)
+        for idx, section in enumerate(reordered_sections):
+            section.order = idx
+            
+        latest_version.sections = reordered_sections
+        form.save()
+        
+        return jsonify({"message": "Sections reordered successfully"}), 200
+        
+    except DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+    except Exception as e:
+        current_app.logger.error(f"Reorder sections error: {str(e)}")
+        return jsonify({"error": str(e)}), 400
+
+@form_bp.route("/<form_id>/section/<section_id>/reorder-questions", methods=["PATCH"])
+@jwt_required()
+def reorder_questions(form_id, section_id):
+    try:
+        current_user = get_current_user()
+        form = Form.objects.get(id=form_id)
+        
+        if not has_form_permission(current_user, form, "edit"):
+            return jsonify({"error": "Unauthorized to edit form"}), 403
+            
+        data = request.get_json()
+        new_order = data.get("order") # List of question IDs
+        
+        if not new_order or not isinstance(new_order, list):
+            return jsonify({"error": "Invalid order list"}), 400
+            
+        if not form.versions:
+            return jsonify({"error": "Form has no versions"}), 400
+            
+        latest_version = form.versions[-1]
+        
+        target_section = None
+        for s in latest_version.sections:
+            if str(s.id) == section_id:
+                target_section = s
+                break
+                
+        if not target_section:
+            return jsonify({"error": "Section not found"}), 404
+            
+        existing_questions = {str(q.id): q for q in target_section.questions}
+        
+        if len(new_order) != len(existing_questions):
+            return jsonify({"error": "Order list length mismatch"}), 400
+            
+        for qid in new_order:
+            if qid not in existing_questions:
+                return jsonify({"error": f"Question ID {qid} not found in section"}), 400
+                
+        reordered_questions = [existing_questions[qid] for qid in new_order]
+        
+        for idx, question in enumerate(reordered_questions):
+            question.order = idx
+            
+        target_section.questions = reordered_questions
+        form.save()
+        
+        return jsonify({"message": "Questions reordered successfully"}), 200
+        
+    except DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+    except Exception as e:
+        current_app.logger.error(f"Reorder questions error: {str(e)}")
+        return jsonify({"error": str(e)}), 400
