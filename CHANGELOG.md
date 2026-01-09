@@ -17,6 +17,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Webhook integration
 - AI-powered form generation
 
+## [1.13.0] - 2026-01-09
+
+### Added
+- **Multi-language Support**:
+  - Implemented localized labels and options for forms (`FR-FORM-017`).
+  - Added `translations` field to `FormVersion` model to store language-specific strings.
+  - Added `supported_languages` and `default_language` configuration to the `Form` model.
+  - New `POST /form/<id>/translations` endpoint for easy translation management.
+  - Updated `GET /form/<id>` to support the `lang` query parameter for delivering merged, localized forms.
+  - Integrated translation logic into the Server-Side Rendering (SSR) `view_form` route.
+
+
 ## [1.12.0] - 2026-01-09
 
 ### Added
@@ -254,6 +266,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.13.0 | 2026-01-09 | Multi-language Support (Localization) |
 | 1.12.0 | 2026-01-09 | Response Drafts / Auto-save & Stability Refactor |
 | 1.11.0 | 2026-01-09 | Custom Scripts, Builder Reordering, Preview API |
 | 1.10.0 | 2026-01-09 | Collaboration, Validation, Usability (Comments, Cloning) |

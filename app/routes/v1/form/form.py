@@ -1,5 +1,5 @@
 import traceback
-from app.routes.v1.form.helper import get_current_user, has_form_permission
+from app.routes.v1.form.helper import get_current_user, has_form_permission, apply_translations
 from app.routes.v1.form import form_bp
 from flask import current_app, request, jsonify
 from flask_jwt_extended import jwt_required
@@ -100,7 +100,12 @@ def get_form(form_id):
         if form.publish_at and now < form.publish_at.replace(tzinfo=timezone.utc) and not is_editor:
                 return jsonify({"error": "Form is not yet available"}), 403
 
-        return jsonify(form.to_mongo().to_dict()), 200
+        lang = request.args.get("lang")
+        form_dict = form.to_mongo().to_dict()
+        if lang:
+            form_dict = apply_translations(form_dict, lang)
+
+        return jsonify(form_dict), 200
     except DoesNotExist:
         return jsonify({"error": "Form not found"}), 404
 
@@ -121,6 +126,43 @@ def update_form(form_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+
+@form_bp.route("/<form_id>/translations", methods=["POST"])
+@jwt_required()
+def update_form_translations(form_id):
+    try:
+        form = Form.objects.get(id=form_id)
+        current_user = get_current_user()
+        if not has_form_permission(current_user, form, "edit"):
+            return jsonify({"error": "Unauthorized"}), 403
+            
+        data = request.get_json()
+        lang_code = data.get("lang_code")
+        translations = data.get("translations")
+        
+        if not lang_code or not translations:
+            return jsonify({"error": "Missing lang_code or translations"}), 400
+            
+        if not form.versions:
+            return jsonify({"error": "Form has no versions"}), 400
+            
+        latest_version = form.versions[-1]
+        if not latest_version.translations:
+            latest_version.translations = {}
+            
+        latest_version.translations[lang_code] = translations
+        
+        # Add to supported_languages if not already there
+        if lang_code not in form.supported_languages:
+            form.supported_languages.append(lang_code)
+            
+        form.save()
+        return jsonify({"message": f"Translations for '{lang_code}' updated"}), 200
+        
+    except DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 @form_bp.route("/<form_id>", methods=["DELETE"])
 @jwt_required()

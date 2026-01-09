@@ -10,4 +10,13 @@
     - [x] Create `POST /responses/draft` endpoint (bypassing strict validation) <!-- id: 14 -->
     - [x] Test draft saving and retrieval <!-- id: 15 -->
 
-- [ ] FR-FORM-017: Multi-language Support
+- [x] FR-FORM-017: Multi-language Support
+    - [x] Add `supported_languages` and `default_language` to Form model
+    - [x] Add `translations` to FormVersion model
+    - [x] Implement `apply_translations` helper
+    - [x] Add `POST /form/<id>/translations` endpoint for management
+    - [x] Update `GET /form/<id>?lang=<lang>` to deliver localized forms
+    - [x] Add `tests/test_multi_language.py`
+
+- [ ] FR-FORM-018: Bulk Export/Import Improvements
+

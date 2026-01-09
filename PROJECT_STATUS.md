@@ -178,7 +178,7 @@ The Form Management System backend is **100% complete** based on the SRS v1.0 sp
 | Feature | Priority | Status | Estimated Effort | SRS Reference |
 |---------|----------|--------|------------------|---------------|
 | FR-RESP-014: Response Drafts / Auto-save | P2 | ✅ COMPLETED | 8 hours | Appendix D.1 |
-| Multi-language Support | P3 | ❌ NOT STARTED | 20 hours | Appendix D.1 |
+| Multi-language Support | P3 | ✅ COMPLETED | 20 hours | Appendix D.1 |
 | Bulk Export (Multiple Forms) | P2 | ❌ NOT STARTED | 4 hours | Appendix D.2 |
 | Response Merge | P3 | ❌ NOT STARTED | 12 hours | Appendix D.2 |
 
@@ -281,7 +281,7 @@ All high-priority features from the SRS have been implemented.
 1. **Section/Question Reordering API** - Currently requires full form update
 2. **Form Preview Mode** - No dedicated preview endpoint
 3. **Response Draft Auto-save** - Users must complete submission
-4. **Multi-language Support** - Single language only
+4. **Multi-language Support** - Localized labels/options supported via `?lang=` parameter
 5. **AI Integration Suite** - Entire AI integration roadmap (Appendix E)
 
 ---

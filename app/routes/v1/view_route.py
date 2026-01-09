@@ -1,4 +1,5 @@
 from flask import Blueprint, current_app, render_template, request, jsonify
+from app.routes.v1.form.helper import apply_translations
 from app.config import Config
 from app.models import Form
 from app.models.User import User
@@ -28,6 +29,10 @@ def index():
 def view_form(id):
     try:
         form = Form.objects.get(id=id)
-        return render_template("view.html", form=form)
+        lang = request.args.get("lang")
+        form_dict = form.to_mongo().to_dict()
+        if lang:
+            form_dict = apply_translations(form_dict, lang)
+        return render_template("view.html", form=form_dict)
     except DoesNotExist:
         return "Form not found", 404

@@ -94,6 +94,7 @@ class FormVersion(EmbeddedDocument):
     created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
     sections = ListField(EmbeddedDocumentField(Section))
     custom_validations = ListField(DictField()) # [{expression, error_message}]
+    translations = DictField() # {lang_code: {title, description, sections: {id: {title, description}}, questions: {id: {label, help_text, options: {id: label}}}}}
 
 # --- Main Form model ---
 class Form(Document):
@@ -115,6 +116,10 @@ class Form(Document):
 
     is_template = BooleanField(default=False)
     is_public= BooleanField(default=False)
+    
+    supported_languages = ListField(StringField(), default=["en"])
+    default_language = StringField(default="en")
+    
     versions = ListField(EmbeddedDocumentField(FormVersion))
 
     # New additions
