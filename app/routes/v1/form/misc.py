@@ -50,6 +50,13 @@ def submit_public_response(form_id):
                 f"Attempted public submission to expired form {form_id} (expired at: {form.expires_at})")
             return jsonify({"error": "Form has expired"}), 403
 
+        # Check if form is scheduled for future
+        now = datetime.now(timezone.utc)
+        if form.publish_at and now < form.publish_at.replace(tzinfo=timezone.utc):
+            current_app.logger.warning(
+                f"Attempted public submission to future scheduled form {form_id} (publish at: {form.publish_at})")
+            return jsonify({"error": "Form is not yet available"}), 403
+
         if not form.is_public:
             return jsonify({"error": "Form is not public"}), 403
 

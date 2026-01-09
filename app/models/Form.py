@@ -110,6 +110,7 @@ class Form(Document):
     created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
     updated_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
     expires_at = DateTimeField()
+    publish_at = DateTimeField()  # Optional: Auto-publish / available from this date
 
     is_public= BooleanField(default=False)
     versions = ListField(EmbeddedDocumentField(FormVersion))
@@ -120,7 +121,7 @@ class Form(Document):
 
     # Permissions
     editors = ListField(StringField())         # Users who can edit
-    uiers = ListField(StringField())         # Users who can ui/read
+    viewers = ListField(StringField())         # Users who can view/read
     submitters = ListField(StringField())      # Users who can submit responses
 
     webhooks = ListField(DictField())          # List of webhook configs: {url, event, secret}

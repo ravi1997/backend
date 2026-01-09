@@ -22,7 +22,7 @@ def has_form_permission(user, form, action):
     if action == "edit":
         return user_id_str in (form.editors or [])
     if action == "view":
-        return user_id_str in (form.viewers or []) or user_id_str in (form.editors or [])
+        return user_id_str in (form.viewers or []) or user_id_str in (form.editors or []) or form.is_public
     if action == "submit":
         return user_id_str in (form.submitters or []) or form.is_public
     return False

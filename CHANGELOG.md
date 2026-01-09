@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Email notifications
 - Webhook integration
 - AI-powered form generation
+## [1.7.0] - 2026-01-09
+
+### Added
+- **Scheduled Publishing**:
+  - Added `publish_at` to `Form` model.
+  - Implemented logic to block access to future forms (unless Editor).
+  - Updated `get_form` and submission endpoints.
+  - Fixed bug in `Form` model (`uiers` -> `viewers`).
+  - Fixed logic to allow public View access on `is_public` forms.
+
 ## [1.6.0] - 2026-01-09
 
 ### Added
@@ -180,6 +190,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.7.0 | 2026-01-09 | Lifecycle Enhancements (Scheduled Publishing) |
 | 1.6.0 | 2026-01-09 | Approval Workflows (Response Status) |
 | 1.5.0 | 2026-01-09 | Workflow Automation (Email Notifications) |
 | 1.4.0 | 2026-01-08 | Advanced Features (History, Webhooks, Logic) |

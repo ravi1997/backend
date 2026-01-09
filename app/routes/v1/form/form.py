@@ -12,6 +12,7 @@ from app.utils.decorator import require_roles
 from app.models.Form import Form, FormResponse
 from app.utils.file_handler import delete_file
 import os
+from datetime import datetime, timezone
 
 
 # -------------------- Form CRUD --------------------
@@ -25,6 +26,14 @@ def create_form():
     try:
         current_app.logger.info(f"User {current_user.username} (ID: {current_user.id}) is attempting to create a form with data: {data}")
         
+        # Manually parse dates
+        for date_field in ['publish_at', 'expires_at']:
+            if date_field in data and data[date_field]:
+                try:
+                    data[date_field] = datetime.fromisoformat(data[date_field])
+                except ValueError:
+                    pass # Let MongoEngine handle or raise error if invalid format
+
         form = Form(**data)
         form.created_by = str(current_user.id)
         form.editors = [str(current_user.id)]
@@ -61,6 +70,13 @@ def get_form(form_id):
         current_user = get_current_user()
         if not has_form_permission(current_user, form, "view"):
             return jsonify({"error": "Unauthorized"}), 403
+
+        # Check Scheduled status for non-editors
+        now = datetime.now(timezone.utc)
+        is_editor = has_form_permission(current_user, form, "edit") 
+        if form.publish_at and now < form.publish_at.replace(tzinfo=timezone.utc) and not is_editor:
+                return jsonify({"error": "Form is not yet available"}), 403
+
         return jsonify(form.to_mongo().to_dict()), 200
     except DoesNotExist:
         return jsonify({"error": "Form not found"}), 404

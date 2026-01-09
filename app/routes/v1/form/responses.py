@@ -79,10 +79,17 @@ def submit_response(form_id):
             return jsonify({"error": f"Form is {form.status}, not accepting submissions"}), 403
 
         # Check if form has expired
-        if form.expires_at and datetime.now(timezone.utc) > form.expires_at.replace(tzinfo=timezone.utc):
+        now = datetime.now(timezone.utc)
+        if form.expires_at and now > form.expires_at.replace(tzinfo=timezone.utc):
             current_app.logger.warning(
                 f"Attempted submission to expired form {form_id} (expired at: {form.expires_at})")
             return jsonify({"error": "Form has expired"}), 403
+
+        # Check if form is scheduled for future
+        if form.publish_at and now < form.publish_at.replace(tzinfo=timezone.utc):
+            current_app.logger.warning(
+                f"Attempted submission to future scheduled form {form_id} (publish at: {form.publish_at})")
+            return jsonify({"error": "Form is not yet available"}), 403
 
         current_user = get_current_user()
         current_app.logger.info(
