@@ -38,6 +38,7 @@ class Role(str, Enum):
     EDITOR = 'editor'                  # CANNOT CREATE A FORM
     PUBLISHER = 'publisher'            # CAN PUBLISH THE FORM
     DEO = 'deo'
+    MANAGER = 'manager'
     GENERAL = 'general'
 
 # -------------------- Model --------------------

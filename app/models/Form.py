@@ -17,6 +17,12 @@ class ResponseTemplate(EmbeddedDocument):
     tags = ListField(StringField())  # Tags for categorization
     meta_data = DictField()
 
+class ApprovalStep(EmbeddedDocument):
+    id = UUIDField(default=uuid.uuid4)
+    name = StringField(required=True)
+    required_role = StringField(required=True) # Role required to approve this step
+    order = IntField(default=0)
+
 class Option(EmbeddedDocument):
     id = UUIDField(primary_key=True, binary=False, default=uuid.uuid4)
     description = StringField()
@@ -133,6 +139,9 @@ class Form(Document):
 
     webhooks = ListField(DictField())          # List of webhook configs: {url, event, secret}
     notification_emails = ListField(StringField())  # List of emails to notify on valid submission
+    
+    approval_enabled = BooleanField(default=False)
+    approval_steps = ListField(EmbeddedDocumentField(ApprovalStep))
 
 # --- Individual Response model ---
 class FormResponse(Document):
@@ -166,10 +175,14 @@ class FormResponse(Document):
     
     version = StringField()  # Track which form version was used
     
+    current_approval_step_index = IntField(default=0)
+    approval_history = ListField(DictField()) # {step_id, step_name, approved_by, approved_at, status, comment}
+    
     status = StringField(choices=('pending', 'approved', 'rejected'), default='pending')
     status_log = ListField(DictField())  # Log of status changes: {status, changed_by, changed_at, comment}
     
     metadata = DictField()  # IP, browser, device, etc.
+    ai_results = DictField() # Sentiment, PII scan, suggestions, etc.
 
 
 class ResponseHistory(Document):
@@ -186,8 +199,9 @@ class ResponseHistory(Document):
     
     changed_by = StringField(required=True)
     changed_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
-    change_type = StringField(choices=('create', 'update', 'delete', 'restore'))
+    change_type = StringField(choices=('create', 'update', 'delete', 'restore', 'merge'))
     version = StringField()
+    metadata = DictField()
 
 class ResponseComment(Document):
     meta = {

@@ -39,3 +39,15 @@
     - [x] Implement `POST /form/export/bulk` for multi-form ZIP export
     - [x] Implement `POST /form/<id>/.../options/import` for CSV option import
     - [x] Add `tests/test_bulk_features.py`
+
+- [x] FR-RESP-017: Advanced Response Management
+    - [x] Implement **Response Merge** (`POST /merge`)
+    - [x] Implement **Multi-step Approval Workflow** (`/approve`, `/reject`)
+    - [x] Add roles (`manager`) to support approval steps
+    - [x] Add `tests/test_response_merge.py` and `tests/test_approval_workflow.py`
+
+- [x] Phase 4: AI Integration (Initial)
+    - [x] Implement **Response Sentiment Analysis**
+    - [x] Implement **PII Scanning** (Emails, Phones)
+    - [x] Create dedicated AI blueprint and results storage
+    - [x] Add `tests/test_ai_analysis.py`

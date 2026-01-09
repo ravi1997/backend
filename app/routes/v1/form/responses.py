@@ -858,3 +858,245 @@ def preview_submission(form_id):
         current_app.logger.error(f"Error during preview validation: {str(e)}")
         return jsonify({"error": str(e)}), 400
 
+@form_bp.route("/<form_id>/responses/merge", methods=["POST"])
+@jwt_required()
+def merge_responses(form_id):
+    """
+    Combine multiple responses into one.
+    """
+    try:
+        data = request.get_json()
+        source_ids = data.get("source_response_ids", [])
+        target_id = data.get("target_response_id")
+        delete_sources = data.get("delete_sources", True)
+
+        if not source_ids:
+            return jsonify({"error": "Missing source_response_ids"}), 400
+
+        form = Form.objects.get(id=form_id)
+        current_user = get_current_user()
+        
+        if not has_form_permission(current_user, form, "edit"):
+            return jsonify({"error": "Unauthorized"}), 403
+
+        # Fetch all candidate responses
+        query_ids = list(set(source_ids + ([target_id] if target_id else [])))
+        all_resps = FormResponse.objects(id__in=query_ids, form=form.id, deleted=False)
+        resp_map = {str(r.id): r for r in all_resps}
+
+        sources = [resp_map[sid] for sid in source_ids if sid in resp_map]
+        if not sources:
+            return jsonify({"error": "No valid source responses found"}), 404
+
+        target = resp_map.get(target_id) if target_id else None
+
+        # Build merged data
+        merged_data = {}
+        # We'll use the target's data as base if it exists
+        if target:
+            merged_data = json.loads(json.dumps(target.data)) # Deep copy
+
+        for src in sources:
+            if target and str(src.id) == str(target.id):
+                continue
+                
+            for sid, sec_data in src.data.items():
+                if sid not in merged_data:
+                    merged_data[sid] = sec_data
+                else:
+                    # Merge Logic
+                    if isinstance(sec_data, dict) and isinstance(merged_data[sid], dict):
+                        for k, v in sec_data.items():
+                            if v is not None:
+                                merged_data[sid][k] = v
+                    elif isinstance(sec_data, list) and isinstance(merged_data[sid], list):
+                        # Append entries (repeatable sections)
+                        merged_data[sid].extend(sec_data)
+                    elif sec_data is not None:
+                        # Overwrite if source has value
+                        merged_data[sid] = sec_data
+
+        if not target:
+            target = FormResponse(
+                form=form.id,
+                submitted_by=str(current_user.id),
+                data=merged_data,
+                submitted_at=datetime.now(timezone.utc),
+                version=form.active_version or (form.versions[-1].version if form.versions else "1.0")
+            )
+        else:
+            target.data = merged_data
+            target.updated_at = datetime.now(timezone.utc)
+            target.updated_by = str(current_user.id)
+
+        target.save()
+
+        # History
+        ResponseHistory(
+            response_id=target.id,
+            form_id=form.id,
+            data_after=merged_data,
+            changed_by=str(current_user.id),
+            change_type="merge", # 'merge' is also fine but let's stick to base types
+            version=target.version,
+            metadata={"merged_from": [str(s.id) for s in sources if str(s.id) != str(target.id)]}
+        ).save()
+
+        # Delete sources
+        history_entries = []
+        for src in sources:
+            if str(src.id) == str(target.id):
+                continue
+            if delete_sources:
+                src.update(set__deleted=True, set__deleted_at=datetime.now(timezone.utc), set__deleted_by=str(current_user.id))
+                history_entries.append(ResponseHistory(
+                    response_id=src.id,
+                    form_id=form.id,
+                    data_before=src.data,
+                    changed_by=str(current_user.id),
+                    change_type="delete",
+                    metadata={"merged_into": str(target.id)}
+                ))
+        
+        if history_entries:
+            ResponseHistory.objects.insert(history_entries)
+
+        return jsonify({
+            "message": "Responses merged", 
+            "target_id": str(target.id),
+            "merged_count": len(sources)
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Merge error: {str(e)}", exc_info=True)
+        return jsonify({"error": str(e)}), 400
+@form_bp.route("/<form_id>/responses/<response_id>/approve", methods=["POST"])
+@jwt_required()
+def approve_response_step(form_id, response_id):
+    """
+    Approve the current step in the multi-step workflow.
+    """
+    try:
+        data = request.get_json() or {}
+        comment = data.get("comment", "")
+        
+        form = Form.objects.get(id=form_id)
+        response = FormResponse.objects.get(id=response_id, form=form.id)
+        current_user = get_current_user()
+        
+        if not form.approval_enabled or not form.approval_steps:
+            return jsonify({"error": "Approval workflow not enabled for this form"}), 400
+            
+        if response.status != "pending":
+             return jsonify({"error": f"Cannot approve response in status: {response.status}"}), 400
+
+        # Current step
+        idx = response.current_approval_step_index
+        if idx >= len(form.approval_steps):
+            return jsonify({"error": "All approval steps already completed"}), 400
+            
+        current_step = form.approval_steps[idx]
+        
+        # Check permission: User must have the required role OR be an admin
+        if current_step.required_role not in current_user.roles and 'admin' not in current_user.roles:
+             return jsonify({"error": f"Unauthorized. Required role: {current_step.required_role}"}), 403
+
+        # Record approval
+        log_entry = {
+            "step_id": str(current_step.id),
+            "step_name": current_step.name,
+            "approved_by": str(current_user.id),
+            "approved_at": datetime.now(timezone.utc).isoformat(),
+            "status": "approved",
+            "comment": comment
+        }
+        
+        new_idx = idx + 1
+        final_status = "pending"
+        if new_idx >= len(form.approval_steps):
+            final_status = "approved"
+
+        response.update(
+            set__current_approval_step_index=new_idx,
+            push__approval_history=log_entry,
+            set__status=final_status,
+            set__updated_at=datetime.now(timezone.utc),
+            set__updated_by=str(current_user.id)
+        )
+        
+        # History
+        ResponseHistory(
+            response_id=response.id,
+            form_id=form.id,
+            data_after=response.data,
+            changed_by=str(current_user.id),
+            change_type="update",
+            metadata={"approval_step": current_step.name, "action": "approved"}
+        ).save()
+
+        return jsonify({
+            "message": f"Step '{current_step.name}' approved",
+            "status": final_status,
+            "completed_steps": new_idx,
+            "total_steps": len(form.approval_steps)
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Approval error: {str(e)}", exc_info=True)
+        return jsonify({"error": str(e)}), 400
+
+@form_bp.route("/<form_id>/responses/<response_id>/reject", methods=["POST"])
+@jwt_required()
+def reject_response_step(form_id, response_id):
+    """
+    Reject the response at the current approval step.
+    """
+    try:
+        data = request.get_json() or {}
+        comment = data.get("comment", "")
+        
+        form = Form.objects.get(id=form_id)
+        response = FormResponse.objects.get(id=response_id, form=form.id)
+        current_user = get_current_user()
+        
+        if not form.approval_enabled or not form.approval_steps:
+            return jsonify({"error": "Approval workflow not enabled"}), 400
+
+        idx = response.current_approval_step_index
+        if idx >= len(form.approval_steps):
+            return jsonify({"error": "Approval already finalized"}), 400
+
+        current_step = form.approval_steps[idx]
+
+        if current_step.required_role not in current_user.roles and 'admin' not in current_user.roles:
+             return jsonify({"error": f"Unauthorized. Required role: {current_step.required_role}"}), 403
+
+        log_entry = {
+            "step_id": str(current_step.id),
+            "step_name": current_step.name,
+            "rejected_by": str(current_user.id),
+            "rejected_at": datetime.now(timezone.utc).isoformat(),
+            "status": "rejected",
+            "comment": comment
+        }
+
+        response.update(
+            push__approval_history=log_entry,
+            set__status="rejected",
+            set__updated_at=datetime.now(timezone.utc),
+            set__updated_by=str(current_user.id)
+        )
+
+        ResponseHistory(
+            response_id=response.id,
+            form_id=form.id,
+            data_after=response.data,
+            changed_by=str(current_user.id),
+            change_type="update",
+            metadata={"approval_step": current_step.name, "action": "rejected"}
+        ).save()
+
+        return jsonify({"message": f"Rejected at step '{current_step.name}'"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400

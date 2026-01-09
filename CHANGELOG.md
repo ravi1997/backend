@@ -27,6 +27,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `POST /form/<id>/section/<sid>/question/<qid>/options/import` endpoint for populating question options from a CSV file.
   - Support for replacing or appending to existing options.
 
+## [1.16.0] - 2026-01-09
+
+### Added
+- **Advanced Response Management**:
+  - **Response Merge**: Combine multiple submissions into a single record with intelligent `None` value handling.
+  - **Multi-step Approval Workflow**: Support for sequential approval steps based on user roles (e.g., Manager -> Admin).
+  - New endpoints: `POST /responses/merge`, `POST /responses/<id>/approve`, `POST /responses/<id>/reject`.
+- **AI Integration (Phase 4 Foundation)**:
+  - **Sentiment Analysis**: Keyword-based sentiment scoring for text responses.
+  - **PII Scanning**: Basic pattern-based detection for emails and phone numbers.
+  - New `ai_results` storage in `FormResponse`.
+- **User Management**:
+  - Added `manager` role to the system.
+
 ## [1.15.0] - 2026-01-09
 
 ### Added
@@ -290,6 +304,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.16.0 | 2026-01-09 | Advanced Workflow & AI Analysis |
 | 1.15.0 | 2026-01-09 | Response Management & Form Versioning |
 | 1.14.0 | 2026-01-09 | Bulk Export/Import Enhancements |
 | 1.13.0 | 2026-01-09 | Multi-language Support (Localization) |
