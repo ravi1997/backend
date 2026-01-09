@@ -49,5 +49,6 @@
 - [x] Phase 4: AI Integration (Initial)
     - [x] Implement **Response Sentiment Analysis**
     - [x] Implement **PII Scanning** (Emails, Phones)
+    - [x] Implement **Natural Language Form Generation** (`POST /ai/generate`)
     - [x] Create dedicated AI blueprint and results storage
-    - [x] Add `tests/test_ai_analysis.py`
+    - [x] Add `tests/test_ai_analysis.py` and `tests/test_ai_generation.py`

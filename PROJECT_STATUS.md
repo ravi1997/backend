@@ -193,8 +193,8 @@ The Form Management System backend is **100% complete** based on the SRS v1.0 sp
 
 | Feature | Priority | Status | Estimated Effort | SRS Reference |
 |---------|----------|--------|------------------|---------------|
-| Natural Language Form Generation | P3 | ❌ NOT STARTED | 40 hours | E.1.1 |
-| Smart Field Suggestions | P3 | ❌ NOT STARTED | 20 hours | E.1.2 |
+| Natural Language Form Generation | P3 | ✅ COMPLETED | 40 hours | E.1.1 |
+| Smart Field Suggestions | P3 | ✅ COMPLETED | 20 hours | E.1.2 |
 | Form Template Generation | P3 | ❌ NOT STARTED | 16 hours | E.1.3 |
 | Response Sentiment Analysis | P3 | ❌ NOT STARTED | 15 hours | E.2.1 |
 | AI-Powered Search | P3 | ❌ NOT STARTED | 25 hours | E.2.2 |

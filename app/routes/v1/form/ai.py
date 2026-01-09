@@ -87,3 +87,129 @@ def analyze_response_ai(form_id, response_id):
         
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+@ai_bp.route("/generate", methods=["POST"])
+@jwt_required()
+def generate_form_ai():
+    """
+    Simulated AI Form Generation.
+    Parses a prompt and generates a structured form object.
+    """
+    try:
+        data = request.get_json()
+        prompt = data.get("prompt", "").lower()
+        if not prompt:
+            return jsonify({"error": "Prompt is required"}), 400
+
+        # Simulation Logic: Keyword-based template selection
+        form_structure = {
+            "title": "AI Generated Form",
+            "description": f"Generated based on: {prompt}",
+            "sections": []
+        }
+
+        if "patient" in prompt or "intake" in prompt:
+            form_structure["title"] = "Patient Intake Form"
+            form_structure["sections"] = [
+                {
+                    "title": "Personal Information",
+                    "questions": [
+                        {"label": "Full Name", "field_type": "input", "is_required": True},
+                        {"label": "Date of Birth", "field_type": "date", "is_required": True},
+                        {"label": "Gender", "field_type": "select", "options": [
+                            {"option_label": "Male", "option_value": "m"},
+                            {"option_label": "Female", "option_value": "f"},
+                            {"option_label": "Other", "option_value": "o"}
+                        ]}
+                    ]
+                },
+                {
+                    "title": "Medical History",
+                    "questions": [
+                        {"label": "Have you ever had surgery?", "field_type": "boolean"},
+                        {"label": "Please list any allergies", "field_type": "textarea"}
+                    ]
+                }
+            ]
+        elif "job" in prompt or "apply" in prompt or "application" in prompt:
+            form_structure["title"] = "Job Application Form"
+            form_structure["sections"] = [
+                {
+                    "title": "Contact Details",
+                    "questions": [
+                        {"label": "Email", "field_type": "input", "is_required": True},
+                        {"label": "Phone Number", "field_type": "input"},
+                        {"label": "Resume Upload", "field_type": "file_upload"}
+                    ]
+                },
+                {
+                    "title": "Experience",
+                    "questions": [
+                        {"label": "Years of Experience", "field_type": "rating"},
+                        {"label": "Cover Letter", "field_type": "textarea"}
+                    ]
+                }
+            ]
+        else:
+            # Generic fallback
+            form_structure["title"] = "General Feedback Form"
+            form_structure["sections"] = [
+                {
+                    "title": "Your Feedback",
+                    "questions": [
+                        {"label": "Overall Satisfaction", "field_type": "rating", "is_required": True},
+                        {"label": "Comments", "field_type": "textarea"}
+                    ]
+                }
+            ]
+
+        # Add IDs to everything (required by model)
+        import uuid
+        for sec in form_structure["sections"]:
+            sec["id"] = str(uuid.uuid4())
+            for q in sec["questions"]:
+                q["id"] = str(uuid.uuid4())
+                if "options" in q:
+                    for opt in q["options"]:
+                        opt["id"] = str(uuid.uuid4())
+
+        return jsonify({
+            "message": "Form generated successfully",
+            "suggestion": form_structure
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@ai_bp.route("/suggestions", methods=["POST"])
+@jwt_required()
+def get_field_suggestions():
+    """
+    Simulated AI Field Suggestions.
+    """
+    try:
+        data = request.get_json()
+        theme = data.get("theme", "").lower()
+        
+        suggestions = []
+        if "feedback" in theme or "survey" in theme:
+            suggestions = [
+                {"label": "How did you hear about us?", "field_type": "select", "options": ["Social Media", "Friend", "Ad"]},
+                {"label": "On a scale of 1-10, how likely are you to recommend us?", "field_type": "rating"}
+            ]
+        elif "contact" in theme:
+             suggestions = [
+                {"label": "Preferred method of contact", "field_type": "radio", "options": ["Email", "Phone", "SMS"]},
+                {"label": "Best time to call", "field_type": "input"}
+            ]
+        else:
+             suggestions = [
+                {"label": "Additional Comments", "field_type": "textarea"},
+                {"label": "Tags", "field_type": "select", "is_repeatable_question": True}
+            ]
+
+        return jsonify({
+            "theme": theme,
+            "suggestions": suggestions
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
