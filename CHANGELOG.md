@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Email notifications
 - Webhook integration
 - AI-powered form generation
+## [1.9.0] - 2026-01-09
+
+### Added
+- **Form Analytics**:
+  - `GET /analytics/summary`: Real-time submission totals and status breakdown.
+  - `GET /analytics/timeline`: Daily submission counts for trend analysis.
+  - `GET /analytics/distribution`: Answer frequency distribution for choice-based questions.
+- **Bug Fixes**:
+  - Fixed `deleted_at` field in `FormResponse` model to default to `None` instead of `now()`, resolving issue where all new responses appeared deleted.
+
 ## [1.8.0] - 2026-01-09
 
 ### Added
@@ -201,6 +211,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.9.0 | 2026-01-09 | Analytics & Insights (Dashboard Metrics) |
 | 1.8.0 | 2026-01-09 | Data Integrity & Export (Cleaning, Flattened CSV) |
 | 1.7.0 | 2026-01-09 | Lifecycle Enhancements (Scheduled Publishing) |
 | 1.6.0 | 2026-01-09 | Approval Workflows (Response Status) |

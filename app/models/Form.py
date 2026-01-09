@@ -151,7 +151,7 @@ class FormResponse(Document):
     
     deleted = BooleanField(default=False)
     deleted_by = StringField()
-    deleted_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    deleted_at = DateTimeField()
     
     version = StringField()  # Track which form version was used
     
