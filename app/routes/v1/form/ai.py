@@ -417,6 +417,104 @@ def ai_powered_search(form_id):
         }), 200
 
     except Exception as e:
-        import traceback
-        current_app.logger.error(f"Search error: {str(e)}\n{traceback.format_exc()}")
+        return jsonify({"error": str(e)}), 400
+
+@ai_bp.route("/<form_id>/anomalies", methods=["POST"])
+@jwt_required()
+def detect_form_anomalies(form_id):
+    """
+    Scans form responses for anomalies:
+    1. Duplicate content (Spam detection)
+    2. Statistical Outliers in numerical fields
+    3. Gibberish/Short text detection
+    """
+    try:
+        current_user = get_current_user()
+        form = Form.objects.get(id=form_id)
+        if not has_form_permission(current_user, form, "view"):
+             return jsonify({"error": "Unauthorized"}), 403
+
+        responses = FormResponse.objects(form=form.id, deleted=False)
+        if len(responses) < 3:
+            return jsonify({"message": "Not enough data for anomaly detection (min 3 responses required)", "anomalies": []}), 200
+
+        flagged = []
+        
+        # 1. Duplicate Detection
+        content_hashes = {}
+        
+        # 2. Outlier detection prep
+        num_values_per_question = {} # {qid: [list of values]}
+        
+        def process_data(data, resp_id):
+            flat_items = []
+            if isinstance(data, dict):
+                for k, v in data.items():
+                    if isinstance(v, (int, float)):
+                        num_values_per_question.setdefault(k, []).append((v, resp_id))
+                    elif isinstance(v, str):
+                        flat_items.append(v)
+                    elif isinstance(v, (dict, list)):
+                        flat_items.extend(process_data(v, resp_id))
+            return flat_items
+
+        all_resp_text = {} # {resp_id: combined_text}
+
+        for resp in responses:
+            rid = str(resp.id)
+            text_parts = process_data(resp.data, rid)
+            combined = " ".join(text_parts).strip()
+            all_resp_text[rid] = combined
+            
+            # Duplicate check
+            if combined and combined in content_hashes:
+                flagged.append({
+                    "response_id": rid,
+                    "type": "duplicate",
+                    "confidence": 0.9,
+                    "reason": f"Content matches response {content_hashes[combined]}"
+                })
+            content_hashes[combined] = rid
+
+            # 3. Gibberish Check (Simple heuristic: very short or low vowel count)
+            if combined and len(combined) > 0:
+                vowels = len(re.findall(r'[aeiou]', combined.lower()))
+                if len(combined) > 10 and vowels / len(combined) < 0.1:
+                    flagged.append({
+                        "response_id": rid,
+                        "type": "low_quality",
+                        "confidence": 0.7,
+                        "reason": "Text pattern looks like gibberish (low vowel ratio)"
+                    })
+
+        # Statistical Outliers (Z-Score method baseline)
+        import math
+        for qid, items in num_values_per_question.items():
+            if len(items) < 3: continue
+            
+            vals = [x[0] for x in items]
+            mean = sum(vals) / len(vals)
+            variance = sum((x - mean) ** 2 for x in vals) / len(vals)
+            std_dev = math.sqrt(variance)
+            
+            if std_dev == 0: continue
+            
+            for val, rid in items:
+                z_score = abs(val - mean) / std_dev
+                if z_score > 2: # 2 Sigma threshold
+                    flagged.append({
+                        "response_id": rid,
+                        "type": "outlier",
+                        "confidence": min(0.9, z_score / 5),
+                        "reason": f"Value {val} is a statistical outlier for field {qid}"
+                    })
+
+        return jsonify({
+            "form_id": form_id,
+            "total_scanned": len(responses),
+            "anomaly_count": len(flagged),
+            "anomalies": flagged
+        }), 200
+
+    except Exception as e:
         return jsonify({"error": str(e)}), 400

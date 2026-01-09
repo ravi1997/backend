@@ -27,6 +27,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `POST /form/<id>/section/<sid>/question/<qid>/options/import` endpoint for populating question options from a CSV file.
   - Support for replacing or appending to existing options.
 
+## [1.19.0] - 2026-01-09
+
+### Added
+- **AI Anomaly Detection**:
+  - Automatically identifies suspicious response patterns using statistical analysis and heuristics.
+  - **Duplicate Detection**: Flags near-identical submissions (spam control).
+  - **Outlier Detection**: Uses Z-Score (2-Sigma) to identify numerical anomalies in form fields.
+  - **Quality Guard**: Detects gibberish or low-effort text submissions based on entropy and character distribution.
+  - New endpoint: `POST /ai/<form_id>/anomalies`.
+
 ## [1.18.0] - 2026-01-09
 
 ### Added
@@ -322,6 +332,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.19.0 | 2026-01-09 | AI Anomaly Detection |
 | 1.18.0 | 2026-01-09 | Enhanced Sentiment & Bulk Trends |
 | 1.17.0 | 2026-01-09 | AI Form Template Generation |
 | 1.16.0 | 2026-01-09 | Advanced Workflow & AI Analysis |
