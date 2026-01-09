@@ -866,6 +866,61 @@ graph TD
 
 ---
 
+
+---
+
+### 4.9 Dashboard Module
+
+#### FR-DASH-001: Create & Configure Dashboard
+**Description:** Create customizable dashboards with widgets for specific user roles.
+
+| Attribute | Specification |
+|-----------|---------------|
+| **Authorization** | `admin` or `superadmin` role required |
+| **Input** | title, slug, roles[], layout, widgets[] |
+| **Output** | Dashboard ID |
+| **Widgets** | Counters, List Views, Charts, Shortcuts |
+
+---
+
+#### FR-DASH-002: View Dashboard
+**Description:** Retrieve dashboard configuration and widget data for current user.
+
+| Attribute | Specification |
+|-----------|---------------|
+| **Authorization** | User must have one of the dashboard's assigned `roles` |
+| **Input** | dashboard_slug |
+| **Output** | Layout config + Data for all widgets (counts, lists) |
+| **Performance** | Widget queries executed in parallel optimized for speed |
+
+---
+
+### 4.10 Workflow Module
+
+#### FR-WORK-001: Configure Form Workflow
+**Description:** Define distinct workflows to link forms together.
+
+| Attribute | Specification |
+|-----------|---------------|
+| **Authorization** | `admin` or `superadmin` role required |
+| **Input** | trigger_form_id, condition, actions[] |
+| **Trigger** | "On Submit" of trigger_form |
+| **Actions** | `redirect_to_form`, `create_draft`, `notify` |
+
+---
+
+#### FR-WORK-002: Workflow Execution & Data Mapping
+**Description:** Automatically execute actions when form submission meets conditions.
+
+| Attribute | Specification |
+|-----------|---------------|
+| **Trigger** | Post-processing of FR-RESP-001 |
+| **Logic** | Evaluate pythonic string expression against response data |
+| **Effect** | Return "next_action" payload to client (e.g. redirect URL with pre-fill) |
+| **Data Map** | Map source answers to target form fields (e.g. `name` -> `patient_name`) |
+
+---
+
 ## 5. Non-Functional Requirements
 
 ### 5.1 Performance Requirements
@@ -1111,6 +1166,59 @@ classDiagram
 
 ---
 
+
+---
+
+### 6.6 Dashboard Models
+
+```mermaid
+classDiagram
+    class Dashboard {
+        +UUID id
+        +String title
+        +String slug
+        +List~String~ roles
+        +String layout
+        +List~DashboardWidget~ widgets
+    }
+
+    class DashboardWidget {
+        +UUID id
+        +String type
+        +String title
+        +Reference~SavedSearch~ data_source
+        +Dict config
+        +Int refresh_rate
+    }
+
+    Dashboard "1" --> "*" DashboardWidget
+```
+
+### 6.7 Workflow Models
+
+```mermaid
+classDiagram
+    class FormWorkflow {
+        +UUID id
+        +String name
+        +Reference~Form~ trigger_form
+        +String trigger_condition
+        +List~WorkflowAction~ actions
+        +Boolean is_active
+    }
+
+    class WorkflowAction {
+        +String type
+        +Reference~Form~ target_form
+        +Dict data_mapping
+        +String assign_to
+    }
+    
+    FormWorkflow "1" --> "*" WorkflowAction
+```
+
+---
+
 ## 7. API Endpoints Reference
 
 ### 7.1 Authentication Endpoints
@@ -1194,6 +1302,27 @@ classDiagram
 |--------|----------|-------------|:-------------:|
 | GET | `/api/v1/form/{id}/files/{qid}/{filename}` | Get file | ❌/✅ |
 | GET | `/api/v1/form/{id}/section/{sid}/question/{qid}/api` | API call | ✅ |
+
+---
+
+
+### 7.7 Dashboard Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|:-------------:|
+| POST | `/api/v1/dashboards/` | Create Dashboard | ✅ |
+| GET | `/api/v1/dashboards/` | List Permitted Dashboards | ✅ |
+| GET | `/api/v1/dashboards/{id}` | Get Dashboard Data | ✅ |
+| PUT | `/api/v1/dashboards/{id}` | Update Configuration | ✅ |
+
+### 7.8 Workflow Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|:-------------:|
+| POST | `/api/v1/workflow/` | Create Workflow | ✅ |
+| GET | `/api/v1/workflow/` | List Workflows | ✅ |
+| PUT | `/api/v1/workflow/{id}` | Update Workflow | ✅ |
+| GET | `/api/v1/form/{id}/next-action` | Check Trigger Status | ✅ |
 
 ---
 

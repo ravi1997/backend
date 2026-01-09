@@ -4,6 +4,7 @@ from app.routes.v1.form.routes import *
 from app.routes.v1.view_route import view_bp
 from app.routes.v1.user_route import user_bp
 from app.routes.v1.form.ai import ai_bp
+from app.routes.v1.dashboard_route import dashboard_bp 
 
 def register_blueprints(app):
     app.register_blueprint(form_bp, url_prefix='/form/api/v1/form')
@@ -11,4 +12,5 @@ def register_blueprints(app):
     app.register_blueprint(user_bp, url_prefix='/form/api/v1/user')
     app.register_blueprint(auth_bp, url_prefix='/form/api/v1/auth')
     app.register_blueprint(ai_bp, url_prefix='/form/api/v1/ai')
-    app.logger.info("Blueprints registered: form, user, auth, ai")
+    app.register_blueprint(dashboard_bp, url_prefix='/form/api/v1/dashboards')
+    app.logger.info("Blueprints registered: form, user, auth, ai, dashboards")

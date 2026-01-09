@@ -17,6 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Webhook integration
 - AI-powered form generation
 
+## [1.22.0] - 2026-01-09
+
+### Added
+- **Dynamic Dashboards**:
+  - **Customizable Views**: Create role-specific dashboards with configured widgets (`FR-DASH-001`).
+  - **Widget Types**: Supported widgets include `counter`, `list_view`, `chart_bar`, `chart_pie`, and `shortcut`.
+  - **Data Resolution**: Automatic data fetching for widgets based on form references and saved searches (`FR-DASH-002`).
+  - **RBAC**: Dashboards are assigned to specific roles (e.g., DEO, Admin) for secured access.
+  - New endpoints: `CRUD /dashboards`.
+
 ## [1.14.0] - 2026-01-09
 
 ### Added
@@ -355,6 +365,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.22.0 | 2026-01-09 | Dynamic Dashboards & Widgets |
 | 1.21.0 | 2026-01-09 | Automated Form Security Audit |
 | 1.20.0 | 2026-01-09 | Deep Content Moderation |
 | 1.19.0 | 2026-01-09 | AI Anomaly Detection |

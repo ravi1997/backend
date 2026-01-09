@@ -56,19 +56,23 @@ def create_app(config_class=Config):
         port = app.config['MONGODB_SETTINGS'].get('port')
         auth_source = app.config['MONGODB_SETTINGS'].get('auth_source')
 
-        # Construct the connection string
-        connection_string = f"mongodb://{host}:{port}/{db_name}?authSource={auth_source}&uuidRepresentation=standard"
+        if app.config.get('TESTING'):
+            import mongomock
+            mongo(db_name, host='mongodb://localhost', mongo_client_class=mongomock.MongoClient, uuidRepresentation='standard')
+            app.logger.info("MongoDB connected via MOCK")
+        else:
+            # Construct the connection string
+            connection_string = f"mongodb://{host}:{port}/{db_name}?authSource={auth_source}&uuidRepresentation=standard"
+            mongo(host=connection_string)
+            app.logger.info("MongoDB connected: %s", connection_string)
 
-        mongo(host=connection_string)
-        # mongo(**app.config['MONGODB_SETTINGS'])
-        app.logger.info("MongoDB connected: %s", connection_string)
-
-        # Extract parameters from connection string
-        client = MongoClient(connection_string)
-        # Run a ping command
-        client.admin.command('ping')
-        print("✅ MongoDB connection successful.")
-        app.logger.info("✅ MongoDB connection successful.")
+        if not app.config.get('TESTING'):
+            # Extract parameters from connection string
+            client = MongoClient(connection_string)
+            # Run a ping command
+            client.admin.command('ping')
+            print("✅ MongoDB connection successful.")
+            app.logger.info("✅ MongoDB connection successful.")
 
     except ConnectionFailure as e:
         app.logger.error("❌ MongoDB connection failed: %s", e)

@@ -19,7 +19,12 @@ def clean_db(app):
         db_name = app.config['MONGODB_SETTINGS']['db']
         # Disconnect any existing connections to prevent leaks/conflicts
         disconnect()
-        conn = connect(db_name, host=app.config['MONGODB_SETTINGS']['host'], port=app.config['MONGODB_SETTINGS']['port'])
+        if app.config.get('TESTING'):
+            import mongomock
+            conn = connect(db_name, host='mongodb://localhost', mongo_client_class=mongomock.MongoClient)
+        else:
+            conn = connect(db_name, host=app.config['MONGODB_SETTINGS']['host'], port=app.config['MONGODB_SETTINGS']['port'])
+            
         conn.drop_database(db_name)
         yield
         disconnect()

@@ -78,3 +78,9 @@ def send_ehospital_uhid(current_app, uhid):
     except Exception as e:
         current_app.logger.error(f"Error fetching patient details: {e}")
         return None
+
+def handle_error(e, logger):
+    import traceback
+    error_trace = traceback.format_exc()
+    logger.error(f"Unhandled Exception: {str(e)}\n{error_trace}")
+    return jsonify({'error': 'Internal server error', 'message': str(e)}), 500

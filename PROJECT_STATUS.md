@@ -170,6 +170,17 @@ The Form Management System backend is **100% complete** based on the SRS v1.0 sp
 
 ---
 
+### Phase 2: Advanced Views & Workflows (Newly Added)
+
+| FR ID | Feature | Status | Test Coverage | Notes |
+|-------|---------|--------|---------------|-------|
+| FR-DASH-001 | Create Dashboard | ✅ DONE | ✅ test_dashboard_lifecycle | Basic CRUD implemented |
+| FR-DASH-002 | View Dashboard/Widgets | ✅ DONE | ✅ test_dashboard_lifecycle | Data resolving implemented |
+| FR-WORK-001 | Configure Workflow | 🔴 PENDING | ❌ | Defined in PLAN.md |
+| FR-WORK-002 | Workflow Execution | 🔴 PENDING | ❌ | Defined in PLAN.md |
+
+---
+
 ## Missing/Incomplete Features (Future Roadmap)
 
 ### Phase 3: Nice-to-Have Features
@@ -407,11 +418,11 @@ All endpoints from FR-RESP-001 to FR-RESP-013 implemented
 
 | Metric | Count | Percentage |
 |--------|-------|------------|
-| **Total SRS Functional Requirements** | 52 | 100% |
-| **Implemented FR** | 52 | 100% |
-| **Partial/In Progress FR** | 0 | 0% |
-| **Total Test Cases** | 69 | - |
-| **Passing Tests** | 69 | 100% |
+| **Total SRS Functional Requirements** | 56 | 100% |
+| **Implemented FR** | 54 | 96% |
+| **Partial/In Progress FR** | 2 | 4% |
+| **Total Test Cases** | 70 | - |
+| **Passing Tests** | 70 | 100% |
 | **Failed Tests** | 0 | 0% |
 | **Code Files** | 13+ | - |
 | **API Endpoints** | 51+ | - |
