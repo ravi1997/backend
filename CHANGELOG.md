@@ -16,6 +16,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Email notifications
 - Webhook integration
 - AI-powered form generation
+## [1.8.0] - 2026-01-09
+
+### Added
+- **Data Integrity**:
+  - Enhanced `validate_form_submission` to return valid, cleaned data.
+  - Automatically strips hidden fields (where `visibility_condition` is false) from submissions.
+- **Export**:
+  - Updated CSV export to flatten JSON structure into columns.
+  - Dynamically generates headers based on form version.
+  - Handles repeatable sections by aggregating values with pipes.
+
 ## [1.7.0] - 2026-01-09
 
 ### Added
@@ -190,6 +201,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.8.0 | 2026-01-09 | Data Integrity & Export (Cleaning, Flattened CSV) |
 | 1.7.0 | 2026-01-09 | Lifecycle Enhancements (Scheduled Publishing) |
 | 1.6.0 | 2026-01-09 | Approval Workflows (Response Status) |
 | 1.5.0 | 2026-01-09 | Workflow Automation (Email Notifications) |

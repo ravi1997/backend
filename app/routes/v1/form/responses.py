@@ -101,7 +101,7 @@ def submit_response(form_id):
             return jsonify({"error": "Unauthorized to submit"}), 403
 
         from app.routes.v1.form.validation import validate_form_submission
-        validation_errors = validate_form_submission(form, submitted_data, current_app.logger)
+        validation_errors, cleaned_data = validate_form_submission(form, submitted_data, current_app.logger)
 
         if validation_errors:
             current_app.logger.warning(
@@ -111,7 +111,7 @@ def submit_response(form_id):
         response = FormResponse(
             form=form,
             submitted_by=str(current_user.id),
-            data=submitted_data,
+            data=cleaned_data,
             submitted_at=datetime.now(timezone.utc),
             version=form.versions[-1].version if form.versions else "1.0"
         )

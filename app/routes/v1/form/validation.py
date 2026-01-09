@@ -54,13 +54,15 @@ def evaluate_condition(condition, context, logger=None):
 def validate_form_submission(form, submitted_data, logger):
     """
     Validates submitted data against form structure and rules.
-    Returns a list of validation errors.
+    Returns (validation_errors, cleaned_data).
+    cleaned_data contains only visible and valid fields.
     """
     validation_errors = []
+    cleaned_data = {}
     
     # Get the latest version
     if not form.versions:
-        return [{"error": "Form has no versions defined"}]
+        return [{"error": "Form has no versions defined"}], {}
     
     latest_version = form.versions[-1]
     
@@ -72,11 +74,10 @@ def validate_form_submission(form, submitted_data, logger):
 
         if section.is_repeatable_section:
             if section_data is None:
-                # If required, should have at least some entries? 
-                # This depends on business logic, but usually if it's repeatable and required, repeat_min > 0
                 if section.repeat_min and section.repeat_min > 0:
                     msg = f"At least {section.repeat_min} entries required"
                     validation_errors.append({"section_id": sid, "error": msg})
+                # If optional and missing, cleaned_data[sid] can be skipped or []
                 continue
                 
             if not isinstance(section_data, list):
@@ -96,27 +97,23 @@ def validate_form_submission(form, submitted_data, logger):
                 logger.warning(f"{sid}: {msg}")
 
             entries = section_data
+            cleaned_section_entries = []
         else:
             if section_data is None:
-                # Non-repeatable sections might be optional overall? 
-                # But usually they are present.
                 entries = [{}] 
             elif not isinstance(section_data, dict):
                 logger.warning(f"{sid}: Non-dict data in non-repeatable section, skipping.")
                 continue
             else:
                 entries = [section_data]
+            cleaned_section_entries = [] # Will hold 1 entry
 
         for entry in entries:
             # Context for visibility/required conditions
-            # For non-repeatable, context is the current entry.
-            # For repeatable, context is also the current entry (standard behavior)
-            context = prepare_eval_context(entries if isinstance(entries, list) else [entry])
-            # Wait, the context should be for the current entry row if referencing siblings, 
-            # OR typically one can reference any field in the same row.
-            # In the original code: context = {str(k): repr(v) for k, v in entry.items()} 
-            # It only included the current entry. Let's stick to that.
+            # Use only current entry context as per original logic
             context = prepare_eval_context([entry])
+            
+            cleaned_entry = {}
 
             for question in section.questions:
                 qid = str(question.id)
@@ -130,6 +127,7 @@ def validate_form_submission(form, submitted_data, logger):
                     logger.debug(f"Visibility of {qid}: {is_visible}")
 
                 if not is_visible:
+                    # Skip validation AND do not add to cleaned_entry
                     continue
 
                 # 2. Evaluate Conditional Required
@@ -139,7 +137,7 @@ def validate_form_submission(form, submitted_data, logger):
                     if is_required:
                         logger.debug(f"Field {qid} is mandatory due to condition: {question.required_condition}")
 
-                # Checkbox normalization (replicated from original logic)
+                # Checkbox normalization
                 if question.field_type == "checkbox" and val is not None and not isinstance(val, list):
                     val = [val] if val else []
 
@@ -149,6 +147,7 @@ def validate_form_submission(form, submitted_data, logger):
                         msg = "Expected list of answers for repeatable question"
                         validation_errors.append({"id": qid, "error": msg})
                         logger.warning(f"{qid}: {msg}")
+                        # Don't add to cleaned_entry if invalid structure
                         continue
                     
                     if is_required and (val is None or len(val) == 0):
@@ -168,8 +167,10 @@ def validate_form_submission(form, submitted_data, logger):
                             logger.warning(f"{qid}: {msg}")
                     
                     answers_to_check = val if val else []
+                    cleaned_entry[qid] = val # Add raw value, or normalized?
                 else:
                     answers_to_check = [val]
+                    cleaned_entry[qid] = val
 
                 for ans in answers_to_check:
                     if is_required and (ans is None or ans == ""):
@@ -235,5 +236,15 @@ def validate_form_submission(form, submitted_data, logger):
                             msg = f"Invalid validation rules: {str(ve)}"
                             validation_errors.append({"id": qid, "error": msg})
                             logger.error(f"{qid}: {msg}")
-    
-    return validation_errors
+            
+            cleaned_section_entries.append(cleaned_entry)
+
+        # Assign cleaned entries to section in cleaned_data
+        if section.is_repeatable_section:
+            if cleaned_section_entries:
+                cleaned_data[sid] = cleaned_section_entries
+        else:
+            if cleaned_section_entries:
+                cleaned_data[sid] = cleaned_section_entries[0]
+
+    return validation_errors, cleaned_data
