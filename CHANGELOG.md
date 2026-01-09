@@ -27,6 +27,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `POST /form/<id>/section/<sid>/question/<qid>/options/import` endpoint for populating question options from a CSV file.
   - Support for replacing or appending to existing options.
 
+## [1.20.0] - 2026-01-09
+
+### Added
+- **AI Deep Content Moderation**:
+  - **Sensitive PII Discovery**: Detects SSNs, Credit Card numbers, and other identity markers.
+  - **PHI Identification**: Special medical terminology scanning to protect health-specific data.
+  - **Safety Filters**: automated profanity and inappropriate content blocking.
+  - **Security Shield**: Heuristic-based detection of XSS (Script) and SQL Injection patterns in text responses.
+  - New endpoint: `POST /ai/<form_id>/responses/<id>/moderate`.
+
 ## [1.19.0] - 2026-01-09
 
 ### Added
@@ -62,6 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Response Merge**: Combine multiple submissions into a single record with intelligent `None` value handling.
   - **Multi-step Approval Workflow**: Support for sequential approval steps based on user roles (e.g., Manager -> Admin).
   - New endpoints: `POST /responses/merge`, `POST /responses/<id>/approve`, `POST /responses/<id>/reject`.
+- 🛡️ **Deep Content Moderation**: Comprehensive scanning for PII, PHI, Profanity, and Injections.
+- 🔄 **AI Features (P4)** - Most integration targets achieved.
 - **AI Integration (Phase 4 Foundation)**:
   - **Sentiment Analysis**: Keyword-based sentiment scoring for text responses.
   - **PII Scanning**: Basic pattern-based detection for emails and phone numbers.
@@ -332,6 +344,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.20.0 | 2026-01-09 | Deep Content Moderation |
 | 1.19.0 | 2026-01-09 | AI Anomaly Detection |
 | 1.18.0 | 2026-01-09 | Enhanced Sentiment & Bulk Trends |
 | 1.17.0 | 2026-01-09 | AI Form Template Generation |

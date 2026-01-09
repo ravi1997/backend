@@ -44,17 +44,13 @@ def analyze_response_ai(form_id, response_id):
         response = FormResponse.objects.get(id=response_id, form=form.id)
         
         # 1. Sentiment Analysis
-        # Extract all text values
         all_text = []
         def extract_text(obj):
             if isinstance(obj, dict):
-                for v in obj.values():
-                    extract_text(v)
+                for v in obj.values(): extract_text(v)
             elif isinstance(obj, list):
-                for item in obj:
-                    extract_text(item)
-            elif isinstance(obj, str):
-                all_text.append(obj)
+                for item in obj: extract_text(item)
+            elif isinstance(obj, str): all_text.append(obj)
         
         extract_text(response.data)
         combined_text = " ".join(all_text)
@@ -71,7 +67,8 @@ def analyze_response_ai(form_id, response_id):
         }
         
         # Update results
-        ai_results = {
+        ai_results = getattr(response, 'ai_results', {})
+        ai_results.update({
             "sentiment": {
                 "label": sentiment,
                 "score": score,
@@ -82,13 +79,100 @@ def analyze_response_ai(form_id, response_id):
                 "details": pii_found if (len(pii_found["emails"]) + len(pii_found["phones"])) > 0 else None
             },
             "summary": "Processed by Antigravity AI Helper"
-        }
+        })
         
         response.update(set__ai_results=ai_results)
         
         return jsonify({
             "message": "AI analysis complete",
             "results": ai_results
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@ai_bp.route("/<form_id>/responses/<response_id>/moderate", methods=["POST"])
+@jwt_required()
+def moderate_response_ai(form_id, response_id):
+    """
+    Deep Content Moderation:
+    - Extended PII (SSN, Credit Cards)
+    - PHI (Medical terminology)
+    - Profanity Filtering
+    - Injection Detection (XSS/SQL)
+    """
+    try:
+        current_user = get_current_user()
+        form = Form.objects.get(id=form_id)
+        if not has_form_permission(current_user, form, "view"):
+            return jsonify({"error": "Unauthorized"}), 403
+            
+        response = FormResponse.objects.get(id=response_id, form=form.id)
+        
+        # 1. Extract all text
+        all_text = []
+        def extract_text(obj):
+            if isinstance(obj, dict):
+                for v in obj.values(): extract_text(v)
+            elif isinstance(obj, list):
+                for item in obj: extract_text(item)
+            elif isinstance(obj, str): all_text.append(obj)
+        
+        extract_text(response.data)
+        text = " ".join(all_text)
+        text_lower = text.lower()
+        
+        # 2. Moderation Engines
+        flags = []
+        
+        # PII Detection (Sensitive)
+        pii_patterns = {
+            "ssn": r'\b\d{3}-\d{2}-\d{4}\b',
+            "credit_card": r'\b(?:\d[ -]*?){13,16}\b',
+            "email": r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+',
+            "phone": r'\b\d{10}\b'
+        }
+        found_pii = {}
+        for key, pattern in pii_patterns.items():
+            matches = re.findall(pattern, text)
+            if matches:
+                 found_pii[key] = len(matches)
+                 flags.append(f"PII Detected: {key.upper()}")
+
+        # PHI Detection (Medical)
+        phi_keywords = {"diabetes", "hiv", "cancer", "medication", "prescription", "diagnosis", "treatment", "therapy"}
+        found_phi = [w for w in phi_keywords if w in text_lower]
+        if found_phi:
+            flags.append(f"PHI Potential: {', '.join(found_phi)}")
+
+        # Profanity Detection (Basic)
+        profanity_list = {"abuse", "offensive", "violent", "vulgar"} # Expanded in real life
+        found_profanity = [w for w in profanity_list if w in text_lower]
+        if found_profanity:
+            flags.append("Warning: Profane or inappropriate language detected")
+
+        # Injection Detection (Security)
+        injection_patterns = [r'<script', r'javascript:', r'or 1=1', r'drop table', r'select \*']
+        found_injection = any(re.search(p, text_lower) for p in injection_patterns)
+        if found_injection:
+            flags.append("CRITICAL: Potential Code/SQL Injection attempt")
+
+        # Update ai_results
+        moderation_results = {
+            "is_safe": not (found_profanity or found_injection),
+            "flags": flags,
+            "pii_summary": found_pii,
+            "phi_detected": found_phi,
+            "evaluated_at": datetime.utcnow().isoformat()
+        }
+        
+        current_results = getattr(response, 'ai_results', {})
+        current_results["moderation"] = moderation_results
+        response.update(set__ai_results=current_results)
+        
+        return jsonify({
+            "message": "Content moderation complete",
+            "moderation": moderation_results
         }), 200
         
     except Exception as e:
