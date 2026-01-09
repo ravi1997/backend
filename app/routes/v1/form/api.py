@@ -14,6 +14,7 @@ from app.models.User import Role
 from app.schemas.form_schema import FormSchema, FormVersionSchema, SectionSchema
 from app.utils.api_helper import send_OTP_sms, send_ehospital_uhid
 from app.utils.decorator import require_roles
+from app.utils.script_engine import execute_safe_script
 
 
 @form_bp.route("<string:form_id>/section/<string:section_id>/question/<string:question_id>/api", methods=["GET"])
@@ -115,12 +116,32 @@ def handleAPI(form_id, section_id, question_id):
             custom_script = question.custom_script
             if not custom_script:
                 return jsonify({"error": "Custom script not defined"}), 400
+            
+            # Parse input value
+            value_param = request.args.get("value")
+            input_data = {}
+            if value_param:
+                try:
+                    input_data = json.loads(value_param)
+                except json.JSONDecodeError:
+                    # Provide as raw string if not JSON
+                    input_data = {"value": value_param}
+            
             try:
-                exec(custom_script)  # Execute the custom script
-                return jsonify({"message": "Custom script executed successfully"}), 200
+                # Execute the custom script
+                local_scope = execute_safe_script(custom_script, input_data)
+                
+                # Check for 'result' in scope
+                if 'result' in local_scope:
+                    return jsonify({"data": local_scope['result']}), 200
+                else:
+                    # Return all local variables that don't start with underscore
+                    # excluding restricted keys if any remain
+                    response_data = {k: v for k, v in local_scope.items() if not k.startswith('_')}
+                    return jsonify({"data": response_data}), 200
             except Exception as e:
                 current_app.logger.error(f"Error executing custom script for user {current_user.username} (ID: {current_user.id}): {str(e)}")
-                return jsonify({"error": "Error executing custom script"}), 500
+                return jsonify({"error": f"Error executing custom script: {str(e)}"}), 500
         else:
             current_app.logger.error(f"Unsupported API call '{api}' for user {current_user.username} (ID: {current_user.id})")
             return jsonify({"error": "Unsupported API call"}), 400

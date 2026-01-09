@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Email notifications
 - Webhook integration
 - AI-powered form generation
+## [1.11.0] - 2026-01-09
+
+### Added
+- **Custom Script Execution**:
+  - Implemented secure server-side script execution for fields (`FR-API-004`).
+  - Added `execute_safe_script` utility with restricted globals and allowed modules (math, random, datetime, json, re).
+  - Updated API route to handle `custom` field type with input parameters.
+
 ## [1.10.0] - 2026-01-09
 
 ### Added
