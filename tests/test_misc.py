@@ -28,17 +28,25 @@ def test_get_form_analytics(client):
     submit_resp = client.post(f"/form/api/v1/form/{form_id}/responses", json={"data":{s1_id: {}}}, headers={"Authorization": f"Bearer {user_token}"})
     assert submit_resp.status_code == 201
     
-    response = client.get(f"/form/api/v1/form/{form_id}/analytics", headers={"Authorization": f"Bearer {admin_token}"})
+    # Updated to use specific endpoint
+    response = client.get(f"/form/api/v1/form/{form_id}/analytics/summary", headers={"Authorization": f"Bearer {admin_token}"})
     assert response.status_code == 200
     assert response.get_json()["total_responses"] == 1
 
 def test_public_submit_success(client):
     admin_token, _ = get_tokens(client)
-    form_id = client.post("/form/api/v1/form/", json={
-        "title": "Public Form", "slug": "pub-form-misc", "status":"published", "is_public": True
-    }, headers={"Authorization": f"Bearer {admin_token}"}).get_json()["form_id"]
+    s1_id = "cccccccc-cccc-cccc-cccc-cccccccccccc"
+    q1_id = "dddddddd-dddd-dddd-dddd-dddddddddddd"
     
-    response = client.post(f"/form/api/v1/form/{form_id}/public-submit", json={"data":{"s1":{"q1":"Public Answer"}}})
+    # Must provide versions for validation
+    form_payload = {
+        "title": "Public Form", "slug": "pub-form-misc", "status":"published", "is_public": True,
+        "versions": [{"version": "1.0", "sections": [{"id": s1_id, "title": "S1", "questions": [{"id": q1_id, "label": "Q1", "field_type": "input"}]}]}]
+    }
+    
+    form_id = client.post("/form/api/v1/form/", json=form_payload, headers={"Authorization": f"Bearer {admin_token}"}).get_json()["form_id"]
+    
+    response = client.post(f"/form/api/v1/form/{form_id}/public-submit", json={"data":{s1_id:{q1_id:"Public Answer"}}})
     assert response.status_code == 201
     assert response.get_json()["message"] == "Response submitted anonymously"
 
