@@ -706,3 +706,61 @@ def add_response_comment(form_id, response_id):
         
     except DoesNotExist:
         return jsonify({"error": "Form not found"}), 404
+
+# -------------------- Preview / Validation --------------------
+@form_bp.route("/<form_id>/preview", methods=["POST"])
+@jwt_required()
+def preview_submission(form_id):
+    """
+    Validate submission data without saving it.
+    Useful for testing forms or 'Preview Mode'.
+    """
+    current_app.logger.info(f"Received preview/validation request for form_id: {form_id}")
+    
+    # Parse Data
+    submitted_data = {}
+    if request.is_json:
+        data = request.get_json()
+        submitted_data = data.get("data", data)
+    else:
+        # Fallback for form-data
+        data = request.form or {}
+        form_data = data.to_dict(flat=False)
+        for key, values in form_data.items():
+            submitted_data[key] = values[0] if len(values) == 1 else values
+
+    try:
+        form = Form.objects.get(id=form_id)
+    except DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+
+    current_user = get_current_user()
+    
+    # Preview allowed for anyone who can view (editor or viewer)
+    # Creator is usually an editor.
+    if not has_form_permission(current_user, form, "view"):
+        return jsonify({"error": "Unauthorized to preview form"}), 403
+
+    from app.routes.v1.form.validation import validate_form_submission
+    
+    try:
+        # We pass the logger from current_app
+        validation_errors, cleaned_data = validate_form_submission(form, submitted_data, current_app.logger)
+        
+        if validation_errors:
+            return jsonify({
+                "valid": False,
+                "errors": validation_errors,
+                "message": "Validation failed"
+            }), 200
+        
+        return jsonify({
+            "valid": True,
+            "data": cleaned_data,
+            "message": "Validation successful"
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error during preview validation: {str(e)}")
+        return jsonify({"error": str(e)}), 400
+

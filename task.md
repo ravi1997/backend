@@ -1,11 +1,11 @@
 # Tasks
 
-- [x] FR-API-004: Custom Script Execution <!-- id: 0 -->
-    - [x] Implement secure script execution engine <!-- id: 1 -->
-    - [x] Update `app/routes/v1/form/api.py` to handle `custom` type <!-- id: 2 -->
-    - [x] Add `test_custom_scripts.py` <!-- id: 3 -->
+- [x] FR-FORM-016: Form Preview Mode (Validation API) <!-- id: 8 -->
+    - [x] Implement `POST /form/<id>/preview` for submission validation without saving <!-- id: 9 -->
+    - [x] Ensure it supports custom scripts and conditional logic checks <!-- id: 10 -->
+    - [x] Add `tests/test_preview_mode.py` <!-- id: 11 -->
 
-- [x] FR-FORM-015: Section/Question Reordering API <!-- id: 4 -->
-    - [x] Implement `PATCH /form/<id>/reorder-sections` <!-- id: 5 -->
-    - [x] Implement `PATCH /form/<id>/section/<sid>/reorder-questions` <!-- id: 6 -->
-    - [x] Add `tests/test_reordering.py` <!-- id: 7 -->
+- [ ] FR-RESP-014: Response Drafts / Auto-save <!-- id: 12 -->
+    - [ ] Update `FormResponse` model to support `is_draft` or `status=draft` <!-- id: 13 -->
+    - [ ] Create `POST /responses/draft` endpoint (bypassing strict validation) <!-- id: 14 -->
+    - [ ] Test draft saving and retrieval <!-- id: 15 -->
