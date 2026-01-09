@@ -140,9 +140,9 @@ The Form Management System backend is **95% complete** based on the SRS v1.0 spe
 | FR-API-001 | UHID Lookup | eHospital integration | ✅ DONE | ✅ test_handle_uhid_api | External API call |
 | FR-API-002 | OTP SMS | SMS gateway integration | ✅ DONE | ✅ test_handle_otp_api | OTP delivery |
 | FR-API-003 | Cross-Form Lookup | Query other forms | ✅ DONE | ✅ test_handle_form_api | Internal routing |
-| FR-API-004 | Custom Script | Server-side execution | ⚠️ PARTIAL | ❌ No tests | Framework exists |
+| FR-API-004 | Custom Script | Server-side execution | ✅ DONE | ✅ test_custom_script_success | Secure execution engine |
 
-**Module Status:** ✅ **75% Complete** (Custom scripts need full implementation)
+**Module Status:** ✅ **100% Complete**
 
 ---
 
@@ -174,7 +174,7 @@ The Form Management System backend is **95% complete** based on the SRS v1.0 spe
 
 | Feature | Priority | Status | Estimated Effort | SRS Reference |
 |---------|----------|--------|------------------|---------------|
-| Section/Question Reordering API | P2 | ❌ NOT STARTED | 4 hours | Appendix D.1 |
+| Section/Question Reordering API | P2 | ✅ DONE | 4 hours | Appendix D.1 |
 | Form Preview Mode | P2 | ❌ NOT STARTED | 6 hours | Appendix D.1 |
 | Response Draft/Auto-save | P2 | ❌ NOT STARTED | 8 hours | Appendix D.1 |
 | Multi-language Support | P3 | ❌ NOT STARTED | 20 hours | Appendix D.1 |
