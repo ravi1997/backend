@@ -329,3 +329,94 @@ def get_form_sentiment_trends(form_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+@ai_bp.route("/<form_id>/search", methods=["POST"])
+@jwt_required()
+def ai_powered_search(form_id):
+    """
+    AI-Powered Smart Search for form responses.
+    Translates Natural Language queries into filters.
+    """
+    try:
+        data = request.get_json()
+        query = data.get("query", "").lower()
+        if not query:
+            return jsonify({"error": "Search query is required"}), 400
+
+        current_user = get_current_user()
+        form = Form.objects.get(id=form_id)
+        if not has_form_permission(current_user, form, "view"):
+             return jsonify({"error": "Unauthorized"}), 403
+
+        # Base filter
+        filters = {"form": form.id, "deleted": False}
+
+        # Simulated NL Parsing
+        # 1. Age patterns: "over 60", "under 30", "older than 25"
+        age_gt_match = re.search(r'(?:over|older than|above)\s+(\d+)', query)
+        age_lt_match = re.search(r'(?:under|younger than|below)\s+(\d+)', query)
+        
+        # 2. Keyword extraction (naive)
+        # We'll look for words that aren't common stop words/operators
+        stop_words = {"find", "all", "patients", "with", "who", "are", "over", "under", "is", "a", "the", "and"}
+        words = re.findall(r'\w+', query)
+        keywords = [w for w in words if w not in stop_words and not w.isdigit()]
+
+        results = FormResponse.objects(**filters)
+        
+        # In-memory filtering for demo/simulation (since data is dict/dynamic)
+        final_results = []
+        for resp in results:
+            match = True
+            resp_data_str = str(resp.data).lower()
+            
+            # Check keywords
+            for kw in keywords:
+                if kw not in resp_data_str:
+                    match = False
+                    break
+            
+            if not match: continue
+
+            # Check Age (if found in query and exists in data)
+            # Naive: looks for any number in the data that could be age
+            if age_gt_match or age_lt_match:
+                # Try to find a number in resp.data that looks like an age
+                # For this simulation, we'll just check if any value in the dict is a number
+                def find_numbers(d):
+                    nums = []
+                    if isinstance(d, dict):
+                        for v in d.values(): nums.extend(find_numbers(v))
+                    elif isinstance(d, list):
+                        for v in d: nums.extend(find_numbers(v))
+                    elif isinstance(d, (int, float)):
+                        nums.append(d)
+                    elif isinstance(d, str) and d.isdigit():
+                        nums.append(int(d))
+                    return nums
+
+                resp_nums = find_numbers(resp.data)
+                
+                if age_gt_match:
+                    threshold = int(age_gt_match.group(1))
+                    if not any(n > threshold for n in resp_nums):
+                        match = False
+                
+                if age_lt_match:
+                    threshold = int(age_lt_match.group(1))
+                    if not any(n < threshold for n in resp_nums):
+                        match = False
+
+            if match:
+                final_results.append(resp)
+
+        return jsonify({
+            "query": query,
+            "count": len(final_results),
+            "results": [str(r.id) for r in final_results] # Return IDs
+        }), 200
+
+    except Exception as e:
+        import traceback
+        current_app.logger.error(f"Search error: {str(e)}\n{traceback.format_exc()}")
+        return jsonify({"error": str(e)}), 400

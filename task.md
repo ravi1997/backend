@@ -52,5 +52,6 @@
     - [x] Implement **Natural Language Form Generation** (`POST /ai/generate`)
     - [x] Implement **Smart Field Suggestions** (`POST /ai/suggestions`)
     - [x] Implement **Form Template Generation** (`GET /ai/templates`)
+    - [x] Implement **AI-Powered Smart Search** (`POST /ai/<id>/search`)
     - [x] Create dedicated AI blueprint and results storage
-    - [x] Add AI test suite (`tests/test_ai_analysis.py`, `tests/test_ai_generation.py`, `tests/test_ai_templates.py`)
+    - [x] Add AI test suite (`tests/test_ai_analysis.py`, `tests/test_ai_generation.py`, `tests/test_ai_templates.py`, `tests/test_ai_search.py`)
