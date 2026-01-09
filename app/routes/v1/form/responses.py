@@ -227,6 +227,74 @@ def update_submission(form_id, response_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+# -------------------- Update Response Status --------------------
+@form_bp.route("/<form_id>/responses/<response_id>/status", methods=["PATCH"])
+@jwt_required()
+def update_response_status(form_id, response_id):
+    data = request.get_json()
+    new_status = data.get("status")
+    comment = data.get("comment", "")
+    
+    if new_status not in ["pending", "approved", "rejected"]:
+        return jsonify({"error": "Invalid status"}), 400
+
+    try:
+        current_user = get_current_user()
+        form = Form.objects.get(id=form_id)
+        
+        # Only editors or creators (who are editors) can approve/reject
+        if not has_form_permission(current_user, form, "edit"):
+            return jsonify({"error": "Unauthorized to change status"}), 403
+
+        response = FormResponse.objects.get(id=response_id, form=form)
+        
+        # 📜 History Tracking: Before
+        data_before = response.to_mongo().to_dict()
+
+        # Update status
+        log_entry = {
+            "status": new_status,
+            "changed_by": str(current_user.id),
+            "changed_at": datetime.now(timezone.utc),
+            "comment": comment
+        }
+        
+        response.update(
+            set__status=new_status,
+            push__status_log=log_entry,
+            set__updated_at=datetime.now(timezone.utc),
+            set__updated_by=str(current_user.id)
+        )
+        
+        # Reload for history recording
+        response = FormResponse.objects.get(id=response.id)
+
+        # 📜 History Tracking: Record (Status Change)
+        ResponseHistory(
+            response_id=response.id,
+            form_id=form.id,
+            data_before=data_before.get("data"), # Data didn't change, but keep context
+            data_after=response.data,
+            changed_by=str(current_user.id),
+            change_type="update",
+            version=response.version
+        ).save()
+        
+        # 🔔 Webhook
+        trigger_webhooks(form, "status_updated", {
+            "response_id": str(response.id), 
+            "status": new_status,
+            "comment": comment
+        })
+
+        return jsonify({"message": f"Response status updated to {new_status}"}), 200
+
+    except DoesNotExist:
+        return jsonify({"error": "Form or response not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
 # -------------------- Delete Individual Response --------------------
 @form_bp.route("/<form_id>/responses/<response_id>", methods=["DELETE"])
 @jwt_required()

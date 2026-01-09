@@ -16,6 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Email notifications
 - Webhook integration
 - AI-powered form generation
+## [1.6.0] - 2026-01-09
+
+### Added
+- **Response Status Management**:
+  - Added `status` (pending/approved/rejected) and `status_log` to `FormResponse`.
+  - Created `PATCH /responses/<id>/status` endpoint for approval workflows.
+  - Added permission checks (Edit access required for status changes).
+  - Integrated status changes with Webhooks (`status_updated` event) and History tracking.
+
 ## [1.5.0] - 2026-01-09
 
 ### Added
@@ -171,6 +180,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.6.0 | 2026-01-09 | Approval Workflows (Response Status) |
 | 1.5.0 | 2026-01-09 | Workflow Automation (Email Notifications) |
 | 1.4.0 | 2026-01-08 | Advanced Features (History, Webhooks, Logic) |
 | 1.3.1 | 2026-01-08 | Conditional Required Fields |

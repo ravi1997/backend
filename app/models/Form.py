@@ -154,6 +154,9 @@ class FormResponse(Document):
     
     version = StringField()  # Track which form version was used
     
+    status = StringField(choices=('pending', 'approved', 'rejected'), default='pending')
+    status_log = ListField(DictField())  # Log of status changes: {status, changed_by, changed_at, comment}
+    
     metadata = DictField()  # IP, browser, device, etc.
 
 
