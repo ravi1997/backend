@@ -17,6 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Webhook integration
 - AI-powered form generation
 
+## [1.14.0] - 2026-01-09
+
+### Added
+- **Bulk Response Export**:
+  - New `POST /form/export/bulk` endpoint to export multiple forms' responses into a single ZIP file.
+  - Re-usable CSV generation logic for individual and bulk exports.
+- **Bulk Option Import**:
+  - New `POST /form/<id>/section/<sid>/question/<qid>/options/import` endpoint for populating question options from a CSV file.
+  - Support for replacing or appending to existing options.
+
+
 ## [1.13.0] - 2026-01-09
 
 ### Added
@@ -266,6 +277,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.14.0 | 2026-01-09 | Bulk Export/Import Enhancements |
 | 1.13.0 | 2026-01-09 | Multi-language Support (Localization) |
 | 1.12.0 | 2026-01-09 | Response Drafts / Auto-save & Stability Refactor |
 | 1.11.0 | 2026-01-09 | Custom Scripts, Builder Reordering, Preview API |

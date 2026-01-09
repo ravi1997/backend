@@ -18,5 +18,9 @@
     - [x] Update `GET /form/<id>?lang=<lang>` to deliver localized forms
     - [x] Add `tests/test_multi_language.py`
 
-- [ ] FR-FORM-018: Bulk Export/Import Improvements
+- [x] FR-FORM-018: Bulk Export/Import Improvements
+    - [x] Implement `POST /form/export/bulk` for multi-form ZIP export
+    - [x] Implement `POST /form/<id>/.../options/import` for CSV option import
+    - [x] Add `tests/test_bulk_features.py`
+
 

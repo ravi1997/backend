@@ -179,7 +179,8 @@ The Form Management System backend is **100% complete** based on the SRS v1.0 sp
 |---------|----------|--------|------------------|---------------|
 | FR-RESP-014: Response Drafts / Auto-save | P2 | ✅ COMPLETED | 8 hours | Appendix D.1 |
 | Multi-language Support | P3 | ✅ COMPLETED | 20 hours | Appendix D.1 |
-| Bulk Export (Multiple Forms) | P2 | ❌ NOT STARTED | 4 hours | Appendix D.2 |
+| Bulk Export (Multiple Forms) | P2 | ✅ COMPLETED | 4 hours | Appendix D.2 |
+| Bulk Option Import | P2 | ✅ COMPLETED | 4 hours | Appendix D.1 |
 | Response Merge | P3 | ❌ NOT STARTED | 12 hours | Appendix D.2 |
 
 ### Phase 4: AI Integration (Appendix E)

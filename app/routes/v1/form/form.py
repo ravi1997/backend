@@ -1,4 +1,6 @@
 import traceback
+import csv
+import io
 from app.routes.v1.form.helper import get_current_user, has_form_permission, apply_translations
 from app.routes.v1.form import form_bp
 from flask import current_app, request, jsonify
@@ -9,7 +11,7 @@ from app.models.User import User
 from app.models.User import Role
 from app.schemas.form_schema import FormSchema, FormVersionSchema, SectionSchema
 from app.utils.decorator import require_roles
-from app.models.Form import Form, FormResponse
+from app.models.Form import Form, FormResponse, Option
 from app.utils.file_handler import delete_file
 import os
 from datetime import datetime, timezone
@@ -353,3 +355,65 @@ def reorder_questions(form_id, section_id):
     except Exception as e:
         current_app.logger.error(f"Reorder questions error: {str(e)}")
         return jsonify({"error": str(e)}), 400
+
+# -------------------- Bulk Option Import --------------------
+@form_bp.route("/<form_id>/section/<section_id>/question/<question_id>/options/import", methods=["POST"])
+@jwt_required()
+def bulk_import_options(form_id, section_id, question_id):
+    try:
+        current_user = get_current_user()
+        form = Form.objects.get(id=form_id)
+        if not has_form_permission(current_user, form, "edit"):
+            return jsonify({"error": "Unauthorized to edit form"}), 403
+
+        replace = request.args.get("replace", "false").lower() == "true"
+        file = request.files.get("file")
+        
+        if not file:
+            return jsonify({"error": "No file uploaded"}), 400
+            
+        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        reader = csv.DictReader(stream)
+        
+        new_options = []
+        for row in reader:
+            label = row.get("label") or row.get("option_label")
+            value = row.get("value") or row.get("option_value") or label
+            
+            if label:
+                new_options.append(Option(
+                    option_label=label,
+                    option_value=value,
+                    description=row.get("description", "")
+                ))
+
+        if not new_options:
+            return jsonify({"error": "No valid options found in CSV. Required headers: 'label', 'value' (optional)"}), 400
+
+        if not form.versions:
+            return jsonify({"error": "Form has no versions"}), 400
+            
+        latest_version = form.versions[-1]
+        target_question = None
+        for s in latest_version.sections:
+            if str(s.id) == section_id:
+                for q in s.questions:
+                    if str(q.id) == question_id:
+                        target_question = q
+                        break
+                if target_question: break
+                
+        if not target_question:
+            return jsonify({"error": "Question not found"}), 404
+
+        if replace:
+            target_question.options = new_options
+        else:
+            target_question.options.extend(new_options)
+            
+        form.save()
+        return jsonify({"message": f"Imported {len(new_options)} options"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
