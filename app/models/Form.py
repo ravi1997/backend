@@ -140,10 +140,12 @@ class FormResponse(Document):
             ('form', 'submitted_at'),         # for sorting/pagination
             ('form', 'submitted_by'),         # for user filtering
             'deleted',
+            'is_draft',
+            ('form', 'is_draft', 'submitted_by')
         ]
     }
     id = UUIDField(primary_key=True, binary=False, default=uuid.uuid4)
-    form = ReferenceField('Form', required=True, reverse_delete_rule=2)  # CASCADE
+    form = UUIDField(required=True)  # Using UUID directly to avoid dereference issues
     data = DictField()  # JSON or stringified object
     submitted_by = StringField()
     submitted_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
@@ -154,6 +156,8 @@ class FormResponse(Document):
     deleted = BooleanField(default=False)
     deleted_by = StringField()
     deleted_at = DateTimeField()
+    
+    is_draft = BooleanField(default=False)
     
     version = StringField()  # Track which form version was used
     

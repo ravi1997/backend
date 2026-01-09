@@ -23,7 +23,7 @@ def get_form_analytics(form_id):
         if not has_form_permission(current_user, form, "view"):
             return jsonify({"error": "Unauthorized"}), 403
 
-        responses = FormResponse.objects(form=form).order_by("-submitted_at")
+        responses = FormResponse.objects(form=form.id).order_by("-submitted_at")
         total = responses.count()
         latest = responses.first().submitted_at if total > 0 else None
 
@@ -70,7 +70,7 @@ def submit_public_response(form_id):
             return jsonify({"error": "Validation failed", "details": validation_errors}), 422
 
         response = FormResponse(
-            form=form,
+            form=form.id,
             submitted_by="anonymous",
             data=cleaned_data,
             submitted_at=datetime.now(timezone.utc),

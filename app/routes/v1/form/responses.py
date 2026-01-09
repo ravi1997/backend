@@ -101,7 +101,9 @@ def submit_response(form_id):
             return jsonify({"error": "Unauthorized to submit"}), 403
 
         from app.routes.v1.form.validation import validate_form_submission
-        validation_errors, cleaned_data = validate_form_submission(form, submitted_data, current_app.logger)
+        is_draft = request.args.get("draft", "false").lower() == "true"
+        
+        validation_errors, cleaned_data = validate_form_submission(form, submitted_data, current_app.logger, is_draft=is_draft)
 
         if validation_errors:
             current_app.logger.warning(
@@ -109,25 +111,40 @@ def submit_response(form_id):
             return jsonify({"error": "Validation failed", "details": validation_errors}), 422
 
         response = FormResponse(
-            form=form,
+            form=form.id,
             submitted_by=str(current_user.id),
             data=cleaned_data,
             submitted_at=datetime.now(timezone.utc),
-            version=form.versions[-1].version if form.versions else "1.0"
+            version=form.versions[-1].version if form.versions else "1.0",
+            is_draft=is_draft
         )
         response.save()
-        current_app.logger.info(f"Submission saved: response_id={response.id}")
+        current_app.logger.info(f"Submission saved: response_id={response.id}, is_draft={is_draft}")
         
-        # Trigger Webhook
-        trigger_webhooks(form, "submitted", response.to_mongo().to_dict())
+        # Prepare clean data for history and triggers
+        clean_response_dict = {
+            "id": str(response.id),
+            "form_id": str(form.id),
+            "data": cleaned_data,
+            "is_draft": is_draft,
+            "submitted_by": response.submitted_by,
+            "submitted_at": response.submitted_at.isoformat() if response.submitted_at else None,
+            "version": response.version,
+            "status": response.status
+        }
         
-        # Trigger Email Notification
-        if form.notification_emails:
-            subject = f"New Submission: {form.title}"
-            body = f"<h3>New response for {form.title}</h3><p>Submitted by: {current_user.username} ({current_user.email})</p><p>Response ID: {response.id}</p>"
-            send_email_notification(form.notification_emails, subject, body)
+        if not is_draft:
+            # Trigger Webhook
+            trigger_webhooks(form, "submitted", clean_response_dict)
+            
+            # Trigger Email Notification
+            if form.notification_emails:
+                subject = f"New Submission: {form.title}"
+                body = f"<h3>New response for {form.title}</h3><p>Submitted by: {current_user.username} ({current_user.email})</p><p>Response ID: {response.id}</p>"
+                send_email_notification(form.notification_emails, subject, body)
         
-        return jsonify({"message": "Response submitted", "response_id": response.id}), 201
+        msg = "Draft saved" if is_draft else "Response submitted"
+        return jsonify({"message": msg, "response_id": response.id}), 201
 
     except DoesNotExist:
         current_app.logger.error(f"Form {form_id} not found.")
@@ -146,7 +163,8 @@ def list_responses(form_id):
         if not has_form_permission(current_user, form, "view"):
             return jsonify({"error": "Unauthorized to view responses"}), 403
 
-        responses = FormResponse.objects(form=form, deleted=False)
+        is_draft_filter = request.args.get("is_draft", "false").lower() == "true"
+        responses = FormResponse.objects(form=form.id, deleted=False, is_draft=is_draft_filter)
         return jsonify([r.to_mongo().to_dict() for r in responses]), 200
     except DoesNotExist:
         return jsonify({"error": "Form not found"}), 404
@@ -161,7 +179,7 @@ def get_response(form_id, response_id):
         if not has_form_permission(current_user, form, "view"):
             return jsonify({"error": "Unauthorized to view this response"}), 403
 
-        response = FormResponse.objects.get(id=response_id, form=form)
+        response = FormResponse.objects.get(id=response_id, form=form.id)
         return jsonify(response.to_mongo().to_dict()), 200
     except DoesNotExist:
         return jsonify({"error": "Response not found"}), 404
@@ -200,38 +218,77 @@ def update_submission(form_id, response_id):
         return jsonify({"error": "Form not found"}), 404
 
     try:
-        response = FormResponse.objects.get(id=response_id, form=form)
+        response = FormResponse.objects.get(id=response_id, form=form_id)
     except DoesNotExist:
         return jsonify({"error": "Response not found"}), 404
 
     try:
         if response.submitted_by != str(current_user.id):
             return jsonify({"error": "Unauthorized to update this submission"}), 403
+            
         # 📜 History Tracking: Before
         data_before = response.to_mongo().to_dict()
+
+        # Validation Logic
+        is_draft_param = request.args.get("draft")
+        is_target_draft = False
+        if is_draft_param is not None:
+            is_target_draft = is_draft_param.lower() == "true"
         
-        response.update(**data)
-        # Manually reload to ensure we have latest data
-        response = FormResponse.objects.get(id=response.id)
+        from app.routes.v1.form.validation import validate_form_submission
+        submitted_data = data.get("data", data)
+        validation_errors, cleaned_data = validate_form_submission(form, submitted_data, current_app.logger, is_draft=is_target_draft)
+
+        if validation_errors:
+            return jsonify({"error": "Validation failed", "details": validation_errors}), 422
+
+        was_draft = response.is_draft
+        
+        # Update response
+        response.update(
+            set__data=cleaned_data,
+            set__is_draft=is_target_draft,
+            set__updated_at=datetime.now(timezone.utc),
+            set__updated_by=str(current_user.id)
+        )
+        
+        # Prepare clean data for history and triggers without dereferencing everything
+        # We use a mix of local variables and existing response data
+        clean_response_dict = {
+            "id": str(response.id),
+            "form_id": str(form.id),
+            "data": cleaned_data,
+            "is_draft": is_target_draft,
+            "submitted_by": response.submitted_by,
+            "submitted_at": response.submitted_at.isoformat() if response.submitted_at else None,
+            "version": response.version,
+            "status": response.status
+        }
 
         # 📜 History Tracking: Record
         ResponseHistory(
             response_id=response.id,
             form_id=form.id,
             data_before=data_before.get("data"),
-            data_after=response.data,
+            data_after=cleaned_data,
             changed_by=str(current_user.id),
             change_type="update",
             version=response.version
         ).save()
 
-        # 🔔 Webhook
-        trigger_webhooks(form, "updated", response.to_mongo().to_dict())
-
-        return jsonify({"message": "Response updated"}), 200
-    except DoesNotExist:
-        return jsonify({"error": "Form or response not found"}), 404
+        # 🔔 Triggers: Transition from Draft to Submitted
+        if was_draft and not is_target_draft:
+            trigger_webhooks(form, "submitted", clean_response_dict)
+            if form.notification_emails:
+                subject = f"New Submission (from draft): {form.title}"
+                body = f"<h3>New response for {form.title}</h3><p>Submitted by: {current_user.username}</p><p>Response ID: {response.id}</p>"
+                send_email_notification(form.notification_emails, subject, body)
+        elif not is_target_draft:
+            # Normal update trigger
+            trigger_webhooks(form, "updated", clean_response_dict)
+        return jsonify({"message": "Response updated", "is_draft": is_target_draft}), 200
     except Exception as e:
+        current_app.logger.error(f"Error updating submission: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 400
 
 # -------------------- Update Response Status --------------------
@@ -352,8 +409,9 @@ def list_paginated_responses(form_id):
         page = int(request.args.get("page", 1))
         limit = int(request.args.get("limit", 10))
         skip = (page - 1) * limit
-        responses = FormResponse.objects(form=form, deleted=False).skip(skip).limit(limit)
-        query = FormResponse.objects(form=form, deleted=False)
+        is_draft_filter = request.args.get("is_draft", "false").lower() == "true"
+        responses = FormResponse.objects(form=form.id, deleted=False, is_draft=is_draft_filter).skip(skip).limit(limit)
+        query = FormResponse.objects(form=form.id, deleted=False, is_draft=is_draft_filter)
         total = query.count()
         return jsonify({
             "total": total,
@@ -370,7 +428,7 @@ def list_paginated_responses(form_id):
 def archive_response(form_id, response_id):
     try:
         form = Form.objects.get(id=form_id)
-        response = FormResponse.objects.get(id=response_id, form=form)
+        response = FormResponse.objects.get(id=response_id, form=form.id)
         current_user = get_current_user()
         if response.submitted_by != str(current_user.id) and not has_form_permission(current_user, form, "edit"):
             return jsonify({"error": "Unauthorized to archive this response"}), 403
@@ -390,7 +448,7 @@ def archive_response(form_id, response_id):
 def restore_response(form_id, response_id):
     try:
         form = Form.objects.get(id=form_id)
-        response = FormResponse.objects.get(id=response_id, form=form)
+        response = FormResponse.objects.get(id=response_id, form=form.id)
         current_user = get_current_user()
         if not has_form_permission(current_user, form, "edit"):
             return jsonify({"error": "Unauthorized to restore this response"}), 403
@@ -430,7 +488,8 @@ def search_responses(form_id):
         direction = filters.get("direction", "next")
         cursor = filters.get("cursor")
 
-        base_query = Q(form=form, deleted=False)
+        is_draft_val = filters.get("is_draft", False)
+        base_query = Q(form=form.id, deleted=False, is_draft=is_draft_val)
 
         # 🔁 Build question_id → section_id map
         qid_to_sid = {
@@ -660,7 +719,7 @@ def get_response_comments(form_id, response_id):
             
         # Ensure response belongs to form
         try:
-            response = FormResponse.objects.get(id=response_id, form=form)
+            response = FormResponse.objects.get(id=response_id, form=form.id)
         except DoesNotExist:
             return jsonify({"error": "Response not found"}), 404
             

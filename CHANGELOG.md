@@ -16,6 +16,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Email notifications
 - Webhook integration
 - AI-powered form generation
+
+## [1.12.0] - 2026-01-09
+
+### Added
+- **Response Drafts / Auto-save**:
+  - Implemented `is_draft` functionality for responses (`FR-RESP-014`).
+  - Added lenient validation for drafts, allowing incomplete submissions to be saved without triggering required field errors or minimum limit checks.
+  - Updated `POST /responses` and `PUT /responses/<id>` to handle the `?draft=true` query parameter.
+  - Added draft filtering to listing and search endpoints (`?is_draft=true`).
+- **Architectural Stability**:
+  - Refactored `FormResponse` model to use `UUIDField` for form references instead of `ReferenceField`, resolving persistent dereferencing issues in testing and high-concurrency environments.
+  - Standardized MongoDB connection to use `uuidRepresentation=standard` for improved cross-driver compatibility.
+  - Improved data serialization for Webhooks and Response History to prevent unsafe database dereferences.
+
 ## [1.11.0] - 2026-01-09
 
 ### Added
@@ -240,6 +254,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.12.0 | 2026-01-09 | Response Drafts / Auto-save & Stability Refactor |
+| 1.11.0 | 2026-01-09 | Custom Scripts, Builder Reordering, Preview API |
 | 1.10.0 | 2026-01-09 | Collaboration, Validation, Usability (Comments, Cloning) |
 | 1.9.0 | 2026-01-09 | Analytics & Insights (Dashboard Metrics) |
 | 1.8.0 | 2026-01-09 | Data Integrity & Export (Cleaning, Flattened CSV) |

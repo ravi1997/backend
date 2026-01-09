@@ -19,7 +19,7 @@ def export_responses_csv(form_id):
         if not has_form_permission(current_user, form, "view"):
             return jsonify({"error": "Unauthorized to export"}), 403
 
-        responses = FormResponse.objects(form=form)
+        responses = FormResponse.objects(form=form.id)
         
         # Build headers and field mapping from latest version
         # Note: If responses rely on older versions with different QIDs, those columns will be empty/missed.
@@ -97,7 +97,7 @@ def export_form_with_responses(form_id):
         if not has_form_permission(current_user, form, "view"):
             return jsonify({"error": "Unauthorized"}), 403
 
-        responses = FormResponse.objects(form=form)
+        responses = FormResponse.objects(form=form.id)
         data = {
             "form_metadata": {
                 "id": str(form.id),

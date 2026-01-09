@@ -129,26 +129,7 @@ def delete_form(form_id):
     try:
         form = Form.objects.get(id=form_id)
         # Delete all associated responses
-        responses = FormResponse.objects(form=form)
-        for response in responses:
-            # Clean up any uploaded files associated with this response
-            for section_id, section_data in response.data.items():
-                if isinstance(section_data, dict):
-                    for question_id, answer in section_data.items():
-                        if isinstance(answer, dict) and 'filepath' in answer:
-                            # This is a file upload response, delete the file
-                            file_path = answer.get('filepath')
-                            if file_path:
-                                delete_file(file_path)
-                elif isinstance(section_data, list):
-                    # Handle repeatable sections
-                    for entry in section_data:
-                        if isinstance(entry, dict):
-                            for question_id, answer in entry.items():
-                                if isinstance(answer, dict) and 'filepath' in answer:
-                                    file_path = answer.get('filepath')
-                                    if file_path:
-                                        delete_file(file_path)
+        FormResponse.objects(form=form.id).delete()
         
         form.delete()
         return jsonify({"message": "Form deleted"}), 200

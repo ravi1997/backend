@@ -51,11 +51,12 @@ def evaluate_condition(condition, context, logger=None):
             logger.warning(f"Eval failed: {condition}, error={err}")
         return False
 
-def validate_form_submission(form, submitted_data, logger):
+def validate_form_submission(form, submitted_data, logger, is_draft=False):
     """
     Validates submitted data against form structure and rules.
     Returns (validation_errors, cleaned_data).
     cleaned_data contains only visible and valid fields.
+    If is_draft=True, skips required checks and minimum limits.
     """
     validation_errors = []
     cleaned_data = {}
@@ -74,7 +75,7 @@ def validate_form_submission(form, submitted_data, logger):
 
         if section.is_repeatable_section:
             if section_data is None:
-                if section.repeat_min and section.repeat_min > 0:
+                if section.repeat_min and section.repeat_min > 0 and not is_draft:
                     msg = f"At least {section.repeat_min} entries required"
                     validation_errors.append({"section_id": sid, "error": msg})
                 # If optional and missing, cleaned_data[sid] can be skipped or []
@@ -86,7 +87,7 @@ def validate_form_submission(form, submitted_data, logger):
                 logger.warning(f"{sid}: {msg}")
                 continue
 
-            if section.repeat_min and len(section_data) < section.repeat_min:
+            if section.repeat_min and len(section_data) < section.repeat_min and not is_draft:
                 msg = f"At least {section.repeat_min} entries required"
                 validation_errors.append({"section_id": sid, "error": msg})
                 logger.warning(f"{sid}: {msg}")
@@ -151,13 +152,14 @@ def validate_form_submission(form, submitted_data, logger):
                         continue
                     
                     if is_required and (val is None or len(val) == 0):
-                        msg = "Required field missing"
-                        validation_errors.append({"id": qid, "error": msg})
-                        logger.warning(f"{qid}: {msg}")
+                        if not is_draft:
+                            msg = "Required field missing"
+                            validation_errors.append({"id": qid, "error": msg})
+                            logger.warning(f"{qid}: {msg}")
                         continue
 
                     if val:
-                        if question.repeat_min and len(val) < question.repeat_min:
+                        if question.repeat_min and len(val) < question.repeat_min and not is_draft:
                             msg = f"At least {question.repeat_min} entries required"
                             validation_errors.append({"id": qid, "error": msg})
                             logger.warning(f"{qid}: {msg}")
@@ -174,9 +176,10 @@ def validate_form_submission(form, submitted_data, logger):
 
                 for ans in answers_to_check:
                     if is_required and (ans is None or ans == ""):
-                        msg = "Required field missing"
-                        validation_errors.append({"id": qid, "error": msg})
-                        logger.warning(f"{qid}: {msg}")
+                        if not is_draft:
+                            msg = "Required field missing"
+                            validation_errors.append({"id": qid, "error": msg})
+                            logger.warning(f"{qid}: {msg}")
                         continue
                     
                     if ans in (None, ""):
@@ -215,7 +218,7 @@ def validate_form_submission(form, submitted_data, logger):
                             logger.warning(f"{qid}: {msg}")
 
                     # Custom validation rules
-                    if question.validation_rules:
+                    if question.validation_rules and not is_draft:
                         try:
                             rules = json.loads(question.validation_rules)
                             if isinstance(ans, str):
@@ -248,7 +251,7 @@ def validate_form_submission(form, submitted_data, logger):
                 cleaned_data[sid] = cleaned_section_entries[0]
 
     # --- Phase 7: Global Custom Validation ---
-    if hasattr(latest_version, 'custom_validations') and latest_version.custom_validations:
+    if hasattr(latest_version, 'custom_validations') and latest_version.custom_validations and not is_draft:
         # Build Global Context
         # Flatten all non-repeatable fields from cleaned_data
         global_context_entries = []

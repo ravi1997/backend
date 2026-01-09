@@ -21,7 +21,7 @@ def get_analytics_summary(form_id):
             return jsonify({"error": "Unauthorized"}), 403
 
         # Python-side aggregation for robustness
-        responses = FormResponse.objects(form=form, deleted_at=None)
+        responses = FormResponse.objects(form=form.id, deleted=False)
         
         total = responses.count()
         
@@ -55,7 +55,7 @@ def get_analytics_timeline(form_id):
         start_date = datetime.now(timezone.utc) - timedelta(days=days)
 
         # Python-side aggregation
-        responses = FormResponse.objects(form=form, deleted_at=None, submitted_at__gte=start_date).only("submitted_at")
+        responses = FormResponse.objects(form=form.id, deleted=False, submitted_at__gte=start_date).only("submitted_at")
         
         date_counts = Counter()
         for r in responses:
@@ -103,7 +103,7 @@ def get_analytics_distribution(form_id):
 
         # Process responses (Python-side for flexibility)
         # Fetch only necessary fields to optimize
-        responses = FormResponse.objects(form=form, deleted_at=None).only("data")
+        responses = FormResponse.objects(form=form.id, deleted=False).only("data")
         
         distribution = defaultdict(Counter) # qid -> Counter
         

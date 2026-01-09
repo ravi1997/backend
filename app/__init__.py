@@ -57,7 +57,7 @@ def create_app(config_class=Config):
         auth_source = app.config['MONGODB_SETTINGS'].get('auth_source')
 
         # Construct the connection string
-        connection_string = f"mongodb://{host}:{port}/{db_name}?authSource={auth_source}"
+        connection_string = f"mongodb://{host}:{port}/{db_name}?authSource={auth_source}&uuidRepresentation=standard"
 
         mongo(host=connection_string)
         # mongo(**app.config['MONGODB_SETTINGS'])
