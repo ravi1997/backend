@@ -13,6 +13,7 @@ import uuid
 from mongoengine.queryset.visitor import Q
 from app.utils.file_handler import save_uploaded_file
 from app.utils.webhooks import trigger_webhooks
+from app.utils.email_helper import send_email_notification
 # -------------------- Responses --------------------
 
 
@@ -112,6 +113,12 @@ def submit_response(form_id):
         
         # Trigger Webhook
         trigger_webhooks(form, "submitted", response.to_mongo().to_dict())
+        
+        # Trigger Email Notification
+        if form.notification_emails:
+            subject = f"New Submission: {form.title}"
+            body = f"<h3>New response for {form.title}</h3><p>Submitted by: {current_user.username} ({current_user.email})</p><p>Response ID: {response.id}</p>"
+            send_email_notification(form.notification_emails, subject, body)
         
         return jsonify({"message": "Response submitted", "response_id": response.id}), 201
 

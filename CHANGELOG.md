@@ -16,6 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Email notifications
 - Webhook integration
 - AI-powered form generation
+## [1.5.0] - 2026-01-09
+
+### Added
+- **Email Notifications**:
+  - Added `notification_emails` to Form model.
+  - Implemented generic `EmailService` utility.
+  - Added email triggers on both authenticated and public submissions.
+  - Integrated SMTP configuration support.
+
 ## [1.4.0] - 2026-01-08
 
 ### Added
@@ -162,6 +171,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.5.0 | 2026-01-09 | Workflow Automation (Email Notifications) |
 | 1.4.0 | 2026-01-08 | Advanced Features (History, Webhooks, Logic) |
 | 1.3.1 | 2026-01-08 | Conditional Required Fields |
 | 1.3.0 | 2026-01-08 | Backend Test Suite & Critical Fixes |

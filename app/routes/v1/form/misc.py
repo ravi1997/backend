@@ -10,6 +10,7 @@ from app.utils.decorator import require_roles
 from app.models.Form import Form, FormResponse
 from flask import json
 from app.utils.webhooks import trigger_webhooks
+from app.utils.email_helper import send_email_notification
 
 
 # -------------------- Form Analytics --------------------
@@ -72,6 +73,12 @@ def submit_public_response(form_id):
         
         # Trigger Webhook
         trigger_webhooks(form, "submitted", response.to_mongo().to_dict())
+
+        # Trigger Email Notification
+        if form.notification_emails:
+            subject = f"New Public Submission: {form.title}"
+            body = f"<h3>New public response for {form.title}</h3><p>Submitted by: Anonymous</p><p>Response ID: {response.id}</p>"
+            send_email_notification(form.notification_emails, subject, body)
         
         return jsonify({"message": "Response submitted anonymously", "response_id": response.id}), 201
     except DoesNotExist:

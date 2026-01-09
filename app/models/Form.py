@@ -124,6 +124,7 @@ class Form(Document):
     submitters = ListField(StringField())      # Users who can submit responses
 
     webhooks = ListField(DictField())          # List of webhook configs: {url, event, secret}
+    notification_emails = ListField(StringField())  # List of emails to notify on valid submission
 
 # --- Individual Response model ---
 class FormResponse(Document):
