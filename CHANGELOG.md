@@ -27,6 +27,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `POST /form/<id>/section/<sid>/question/<qid>/options/import` endpoint for populating question options from a CSV file.
   - Support for replacing or appending to existing options.
 
+## [1.15.0] - 2026-01-09
+
+### Added
+- **Response Management Enhancements**:
+  - Comprehensive **Edit History** tracking (Creation, Updates, Status Changes, Deletion, Restoration).
+  - **Internal Commenting** system for responses to aid team collaboration.
+  - **Soft Delete** (Archive/Restore) functionality for responses.
+  - **Status Change Notifications**: Automatic email alerts on response approval/rejection.
+- **Form Versioning Management**:
+  - Explicit **Active Version** selection for each form.
+  - API endpoints to create new versions and switch the currently active version.
+  - Validation and submission logic now prioritize the selected active version.
+
 
 ## [1.13.0] - 2026-01-09
 
@@ -277,6 +290,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.15.0 | 2026-01-09 | Response Management & Form Versioning |
 | 1.14.0 | 2026-01-09 | Bulk Export/Import Enhancements |
 | 1.13.0 | 2026-01-09 | Multi-language Support (Localization) |
 | 1.12.0 | 2026-01-09 | Response Drafts / Auto-save & Stability Refactor |

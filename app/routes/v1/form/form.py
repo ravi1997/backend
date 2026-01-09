@@ -39,6 +39,8 @@ def create_form():
         form = Form(**data)
         form.created_by = str(current_user.id)
         form.editors = [str(current_user.id)]
+        if form.versions:
+            form.active_version = form.versions[-1].version
         form.save()
         
         current_app.logger.info(f"Form {form.id} created successfully by user {current_user.username} (ID: {current_user.id})")
@@ -103,7 +105,23 @@ def get_form(form_id):
                 return jsonify({"error": "Form is not yet available"}), 403
 
         lang = request.args.get("lang")
+        version_req = request.args.get("v")
+        
         form_dict = form.to_mongo().to_dict()
+        
+        # If version explicitly requested, filter version list to only show that one
+        if version_req:
+            target_v = next((v for v in form_dict.get("versions", []) if v["version"] == version_req), None)
+            if target_v:
+                form_dict["versions"] = [target_v]
+            else:
+                return jsonify({"error": "Version not found"}), 404
+        elif form.active_version:
+            # Fallback to active version in the list? 
+            # Or just show all (current behavior)?
+            # Usually for preview/submit we want specific one.
+            pass
+
         if lang:
             form_dict = apply_translations(form_dict, lang)
 
@@ -416,4 +434,72 @@ def bulk_import_options(form_id, section_id, question_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+# -------------------- Version Management --------------------
+
+@form_bp.route("/<form_id>/versions", methods=["POST"])
+@jwt_required()
+def create_new_version(form_id):
+    try:
+        current_user = get_current_user()
+        form = Form.objects.get(id=form_id)
+        if not has_form_permission(current_user, form, "edit"):
+            return jsonify({"error": "Unauthorized"}), 403
+            
+        data = request.get_json()
+        new_v_str = data.get("version")
+        sections_data = data.get("sections")
+        
+        if not new_v_str or not sections_data:
+            return jsonify({"error": "Missing version string or sections"}), 400
+            
+        # Check if version string already exists
+        if any(v.version == new_v_str for v in form.versions):
+            return jsonify({"error": f"Version {new_v_str} already exists"}), 400
+            
+        from app.schemas.form_schema import FormVersionSchema
+        from app.models.Form import FormVersion
+        
+        version_dict = FormVersionSchema().load(data)
+        # FormVersionSchema load returns a dict, if we want the actual model we might need to instantiate or use it directly
+        # Actually our schema is configured to return dict or objects based on meta. We'll use dict and cast if needed or just use current pattern.
+        # Let's check how other routes do it. Usually they use data directly for EmbeddedDocument if structure matches.
+        
+        form.update(push__versions=version_dict)
+        
+        # Reload to handle activation
+        form.reload()
+        if data.get("activate", False):
+            form.active_version = new_v_str
+            form.save()
+            
+        return jsonify({"message": f"Version {new_v_str} created"}), 201
+        
+    except DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@form_bp.route("/<form_id>/versions/<v_str>/activate", methods=["PATCH"])
+@jwt_required()
+def activate_version(form_id, v_str):
+    try:
+        current_user = get_current_user()
+        form = Form.objects.get(id=form_id)
+        if not has_form_permission(current_user, form, "edit"):
+            return jsonify({"error": "Unauthorized"}), 403
+            
+        version_exists = any(v.version == v_str for v in form.versions)
+        if not version_exists:
+            return jsonify({"error": "Version not found"}), 404
+            
+        form.active_version = v_str
+        form.save()
+        return jsonify({"message": f"Version {v_str} is now active"}), 200
+        
+    except DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 

@@ -65,7 +65,11 @@ def validate_form_submission(form, submitted_data, logger, is_draft=False):
     if not form.versions:
         return [{"error": "Form has no versions defined"}], {}
     
-    latest_version = form.versions[-1]
+    active_v = getattr(form, 'active_version', None)
+    if active_v:
+        latest_version = next((v for v in form.versions if v.version == active_v), form.versions[-1])
+    else:
+        latest_version = form.versions[-1]
     
     for section in latest_version.sections:
         sid = str(section.id)

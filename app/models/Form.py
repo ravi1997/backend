@@ -1,5 +1,3 @@
-from ast import Str
-from typing import Required
 from mongoengine import (
     Document, EmbeddedDocument,
     StringField, ListField, EmbeddedDocumentField,
@@ -95,6 +93,7 @@ class FormVersion(EmbeddedDocument):
     sections = ListField(EmbeddedDocumentField(Section))
     custom_validations = ListField(DictField()) # [{expression, error_message}]
     translations = DictField() # {lang_code: {title, description, sections: {id: {title, description}}, questions: {id: {label, help_text, options: {id: label}}}}}
+    status = StringField(choices=('draft', 'active', 'deprecated'), default='active')
 
 # --- Main Form model ---
 class Form(Document):
@@ -108,6 +107,7 @@ class Form(Document):
     status = StringField(choices=FORM_STATUS_CHOICES, default="draft")
     ui = StringField(choices=ui_TYPE_CHOICES, default="flex")
     submit_scripts = StringField()
+    active_version = StringField() # Store version string like "1.1" or "1.0"
 
     created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
     updated_at = DateTimeField(default=lambda: datetime.now(timezone.utc))

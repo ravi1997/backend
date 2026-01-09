@@ -18,9 +18,24 @@
     - [x] Update `GET /form/<id>?lang=<lang>` to deliver localized forms
     - [x] Add `tests/test_multi_language.py`
 
+- [x] FR-RESP-015: Response Edit History & Comments
+    - [x] Log creation, updates, status changes, and restores to `ResponseHistory`
+    - [x] Add `GET /history` endpoint for responses
+    - [x] Add comments system for internal team collaboration
+    - [x] Add email notifications for status changes (approved/rejected)
+    - [x] Add `tests/test_response_management.py`
+
+- [x] FR-RESP-016: Soft Delete (Archive/Restore)
+    - [x] Implement archival and restoration for individual responses
+    - [x] Filter out deleted responses from list/search by default
+
+- [x] FR-FORM-012: Form Versioning Management
+    - [x] Endpoint to create new version explicitly (`POST /versions`)
+    - [x] Endpoint to switch active version (`PATCH /activate`)
+    - [x] Respect `active_version` in validation and submission
+    - [x] Add `tests/test_form_versioning.py`
+
 - [x] FR-FORM-018: Bulk Export/Import Improvements
     - [x] Implement `POST /form/export/bulk` for multi-form ZIP export
     - [x] Implement `POST /form/<id>/.../options/import` for CSV option import
     - [x] Add `tests/test_bulk_features.py`
-
-

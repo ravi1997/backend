@@ -115,11 +115,22 @@ def submit_response(form_id):
             submitted_by=str(current_user.id),
             data=cleaned_data,
             submitted_at=datetime.now(timezone.utc),
-            version=form.versions[-1].version if form.versions else "1.0",
+            version=form.active_version or (form.versions[-1].version if form.versions else "1.0"),
             is_draft=is_draft
         )
         response.save()
         current_app.logger.info(f"Submission saved: response_id={response.id}, is_draft={is_draft}")
+        
+        # 📜 History Tracking: Record Creation
+        ResponseHistory(
+            response_id=response.id,
+            form_id=form.id,
+            data_before=None,
+            data_after=cleaned_data,
+            changed_by=str(current_user.id),
+            change_type="create",
+            version=response.version
+        ).save()
         
         # Prepare clean data for history and triggers
         clean_response_dict = {
@@ -310,7 +321,7 @@ def update_response_status(form_id, response_id):
         if not has_form_permission(current_user, form, "edit"):
             return jsonify({"error": "Unauthorized to change status"}), 403
 
-        response = FormResponse.objects.get(id=response_id, form=form)
+        response = FormResponse.objects.get(id=response_id, form=form.id)
         
         # 📜 History Tracking: Before
         data_before = response.to_mongo().to_dict()
@@ -351,6 +362,18 @@ def update_response_status(form_id, response_id):
             "comment": comment
         })
 
+        # 📧 Email Notification for Status Change
+        if form.notification_emails:
+            subject = f"Response Status Updated: {new_status.capitalize()}"
+            body = f"""
+            <h3>Submission status changed for {form.title}</h3>
+            <p><b>Status:</b> {new_status.capitalize()}</p>
+            <p><b>Comment:</b> {comment or "No comment provided"}</p>
+            <p><b>Response ID:</b> {response.id}</p>
+            <p><b>Changed by:</b> {current_user.username}</p>
+            """
+            send_email_notification(form.notification_emails, subject, body)
+
         return jsonify({"message": f"Response status updated to {new_status}"}), 200
 
     except DoesNotExist:
@@ -365,7 +388,7 @@ def update_response_status(form_id, response_id):
 def delete_response(form_id, response_id):
     try:
         form = Form.objects.get(id=form_id)
-        response = FormResponse.objects.get(id=response_id, form=form)
+        response = FormResponse.objects.get(id=response_id, form=form.id)
         current_user = get_current_user()
         if not has_form_permission(current_user, form, "edit"):
             return jsonify({"error": "Unauthorized to delete response"}), 403
@@ -457,6 +480,18 @@ def restore_response(form_id, response_id):
             unset__deleted_at=True,
             unset__deleted_by=True
         )
+
+        # 📜 History Tracking: Record Restore
+        ResponseHistory(
+            response_id=response.id,
+            form_id=form.id,
+            data_before=None, # Or we could fetch previous data but it didn't change 'data' itself
+            data_after=response.data,
+            changed_by=str(current_user.id),
+            change_type="restore",
+            version=response.version
+        ).save()
+
         return jsonify({"message": "Response restored"}), 200
     except DoesNotExist:
         return jsonify({"error": "Form or response not found"}), 404
@@ -661,7 +696,7 @@ def create_saved_search(form_id):
         data = request.get_json()
         saved = SavedSearch(
             user_id=str(current_user.id),
-            form=form,
+            form=form.id,
             name=data.get("name"),
             filters=data.get("filters")
         )
@@ -742,7 +777,7 @@ def add_response_comment(form_id, response_id):
             return jsonify({"error": "Unauthorized"}), 403
             
         try:
-            response = FormResponse.objects.get(id=response_id, form=form)
+            response = FormResponse.objects.get(id=response_id, form=form.id)
         except DoesNotExist:
             return jsonify({"error": "Response not found"}), 404
             

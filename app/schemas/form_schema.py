@@ -77,6 +77,12 @@ class FormVersionSchema(Schema):
     created_by = fields.Str()
     created_at = fields.DateTime(dump_only=True)
     sections = fields.List(fields.Nested(SectionSchema))
+    status = fields.Str(validate=validate.OneOf(('draft', 'active', 'deprecated')), load_default='active')
+    custom_validations = fields.List(fields.Dict())
+    translations = fields.Dict()
+
+    class Meta:
+        unknown = "INCLUDE"
 
 # --- Form Schema ---
 class FormSchema(Schema):
@@ -97,6 +103,10 @@ class FormSchema(Schema):
     editors = fields.List(fields.Str())
     uiers = fields.List(fields.Str())
     submitters = fields.List(fields.Str())
+    active_version = fields.Str()
+
+    class Meta:
+        unknown = "INCLUDE"
 
 # --- FormResponse Schema ---
 class FormResponseSchema(Schema):
