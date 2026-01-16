@@ -8,12 +8,15 @@
 ## 🔴 Production Incidents (P1)
 
 ### HTTP/Proxy Errors
+
 - [`nginx_502_504.md`](nginx_502_504.md) - Handle 502/504 gateway errors
 
-### Service Failures  
+### Service Failures
+
 - [`systemd_failures.md`](systemd_failures.md) - Debug systemd service failures
 
 ### Database Issues
+
 - [`db_migrations.md`](db_migrations.md) - Handle database migration issues
 
 ---
@@ -65,18 +68,18 @@
 
 ## Quick Reference
 
-| Workflow | Use When | Priority | Time |
-|----------|----------|----------|------|
-| nginx_502_504 | Getting 502/504 errors | P1 | 15-30 min |
-| systemd_failures | Service won't start | P1 | 10-20 min |
-| db_migrations | Migration failed | P1 | 20-40 min |
-| docker_dev_loop | Docker build issues | P2 | 15-30 min |
-| deploy_and_migrate | Deploying changes | P2 | 30-60 min |
-| performance_profiling | App is slow | P3 | 30-60 min |
-| security_incident | Security issue | P4 | 30-90 min |
-| feature_delivery | Building features | P5 | Hours-Days |
-| rollback_recovery | Need to rollback | P6 | 10-20 min |
-| maintenance_mode | Scheduled downtime | P6 | Variable |
+| Workflow              | Use When               | Priority   | Time       |
+|-----------------------|------------------------|------------|------------|
+| nginx_502_504         | Getting 502/504 errors | P1         | 15-30 min  |
+| systemd_failures      | Service won't start    | P1         | 10-20 min  |
+| db_migrations         | Migration failed       | P1         | 20-40 min  |
+| docker_dev_loop       | Docker build issues    | P2         | 15-30 min  |
+| deploy_and_migrate    | Deploying changes      | P2         | 30-60 min  |
+| performance_profiling | App is slow            | P3         | 30-60 min  |
+| security_incident     | Security issue         | P4         | 30-90 min  |
+| feature_delivery      | Building features      | P5         | Hours-Days |
+| rollback_recovery     | Need to rollback       | P6         | 10-20 min  |
+| maintenance_mode      | Scheduled downtime     | P6         | Variable   |
 
 ---
 

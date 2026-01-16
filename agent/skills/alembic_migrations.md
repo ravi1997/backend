@@ -12,17 +12,23 @@
 ### Create New Migration
 
 ```bash
+
 # Auto-generate migration from model changes
+
 alembic revision --autogenerate -m "description of changes"
 
 # Create empty migration
+
 alembic revision -m "description"
 
 # Review generated migration
+
 cat alembic/versions/xxxxx_description.py
+
 ```
 
 **Always review auto-generated migrations!** They may miss:
+
 - Data migrations
 - Index changes
 - Constraint changes
@@ -32,20 +38,27 @@ cat alembic/versions/xxxxx_description.py
 ### Apply Migrations
 
 ```bash
+
 # Upgrade to latest
+
 alembic upgrade head
 
 # Upgrade one version
+
 alembic upgrade +1
 
 # Upgrade to specific version
+
 alembic upgrade abc123
 
 # Check current version
+
 alembic current
 
 # Show migration history
+
 alembic history
+
 ```
 
 ---
@@ -53,14 +66,19 @@ alembic history
 ### Rollback Migrations
 
 ```bash
+
 # Downgrade one version
+
 alembic downgrade -1
 
 # Downgrade to specific version
+
 alembic downgrade abc123
 
 # Downgrade to base (all down)
+
 alembic downgrade base
+
 ```
 
 ---
@@ -74,15 +92,21 @@ alembic downgrade base
 **Cause:** Conflicting migrations from different branches
 
 **Fix:**
+
 ```bash
+
 # Show heads
+
 alembic heads
 
 # Merge heads
+
 alembic merge heads -m "merge migrations"
 
 # Apply merge
+
 alembic upgrade head
+
 ```
 
 ---
@@ -92,23 +116,33 @@ alembic upgrade head
 **Symptom:** Database doesn't match migrations
 
 **Diagnosis:**
+
 ```bash
+
 # Check for drift
+
 alembic check
 
 # Show current version
+
 alembic current
 
 # Compare with database
+
 ```
 
 **Fix:**
+
 ```bash
+
 # Option 1: Create migration to fix drift
+
 alembic revision --autogenerate -m "fix schema drift"
 
 # Option 2: Stamp database to current
+
 alembic stamp head  # DANGEROUS - only if you're sure
+
 ```
 
 ---
@@ -118,21 +152,28 @@ alembic stamp head  # DANGEROUS - only if you're sure
 **Symptom:** `alembic upgrade` fails with error
 
 **Common Causes:**
+
 - Constraint violation
 - Data incompatibility
 - Missing column
 - Duplicate key
 
 **Fix:**
+
 ```bash
+
 # Rollback
+
 alembic downgrade -1
 
 # Fix migration file
+
 nano alembic/versions/xxxxx_migration.py
 
 # Try again
+
 alembic upgrade head
+
 ```
 
 ---
@@ -144,12 +185,16 @@ alembic upgrade head
 **Cause:** Missing `downgrade()` function
 
 **Fix:**
+
 ```python
+
 # In migration file
+
 def downgrade():
     # Add reverse operations
     op.drop_table('new_table')
     op.drop_column('users', 'new_column')
+
 ```
 
 ---
@@ -159,29 +204,39 @@ def downgrade():
 ### 1. Always Test Migrations
 
 ```bash
+
 # Test upgrade
+
 alembic upgrade head
 
 # Test downgrade
+
 alembic downgrade -1
 
 # Test upgrade again
+
 alembic upgrade head
+
 ```
 
 ### 2. Backup Before Migration
 
 ```bash
+
 # PostgreSQL
+
 pg_dump mydb > backup_before_migration.sql
 
 # MySQL
+
 mysqldump mydb > backup_before_migration.sql
+
 ```
 
 ### 3. Review Auto-Generated Migrations
 
 Check for:
+
 - Missing indexes
 - Data migrations needed
 - Constraint changes
@@ -190,13 +245,16 @@ Check for:
 ### 4. Use Transactions
 
 ```python
+
 # In migration file
+
 from alembic import op
 import sqlalchemy as sa
 
 def upgrade():
     # Migrations run in transaction by default
     op.add_column('users', sa.Column('email', sa.String(255)))
+
 ```
 
 ---
@@ -204,6 +262,7 @@ def upgrade():
 ## Migration File Structure
 
 ```python
+
 """description of changes
 
 Revision ID: abc123
@@ -215,6 +274,7 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers
+
 revision = 'abc123'
 down_revision = 'xyz789'
 branch_labels = None
@@ -231,6 +291,7 @@ def upgrade():
 def downgrade():
     # Reverse changes here
     op.drop_table('users')
+
 ```
 
 ---

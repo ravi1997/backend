@@ -9,12 +9,12 @@
 
 ## Workflow Contract
 
-| Attribute | Details |
-| :--- | :--- |
-| **Inputs** | Changed Files List (Git diff) |
-| **Outputs** | List of Affected Components |
-| **Policy** | Conservative Mapping (If unsure, assume Global) |
-| **Stop Conditions** | Git error, Corrupt Components Registry |
+| Attribute           | Details                                         |
+|:--------------------|:------------------------------------------------|
+| **Inputs**          | Changed Files List (Git diff)                   |
+| **Outputs**         | List of Affected Components                     |
+| **Policy**          | Conservative Mapping (If unsure, assume Global) |
+| **Stop Conditions** | Git error, Corrupt Components Registry          |
 
 ---
 
@@ -23,9 +23,13 @@
 Ensure the component registry is up-to-date to avoid missing new components.
 
 ```bash
+
 # Optional: run detection if files were added recently
+
 # bash agent/scripts/detect_components.sh
+
 cat agent/COMPONENT_GRAPH.md
+
 ```
 
 ---
@@ -35,15 +39,23 @@ cat agent/COMPONENT_GRAPH.md
 Capture the list of files modified in the scope of interest.
 
 **For Pull Requests:**
+
 ```bash
+
 git diff --name-only origin/main...HEAD > changed_files.txt
+
 ```
 
 **For Local Work:**
+
 ```bash
+
 git diff --name-only > changed_files.txt
+
 # Include staged files
+
 git diff --name-only --cached >> changed_files.txt
+
 ```
 
 ---
@@ -53,6 +65,7 @@ git diff --name-only --cached >> changed_files.txt
 **Objective**: Map each file in `changed_files.txt` to a Component ID from `agent/COMPONENT_GRAPH.md`.
 
 **Algorithm**:
+
 1. Load Map: Read `path` for each component in `agent/COMPONENT_GRAPH.md`.
 2. Iterate: For each file `f`:
    - Find component `c` where `f` starts with `c.path`.
@@ -61,6 +74,7 @@ git diff --name-only --cached >> changed_files.txt
 3. Deduplicate: Produce a unique list of Component IDs.
 
 **Example Scenarios**:
+
 - File: `services/auth/src/User.ts` -> Component: `services/auth`
 - File: `packages/ui-lib/Button.tsx` -> Component: `packages/ui-lib`
 - File: `README.md` -> Component: `root`
@@ -84,17 +98,23 @@ git diff --name-only --cached >> changed_files.txt
 Export the list for use in CI or Release workflows.
 
 **Format (JSON Example):**
+
 ```json
+
 {
   "scope": "partial",
   "components": ["services/auth", "packages/ui-lib"],
   "includes_root": false
 }
+
 ```
 
 **Format (Env Var Example):**
+
 ```bash
+
 export AFFECTED_COMPONENTS="services/auth packages/ui-lib"
+
 ```
 
 ---

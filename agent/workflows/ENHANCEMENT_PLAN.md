@@ -1,7 +1,9 @@
 # Workflow Enhancement Summary
 
 ## Goal
+
 Enhance all 14 workflow files with:
+
 - Prerequisites section
 - Expected outcomes
 - Stop conditions
@@ -16,6 +18,7 @@ Enhance all 14 workflow files with:
 Every workflow should follow this structure:
 
 ```markdown
+
 # [Workflow Name]
 
 **Purpose:** [One-line description]
@@ -42,16 +45,23 @@ If any prerequisite is not met → STOP and complete it first.
 [Step description]
 
 ### Commands
-```bash
-[commands]
+
 ```
+
+[commands]
+
+```text
 
 ### Expected Output
-```
-[expected output]
+
 ```
 
+[expected output]
+
+```text
+
 ### If This Step Fails
+
 1. Check: [what to verify]
 2. Try: [alternative approach]
 3. Escalate: [when to ask for help]
@@ -72,9 +82,12 @@ Do NOT proceed until all criteria are met.
 ## Validation
 
 Run these commands to verify success:
-```bash
-[validation commands]
+
 ```
+
+[validation commands]
+
+```text
 
 Expected results:
 - [Expected result 1]
@@ -83,8 +96,10 @@ Expected results:
 ---
 
 ## See Also
+
 - [Related workflow]
 - [Related checklist]
+
 ```
 
 ---
@@ -111,6 +126,7 @@ Expected results:
 ## Enhancement Checklist
 
 For each workflow:
+
 - [ ] Add standard header with purpose, when to use, prerequisites
 - [ ] Add estimated time
 - [ ] Add prerequisites checklist

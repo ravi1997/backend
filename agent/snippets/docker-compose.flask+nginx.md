@@ -1,6 +1,7 @@
 # Snippet: docker-compose (flask + nginx) minimal
 
 ```yaml
+
 services:
   web:
     build: .
@@ -14,4 +15,5 @@ services:
       - "80:80"
     depends_on:
       - web
+
 ```

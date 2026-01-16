@@ -21,20 +21,30 @@
 ## Step 1: Prepare
 
 ### Create Backup
+
 ```bash
+
 # Database backup
+
 pg_dump mydb > backup_maintenance_$(date +%Y%m%d_%H%M%S).sql
 
 # Code backup
+
 git tag maintenance-$(date +%Y%m%d-%H%M%S)
 git push --tags
+
 ```
 
 ### Notify Users
+
 ```bash
+
 # Update status page
+
 # Send email notification
+
 # Post on social media
+
 ```
 
 ---
@@ -42,8 +52,11 @@ git push --tags
 ## Step 2: Enable Maintenance Mode
 
 ### Option A: Nginx Maintenance Page
+
 ```bash
+
 # Create maintenance page
+
 cat > /var/www/maintenance.html << 'EOF'
 <!DOCTYPE html>
 <html>
@@ -59,26 +72,39 @@ cat > /var/www/maintenance.html << 'EOF'
 EOF
 
 # Update nginx config
+
 sudo nano /etc/nginx/sites-available/myapp
+
 # Add:
+
 # location / {
+
 #     return 503;
+
 #     error_page 503 /maintenance.html;
+
 # }
 
 # Reload nginx
+
 sudo nginx -t
 sudo systemctl reload nginx
+
 ```
 
 ### Option B: Application Maintenance Mode
+
 ```python
+
 # Add to app config
+
 MAINTENANCE_MODE = True
 
 # In middleware
+
 if app.config['MAINTENANCE_MODE']:
     return jsonify({"error": "Maintenance in progress"}), 503
+
 ```
 
 ---
@@ -86,31 +112,45 @@ if app.config['MAINTENANCE_MODE']:
 ## Step 3: Perform Maintenance
 
 ### Database Maintenance
+
 ```bash
+
 # Stop application
+
 sudo systemctl stop myapp
 
 # Run maintenance tasks
+
 # - Vacuum database
+
 # - Rebuild indexes
+
 # - Update statistics
+
 # - Apply schema changes
 
 # PostgreSQL example
+
 psql mydb << EOF
 VACUUM ANALYZE;
 REINDEX DATABASE mydb;
 EOF
+
 ```
 
 ### Server Updates
+
 ```bash
+
 # Update packages
+
 sudo apt update
 sudo apt upgrade -y
 
 # Reboot if needed
+
 sudo reboot
+
 ```
 
 ---
@@ -118,15 +158,21 @@ sudo reboot
 ## Step 4: Test Before Enabling
 
 ```bash
+
 # Start application in test mode
+
 # ... start app ...
 
 # Run smoke tests
+
 curl -I http://localhost:8000/healthz
+
 # Expected: 200 OK
 
 # Test critical functionality
+
 # ... manual tests ...
+
 ```
 
 ---
@@ -134,23 +180,34 @@ curl -I http://localhost:8000/healthz
 ## Step 5: Disable Maintenance Mode
 
 ### Nginx
+
 ```bash
+
 # Remove maintenance mode from nginx config
+
 sudo nano /etc/nginx/sites-available/myapp
+
 # Remove maintenance location block
 
 # Reload nginx
+
 sudo nginx -t
 sudo systemctl reload nginx
+
 ```
 
 ### Application
+
 ```python
+
 # Update config
+
 MAINTENANCE_MODE = False
 
 # Restart application
+
 sudo systemctl restart myapp
+
 ```
 
 ---
@@ -158,16 +215,22 @@ sudo systemctl restart myapp
 ## Step 6: Verify
 
 ```bash
+
 # Application accessible?
+
 curl -I https://myapp.com
+
 # Expected: 200 OK
 
 # All services running?
+
 sudo systemctl status myapp
 docker-compose ps
 
 # No errors in logs?
+
 sudo journalctl -u myapp -n 50 | grep -i error
+
 ```
 
 ---
@@ -175,13 +238,19 @@ sudo journalctl -u myapp -n 50 | grep -i error
 ## Step 7: Monitor
 
 ```bash
+
 # Watch logs for 15-20 minutes
+
 sudo journalctl -u myapp -f
 
 # Monitor metrics
+
 # - Error rates
+
 # - Response times
+
 # - User activity
+
 ```
 
 ---
@@ -203,20 +272,27 @@ sudo journalctl -u myapp -f
 If maintenance causes issues:
 
 ```bash
+
 # 1. Re-enable maintenance mode
+
 # ... enable maintenance page ...
 
 # 2. Restore from backup
+
 psql mydb < backup_maintenance_YYYYMMDD_HHMMSS.sql
 
 # 3. Rollback code (if changed)
+
 git checkout <previous-tag>
 
 # 4. Restart services
+
 sudo systemctl restart myapp
 
 # 5. Verify
+
 curl -I https://myapp.com/healthz
+
 ```
 
 ---
@@ -224,19 +300,31 @@ curl -I https://myapp.com/healthz
 ## Post-Maintenance
 
 ### Notify Users
+
 ```bash
+
 # Update status page
+
 # Send completion email
+
 # Post on social media
+
 ```
 
 ### Document
+
 ```bash
+
 # Create maintenance report
+
 # - What was done
+
 # - Any issues encountered
+
 # - Duration
+
 # - Next maintenance window
+
 ```
 
 ---
@@ -244,6 +332,7 @@ curl -I https://myapp.com/healthz
 ## Common Maintenance Tasks
 
 ### Database
+
 - Vacuum and analyze
 - Rebuild indexes
 - Update statistics
@@ -251,6 +340,7 @@ curl -I https://myapp.com/healthz
 - Optimize queries
 
 ### Server
+
 - OS updates
 - Security patches
 - Disk cleanup
@@ -258,6 +348,7 @@ curl -I https://myapp.com/healthz
 - Certificate renewal
 
 ### Application
+
 - Dependency updates
 - Cache clearing
 - Session cleanup

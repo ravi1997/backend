@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  # Linter Service
+  # Run with: docker compose run linter
+  linter:
+    build:
+      context: .
+      dockerfile: Dockerfile.linter
+    volumes:
+      - .:/app
+    command: markdownlint '**/*.md'

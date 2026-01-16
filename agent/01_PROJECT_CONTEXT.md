@@ -1,108 +1,90 @@
 # Project Context (Fill Once)
 
-**Purpose:** Configure project-specific settings for AI agent
-**When to use:** Once per project, during initial setup
-**Prerequisites:** AI folder copied to project
-**Outputs:** Configured AUTO_CONTEXT for agent use
+**Purpose:** Configure project-specific settings for AI agent.
+**When to use:** Once per project, during initial setup.
+**Outputs:** Configured AUTO_CONTEXT for agent use.
 
 ---
 
-## CRITICAL: Use Auto-Setup First
+## 🚀 AUTO-SETUP (Recommended)
 
-**Recommended:** Let the agent auto-detect everything:
+**"Setup AI folder for this project"**
+The agent will:
 
-```
-User: "Setup AI folder for this project"
-```
-
-Agent will:
-1. Detect project type (Python/C++/Java/etc.)
-2. Find build system (CMake/Maven/npm/etc.)
-3. Identify framework (Flask/Spring/React/etc.)
-4. Fill ALL fields automatically
-5. Report confidence level
-
-**Manual setup only if auto-detection fails.**
+1. Detect Language & Framework (Python, Node, Java, Go, etc.)
+2. Find Build System (Maven, Gradle, CMake, NPM, etc.)
+3. Identify Docker/Ports/Entrypoints.
+4. Fill this file automatically.
 
 ---
 
-## AUTO_CONTEXT (Universal Schema)
+## 📋 AUTO_CONTEXT (Universal Schema)
 
 Copy/paste and edit. **Leave unknowns blank** - agent will infer.
 
 ```yaml
-# CORE (Required)
-app_name: "form-backend"
-project_type: "python"
-PRIMARY_STACK: "python"
-env: "dev"
 
-# STRUCTURE
-repo_root: "."
-source_dir: "app/"
-build_dir: ""
-test_dir: "tests/"
+# ============================================
 
-# BUILD
-build_system: "pip"
-build_cmd: "pip install -r requirements.txt"
-clean_cmd: "find . -type d -name __pycache__ -exec rm -rf {} +"
+# 1. CORE IDENTITY
 
-# PACKAGE MANAGER
-package_manager: "pip"
-install_cmd: "pip install -r requirements.txt"
+# ============================================
 
-# RUNTIME
-runtime: "python"
-entrypoint: "run:app"
-run_cmd: "python run.py"
+app_name: "backend"              # REQUIRED (e.g., "my-fintech-app")
+project_type: "python"          # REQUIRED (python|nodejs|java|cpp|go|rust|flutter|static)
+env: "dev"                # REQUIRED (dev|staging|production)
 
-# WEB (if applicable)
-framework: "flask"
-server_type: "gunicorn"
-listen_host: "0.0.0.0"
-app_port: 5000
-health_path: "/api/v1/health"
+# ============================================
 
-# DATABASE (if applicable)
-db_kind: "mongo"
-migration_tool: "none"
+# 2. STRUCTURE & BUILD
 
-# DOCKER (if applicable)
-uses_docker: false
-compose_file: ""
-compose_backend_service: ""
+# ============================================
 
-# DEPLOYMENT (if applicable)
-deployment_type: "gunicorn"
-systemd_unit: ""
+repo_root: "."            # usually "."
+source_dir: "app"            # src/|app/|lib/|backend/
+build_system: "python"          # cmake|gradle|maven|npm|poetry|cargo|go
+package_manager: "pip"       # pip|npm|yarn|mvn|gradlew|go mod
 
-# TESTING
-test_cmd: "pytest"
-lint_cmd: "ruff check ."
+# ============================================
 
-# SECURITY
-has_phi_pii: true
+# 3. RUNTIME & ENTRYPOINT
+
+# ============================================
+
+entrypoint: "run.py"            # main.py|index.js|App.java|main.go
+run_cmd: "python run.py"               # "python app.py" | "npm start" | "./gradlew bootRun"
+test_cmd: "pytest"              # "pytest" | "npm test" | "go test ./..."
+app_port: 5000            # Internal port the app listens on
+
+# ============================================
+
+# 4. INFRASTRUCTURE (Docker/Deploy)
+
+# ============================================
+
+uses_docker: true        # true/false
+compose_file: "docker-compose.yml"          # docker-compose.yml
+compose_service_name: "linter"  # The main app service name in compose
+deployment_type: "docker"       # docker|systemd|k8s|serverless
+
+# ============================================
+
+# 5. SECURITY
+
+# ============================================
+
+has_phi_pii: true         # Default true for safety (Redact logs)
+
 ```
 
-See [`contracts/UNIVERSAL_PROJECT_SCHEMA.md`](contracts/UNIVERSAL_PROJECT_SCHEMA.md) for complete schema.
+See [`contracts/UNIVERSAL_PROJECT_SCHEMA.md`](contracts/UNIVERSAL_PROJECT_SCHEMA.md) for full details.
 
 ---
 
-## Validation Checklist
+## ✅ Validation Checklist
 
 Agent MUST verify:
-- [ ] `app_name` is filled (REQUIRED)
-- [ ] `project_type` is set (REQUIRED)
-- [ ] `env` is correct (dev/staging/production)
-- [ ] All blank fields processed by autofill
-- [ ] Confidence level calculated
-- [ ] If uncertain about env → defaulted to production
 
----
-
-## See Also
-
-- [`skills/project_auto_setup.md`](skills/project_auto_setup.md) - Auto-detection
-- [`autofill/PATH_AND_SERVICE_INFERENCE.md`](autofill/PATH_AND_SERVICE_INFERENCE.md) - Inference rules
-- [`examples/example_project_context.md`](examples/example_project_context.md) - Examples
+- [ ] `app_name`, `project_type`, `env` are filled.
+- [ ] `test_cmd` is valid for the stack.
+- [ ] If `uses_docker: true`, `compose_file` is located.

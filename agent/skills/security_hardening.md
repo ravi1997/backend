@@ -1,6 +1,7 @@
 # SKILL: Security Hardening
 
 Focus:
+
 - input validation and allowlists
 - path traversal protections
 - SQL injection protections (parameterized queries)

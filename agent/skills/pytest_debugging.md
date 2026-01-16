@@ -12,26 +12,35 @@
 ### Basic Commands
 
 ```bash
+
 # Run all tests
+
 pytest
 
 # Run specific file
+
 pytest tests/test_users.py
 
 # Run specific test
+
 pytest tests/test_users.py::test_create_user
 
 # Run with verbose output
+
 pytest -v
 
 # Run with print statements
+
 pytest -s
 
 # Run last failed tests
+
 pytest --lf
 
 # Run failed first
+
 pytest --ff
+
 ```
 
 ---
@@ -41,39 +50,51 @@ pytest --ff
 ### 1. Use Print Debugging
 
 ```python
+
 def test_something():
     result = my_function()
     print(f"DEBUG: result = {result}")  # Will show with pytest -s
     assert result == expected
+
 ```
 
 ### 2. Use Pytest's Built-in Debugger
 
 ```bash
+
 # Drop into debugger on failure
+
 pytest --pdb
 
 # Drop into debugger at start of test
+
 pytest --trace
+
 ```
 
 ### 3. Use Breakpoints
 
 ```python
+
 def test_something():
     result = my_function()
     breakpoint()  # Python 3.7+
     assert result == expected
+
 ```
 
 ### 4. Show Locals on Failure
 
 ```bash
+
 # Show local variables when test fails
+
 pytest -l
 
 # Show full diff
+
 pytest -vv
+
 ```
 
 ---
@@ -85,20 +106,27 @@ pytest -vv
 **Symptom:** `ModuleNotFoundError` or `ImportError`
 
 **Causes:**
+
 - Missing `__init__.py`
 - Wrong PYTHONPATH
 - Missing dependencies
 
 **Fixes:**
+
 ```bash
+
 # Check Python path
+
 python -c "import sys; print(sys.path)"
 
 # Install in editable mode
+
 pip install -e .
 
 # Add to PYTHONPATH
+
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+
 ```
 
 ---
@@ -108,23 +136,30 @@ export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 **Symptom:** `fixture 'xyz' not found`
 
 **Causes:**
+
 - Fixture not defined
 - Fixture in wrong file
 - Wrong scope
 
 **Fixes:**
+
 ```python
+
 # Define fixture
+
 @pytest.fixture
 def my_fixture():
     return "value"
 
 # Use fixture
+
 def test_something(my_fixture):
     assert my_fixture == "value"
 
 # Check conftest.py
+
 # Fixtures in conftest.py are available to all tests
+
 ```
 
 ---
@@ -134,13 +169,17 @@ def test_something(my_fixture):
 **Symptom:** Tests pass individually but fail together
 
 **Causes:**
+
 - Shared state
 - Database not cleaned
 - Order dependency
 
 **Fixes:**
+
 ```python
+
 # Use function-scoped fixtures
+
 @pytest.fixture(scope="function")
 def db():
     # Setup
@@ -150,9 +189,11 @@ def db():
     db.drop_all()
 
 # Or use pytest-django's transactional tests
+
 @pytest.mark.django_db(transaction=True)
 def test_something():
     pass
+
 ```
 
 ---
@@ -162,15 +203,21 @@ def test_something():
 **Symptom:** Tests take too long
 
 **Diagnosis:**
+
 ```bash
+
 # Show slowest tests
+
 pytest --durations=10
 
 # Profile tests
+
 pytest --profile
+
 ```
 
 **Fixes:**
+
 - Use mocks instead of real services
 - Parallelize: `pytest -n auto` (requires pytest-xdist)
 - Mark slow tests: `@pytest.mark.slow`
@@ -180,26 +227,35 @@ pytest --profile
 ## Useful Pytest Options
 
 ```bash
+
 # Stop on first failure
+
 pytest -x
 
 # Stop after N failures
+
 pytest --maxfail=3
 
 # Run only marked tests
+
 pytest -m "not slow"
 
 # Show coverage
+
 pytest --cov=app tests/
 
 # Generate HTML coverage report
+
 pytest --cov=app --cov-report=html tests/
 
 # Run in parallel
+
 pytest -n auto  # requires pytest-xdist
 
 # Rerun failures
+
 pytest --lf --tb=short
+
 ```
 
 ---
@@ -224,6 +280,7 @@ pytest --lf --tb=short
 ### Mocking
 
 ```python
+
 from unittest.mock import Mock, patch
 
 def test_with_mock():
@@ -233,11 +290,13 @@ def test_with_mock():
         result = my_function()
         assert result == "mocked"
         mock_func.assert_called_once()
+
 ```
 
 ### Parametrize
 
 ```python
+
 @pytest.mark.parametrize("input,expected", [
     (1, 2),
     (2, 4),
@@ -245,11 +304,13 @@ def test_with_mock():
 ])
 def test_double(input, expected):
     assert double(input) == expected
+
 ```
 
 ### Fixtures with Cleanup
 
 ```python
+
 @pytest.fixture
 def temp_file():
     # Setup
@@ -258,6 +319,7 @@ def temp_file():
     # Cleanup
     f.close()
     os.remove('temp.txt')
+
 ```
 
 ---

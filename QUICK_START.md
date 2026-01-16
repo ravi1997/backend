@@ -7,19 +7,24 @@
 ## Existing Project (5 minutes)
 
 ### 1. Copy AI Folder
+
 ```bash
 cp -r /path/to/ai-agent-md-pack/agent /path/to/your/project/
 ```
 
 ### 2. Fill Context (2 required fields)
+
 Edit `agent/01_PROJECT_CONTEXT.md`:
+
 ```yaml
 app_name: "your-app-name"
 env: "dev"  # or staging, production
 ```
 
 ### 3. Use It
+
 Tell your AI agent:
+
 ```
 "Read agent/00_INDEX.md and fix this error: [paste error]"
 ```
@@ -31,17 +36,20 @@ Tell your AI agent:
 ## New Project (10 minutes)
 
 ### 1. Create Project
+
 ```bash
 mkdir my-project && cd my-project
 git init
 ```
 
 ### 2. Copy AI Folder
+
 ```bash
 cp -r /path/to/ai-agent-md-pack/agent ./
 ```
 
 ### 3. Choose Stack & Let AI Build
+
 ```bash
 # Python/Flask
 "Read agent/00_INDEX.md and set up Flask project with auth and Docker"

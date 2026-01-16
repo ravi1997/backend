@@ -15,30 +15,41 @@ Do NOT skip any section. Incomplete evidence leads to wrong diagnosis.
 
 ## Section A: Build Failures
 
-### Commands to Run
+### Commands to Run (Build Failures)
+
 ```bash
+
 # 1. Full build output
+
 docker-compose build 2>&1 | tee build.log
+
 # OR
+
 docker build -t myapp . 2>&1 | tee build.log
 
 # 2. Last 50 lines of build output
+
 tail -n 50 build.log
 
 # 3. Check disk space
+
 df -h
 
 # 4. Check Docker disk usage
+
 docker system df
+
 ```
 
-### Expected Information
+### Expected Information (Build Failures)
+
 - [ ] Exact error message documented
 - [ ] Which step failed (step number)
 - [ ] Base image and tag
 - [ ] Dockerfile section that failed
 
 ### Common Build Errors
+
 - `no space left on device` → Disk full
 - `failed to fetch` → Network issue
 - `unable to find image` → Wrong base image
@@ -49,26 +60,35 @@ docker system df
 
 ## Section B: Dockerfile Analysis
 
-### Commands to Run
+### Commands to Run (Dockerfile Analysis)
+
 ```bash
+
 # 1. Show Dockerfile
+
 cat Dockerfile
 
 # 2. Show docker-compose.yml
+
 cat docker-compose.yml
 
 # 3. Check if files exist
+
 ls -la requirements.txt package.json
+
 # (whatever is being COPY'd)
+
 ```
 
-### Expected Information
+### Expected Information (Dockerfile Analysis)
+
 - [ ] Base image documented (FROM line)
 - [ ] Files being COPY'd exist
 - [ ] Build context is correct
 - [ ] No syntax errors
 
-### Red Flags
+### Red Flags (Dockerfile Analysis)
+
 - ❌ COPY file that doesn't exist
 - ❌ RUN command with hardcoded paths
 - ❌ Missing .dockerignore (copying too much)
@@ -78,28 +98,37 @@ ls -la requirements.txt package.json
 
 ## Section C: Runtime Failures
 
-### Commands to Run
+### Commands to Run (Runtime Failures)
+
 ```bash
+
 # 1. Container status
+
 docker ps -a
 
 # 2. Container logs
+
 docker logs myapp --tail 200
 
 # 3. Container inspect
+
 docker inspect myapp | grep -A 10 "State"
 
 # 4. Check exit code
+
 docker inspect myapp | grep ExitCode
+
 ```
 
-### Expected Information
+### Expected Information (Runtime Failures)
+
 - [ ] Container state (running/exited/restarting)
 - [ ] Exit code (if exited)
 - [ ] Error messages in logs
 - [ ] Restart count
 
 ### Common Runtime Errors
+
 - Exit code 1 → Application error
 - Exit code 137 → OOM killed
 - Exit code 139 → Segmentation fault
@@ -109,30 +138,41 @@ docker inspect myapp | grep ExitCode
 
 ## Section D: Port and Volume Issues
 
-### Commands to Run
+### Commands to Run (Port and Volume Issues)
+
 ```bash
+
 # 1. Check port conflicts
+
 sudo ss -tlnp | grep 8000
+
 # OR
+
 sudo netstat -tlnp | grep 8000
 
 # 2. Check volume mounts
+
 docker inspect myapp | grep -A 20 "Mounts"
 
 # 3. Check volume permissions
+
 docker exec myapp ls -la /app
 
 # 4. Check bind mounts exist
+
 ls -la ./data ./logs
+
 ```
 
-### Expected Information
+### Expected Information (Port and Volume Issues)
+
 - [ ] Ports are available (not in use)
 - [ ] Volumes are mounted correctly
 - [ ] Permissions are correct
 - [ ] Bind mount paths exist on host
 
-### Red Flags
+### Red Flags (Port and Volume Issues)
+
 - ❌ Port already in use
 - ❌ Volume mount failed
 - ❌ Permission denied in container
@@ -142,26 +182,34 @@ ls -la ./data ./logs
 
 ## Section E: Network Issues
 
-### Commands to Run
+### Commands to Run (Network Issues)
+
 ```bash
+
 # 1. Check networks
+
 docker network ls
 
 # 2. Inspect network
+
 docker network inspect myapp_default
 
 # 3. Test connectivity between containers
+
 docker exec myapp ping db
 docker exec myapp curl http://db:5432
+
 ```
 
-### Expected Information
+### Expected Information (Network Issues)
+
 - [ ] Network exists
 - [ ] Containers are on same network
 - [ ] DNS resolution works
 - [ ] Containers can communicate
 
-### Red Flags
+### Red Flags (Network Issues)
+
 - ❌ Network doesn't exist
 - ❌ Container not connected to network
 - ❌ DNS not resolving
@@ -171,25 +219,33 @@ docker exec myapp curl http://db:5432
 
 ## Section F: Environment and Secrets
 
-### Commands to Run
+### Commands to Run (Environment and Secrets)
+
 ```bash
+
 # 1. Check environment variables
+
 docker exec myapp env
 
 # 2. Check .env file
+
 cat .env
 
 # 3. Check docker-compose env
+
 docker-compose config | grep -A 10 "environment"
+
 ```
 
-### Expected Information
+### Expected Information (Environment and Secrets)
+
 - [ ] Required env vars are set
 - [ ] .env file exists (if used)
 - [ ] No secrets in logs
 - [ ] Env vars match expected
 
-### Red Flags
+### Red Flags (Environment and Secrets)
+
 - ❌ Missing required env var
 - ❌ .env file not found
 - ❌ Secrets in docker-compose.yml
@@ -199,26 +255,34 @@ docker-compose config | grep -A 10 "environment"
 
 ## Section G: Resource Constraints
 
-### Commands to Run
+### Commands to Run (Resource Constraints)
+
 ```bash
+
 # 1. Check container resources
+
 docker stats --no-stream myapp
 
 # 2. Check Docker daemon resources
+
 docker system info | grep -A 10 "Memory"
 
 # 3. Check host resources
+
 free -h
 df -h
+
 ```
 
-### Expected Information
+### Expected Information (Resource Constraints)
+
 - [ ] Container memory limit
 - [ ] Container CPU limit
 - [ ] Host has available resources
 - [ ] No resource exhaustion
 
-### Red Flags
+### Red Flags (Resource Constraints)
+
 - ❌ Container hitting memory limit
 - ❌ Host out of memory
 - ❌ Host disk full
@@ -229,6 +293,7 @@ df -h
 ## Section H: Recent Changes
 
 ### Questions to Answer
+
 - [ ] What changed since last successful build?
   - Dockerfile modified?
   - Dependencies updated?
@@ -260,7 +325,8 @@ Based on evidence, check which applies:
 
 After collecting all evidence, write a 10-line summary:
 
-```
+```text
+
 DIAGNOSIS SUMMARY
 =================
 Issue Type: [build failure / runtime failure]
@@ -273,6 +339,7 @@ Evidence: [key evidence]
 Recommended Fix: [specific action]
 Estimated Time: [minutes]
 Risk Level: [low/medium/high]
+
 ```
 
 ---
@@ -280,6 +347,7 @@ Risk Level: [low/medium/high]
 ## Validation
 
 Before proceeding to fix:
+
 - [ ] All sections A-I completed
 - [ ] Root cause identified
 - [ ] Evidence supports diagnosis

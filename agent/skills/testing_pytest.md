@@ -1,6 +1,7 @@
 # SKILL: pytest Testing
 
 Prefer:
+
 - unit tests for pure functions
 - request-level tests with Flask test client
 - integration tests for DB boundaries

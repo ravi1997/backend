@@ -1,24 +1,30 @@
 # Postmortem Template (Blameless)
 
 ## Timeline
+
 - T0: ...
 - T1: ...
 - T2: ...
 
 ## Impact
+
 - Who/what affected, duration, severity
 
 ## Root Cause
+
 - Primary cause
 - Secondary causes
 
 ## What went well
+
 - ...
 
 ## What went wrong
+
 - ...
 
 ## Action items
+
 - [ ] Fix ...
 - [ ] Add monitoring ...
 - [ ] Add tests ...

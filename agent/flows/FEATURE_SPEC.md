@@ -10,6 +10,7 @@
 ## Feature Spec Process
 
 ```mermaid
+
 graph TD
     A[Feature Request] --> B[Understand Requirements]
     B --> C[Define User Story]
@@ -21,6 +22,7 @@ graph TD
     H --> I[Get Approval]
     I -->|Approved| J[Start Implementation]
     I -->|Changes Needed| B
+
 ```
 
 ---
@@ -30,16 +32,19 @@ graph TD
 Define the feature as a user story:
 
 ```markdown
+
 ## User Story
 
-**As a** [type of user]  
-**I want** [goal/desire]  
+**As a** [type of user]
+**I want** [goal/desire]
 **So that** [benefit/value]
 
 ### Example
-As a **registered user**  
-I want **to reset my password via email**  
+
+As a **registered user**
+I want **to reset my password via email**
 So that **I can regain access if I forget my password**
+
 ```
 
 ---
@@ -49,6 +54,7 @@ So that **I can regain access if I forget my password**
 List specific, testable criteria:
 
 ```markdown
+
 ## Acceptance Criteria
 
 - [ ] User can request password reset from login page
@@ -58,9 +64,11 @@ List specific, testable criteria:
 - [ ] Old password no longer works after reset
 - [ ] User receives confirmation email after reset
 - [ ] Invalid/expired links show clear error message
+
 ```
 
 **Each criterion must be:**
+
 - Specific (not vague)
 - Testable (can verify)
 - Measurable (has clear pass/fail)
@@ -72,50 +80,66 @@ List specific, testable criteria:
 Define API endpoints:
 
 ```markdown
+
 ## API Endpoints
 
 ### POST /api/auth/password-reset/request
-**Purpose:** Request password reset  
-**Auth:** None  
+
+**Purpose:** Request password reset
+**Auth:** None
 **Input:**
-```json
+
+```
+
 {
   "email": "user@example.com"
 }
-```
+
+```text
 
 **Output (200):**
-```json
+
+```
+
 {
   "message": "If email exists, reset link sent"
 }
-```
+
+```text
 
 **Errors:**
 - 400: Invalid email format
 - 429: Too many requests
 
 ### POST /api/auth/password-reset/confirm
-**Purpose:** Confirm password reset  
-**Auth:** Reset token  
+
+**Purpose:** Confirm password reset
+**Auth:** Reset token
 **Input:**
-```json
+
+```
+
 {
   "token": "abc123...",
   "new_password": "SecurePass123!"
 }
-```
+
+```text
 
 **Output (200):**
-```json
+
+```
+
 {
   "message": "Password reset successful"
 }
-```
+
+```text
 
 **Errors:**
 - 400: Invalid token or weak password
 - 410: Token expired
+
 ```
 
 ---
@@ -125,9 +149,11 @@ Define API endpoints:
 Describe user interface:
 
 ```markdown
+
 ## UI Components
 
 ### Password Reset Request Page
+
 - Email input field (validated)
 - Submit button
 - Link back to login
@@ -135,6 +161,7 @@ Describe user interface:
 - Error message display
 
 ### Password Reset Confirm Page
+
 - New password input (with strength indicator)
 - Confirm password input
 - Submit button
@@ -142,10 +169,12 @@ Describe user interface:
 - Success/error messages
 
 ### Email Template
+
 - Clear subject line
 - Reset link (button)
 - Expiry time notice
 - Security warning
+
 ```
 
 ---
@@ -155,10 +184,13 @@ Describe user interface:
 Define database changes:
 
 ```markdown
+
 ## Data Model
 
 ### New Table: password_reset_tokens
-```sql
+
+```
+
 CREATE TABLE password_reset_tokens (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id),
@@ -170,10 +202,13 @@ CREATE TABLE password_reset_tokens (
 
 CREATE INDEX idx_token ON password_reset_tokens(token);
 CREATE INDEX idx_user_id ON password_reset_tokens(user_id);
-```
+
+```text
 
 ### Modified Table: users
+
 - No changes needed
+
 ```
 
 ---
@@ -183,20 +218,25 @@ CREATE INDEX idx_user_id ON password_reset_tokens(user_id);
 List all dependencies:
 
 ```markdown
+
 ## Dependencies
 
 ### External Services
+
 - Email service (SendGrid/AWS SES)
 - Token generation library
 
 ### Internal Dependencies
+
 - User authentication system
 - Email template system
 
 ### Configuration
+
 - RESET_TOKEN_EXPIRY=24h
 - RESET_EMAIL_FROM=noreply@example.com
 - MAX_RESET_REQUESTS_PER_HOUR=3
+
 ```
 
 ---
@@ -206,6 +246,7 @@ List all dependencies:
 Identify security requirements:
 
 ```markdown
+
 ## Security
 
 - [ ] Rate limit reset requests (3 per hour per email)
@@ -216,6 +257,7 @@ Identify security requirements:
 - [ ] Log all reset attempts
 - [ ] Require strong password (min 8 chars, mixed case, numbers)
 - [ ] Send notification email after successful reset
+
 ```
 
 ---
@@ -225,25 +267,30 @@ Identify security requirements:
 Plan how to test:
 
 ```markdown
+
 ## Testing
 
 ### Unit Tests
+
 - Token generation
 - Token validation
 - Password strength validation
 - Email sending
 
 ### Integration Tests
+
 - Full reset flow
 - Expired token handling
 - Invalid token handling
 - Rate limiting
 
 ### Manual Tests
+
 - UI/UX flow
 - Email delivery
 - Error messages
 - Edge cases
+
 ```
 
 ---
@@ -253,12 +300,14 @@ Plan how to test:
 Estimate time and complexity:
 
 ```markdown
+
 ## Effort Estimate
 
-**Complexity:** Medium  
+**Complexity:** Medium
 **Estimated Time:** 2-3 days
 
 ### Breakdown
+
 - Backend API: 4 hours
 - Database migration: 1 hour
 - Email templates: 2 hours
@@ -268,6 +317,7 @@ Estimate time and complexity:
 - Code review: 2 hours
 
 **Total:** 18 hours (~2.5 days)
+
 ```
 
 ---
@@ -275,6 +325,7 @@ Estimate time and complexity:
 ## Step 10: Get Approval
 
 Before implementation:
+
 - [ ] Spec reviewed by team
 - [ ] Security reviewed
 - [ ] UX approved

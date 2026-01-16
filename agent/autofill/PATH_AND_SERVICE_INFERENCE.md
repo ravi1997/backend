@@ -1,61 +1,83 @@
 # Autofill: Path & Service Inference Rules
 
-Goal: avoid deep inputs. If `AUTO_CONTEXT` is incomplete, infer using repo contents and common conventions.
+Goal: Automatically detecting project structure and details using universal language patterns.
+**If `AUTO_CONTEXT` is incomplete, use these rules to fill gaps.**
 
-## 1) Repo root
-- If file `pyproject.toml` exists at root → `repo_root="."`
-- Else if `backend/pyproject.toml` exists → `repo_root="backend"`
-- Else if `app/pyproject.toml` exists → `repo_root="app"`
+## 1. Repo Root & Project Type (Detection)
 
-## 2) Backend directory
-Prefer in order:
-1. `backend/` if contains `pyproject.toml` or `requirements.txt`
-2. `app/` if contains Flask entry files
-3. `server/`
-4. root `.` if contains Flask package
+Detect the `repo_root` (where the config file lives) and `project_type`.
 
-## 3) Flask package name (python_package)
-Try in order:
-- directory inside backend_dir that contains `__init__.py` and `routes.py` or `wsgi.py`
-- if `wsgi.py` exists, parse import line (best effort)
-Fallback: `yourapp`
+| Rule                                   | Output                                |
+|:---------------------------------------|:--------------------------------------|
+| `pyproject.toml` or `requirements.txt` | `project_type="python"`               |
+| `package.json`                         | `project_type="nodejs"`               |
+| `pom.xml`                              | `project_type="java"` (setup: maven)  |
+| `build.gradle` / `build.gradle.kts`    | `project_type="java"` (setup: gradle) |
+| `CMakeLists.txt`                       | `project_type="cpp"` (setup: cmake)   |
+| `go.mod`                               | `project_type="go"`                   |
+| `pubspec.yaml`                         | `project_type="flutter"`              |
+| `Cargo.toml`                           | `project_type="rust"`                 |
 
-## 4) Entrypoint (wsgi)
-Try in order:
-- `wsgi.py` exists → `wsgi:app`
-- `app.py` exists → `app:app`
-- `yourapp/wsgi.py` exists → `yourapp.wsgi:app`
+## 2. Backend Directory (`backend_dir` or `source_dir`)
 
-## 5) Docker Compose service names
-If `docker-compose.yml` exists:
-- If service contains `gunicorn`/`flask` command → `compose_backend_service`
-- If service has `nginx` image → `compose_nginx_service`
-- If service builds from `frontend/` → `compose_frontend_service`
+*Where is the code?*
 
-Common defaults:
-- backend: `web` or `api`
-- nginx: `nginx`
-- frontend: `frontend`
+1. **Standard:** `src/`, `app/`, or `lib/` (standard for Java/C++/Rust).
+2. **Explicit:** `backend/`, `server/`, `api/`.
+3. **Root:** If `src/` is missing and config files (like `app.py`, `package.json`) are at root, set `source_dir="."`.
 
-## 6) Ports
-- If compose exposes `8000:8000` → app_port=8000
-- Else if gunicorn config uses `:8000` → app_port=8000
-Fallback: app_port=8000, nginx_port=80
+## 3. Package/App Identification
 
-## 7) systemd unit name
-If `deploy/` or `systemd/` directory exists, search for `*.service`.
-Else infer as `{app_name}.service`.
+*What is the main namespace or app name?*
 
-## 8) Log locations
-- If nginx present: `/var/log/nginx/access.log`, `/var/log/nginx/error.log`
-- If systemd: use `journalctl -u {unit} -e`
-- If docker: use `docker compose logs --tail=200 {service}`
+- **Python:** Look for `setup.py` name, or directory with `__init__.py`.
+- **Java:** Look in `pom.xml` (`<artifactId>`) or `build.gradle` (`rootProject.name`).
+- **Node.js:** Look in `package.json` (`"name"` field).
+- **Go:** Look in `go.mod` (`module <name>`).
+- **C++:** Look in `CMakeLists.txt` (`project(<NAME>)`).
 
-## 9) Minimal follow-up questions (only if needed)
-Ask at most one line for each missing “critical” field:
-- app_name
-- env
-- backend_dir (only if not inferable)
-- compose_backend_service (only if docker is used)
+## 4. Entrypoint Inference
 
-If env unclear → assume production rules (read-only).
+*How do I start it?*
+
+- **Python (Flask/Django):** `wsgi.py`, `app.py`, `manage.py`.
+- **Node.js:** `package.json` -> `"main"` or `"scripts": {"start": "..."}`.
+- **Java:** Look for `public static void main` or Spring Boot's `@SpringBootApplication`.
+- **Go:** `main.go` or `cmd/server/main.go`.
+- **Flutter:** `lib/main.dart`.
+- **C++:** Look for `add_executable` in CMakeLists.
+
+## 5. Docker Compose Service Names
+
+*Scanning `docker-compose.yml`...*
+
+- `compose_backend_service`: Services running `flask`, `node`, `java`, `go run`, or building from `backend/`.
+- `compose_frontend_service`: Services running `npm start`, `nginx` (if pure static), or building from `frontend/`.
+- `compose_db_service`: Images like `postgres`, `mysql`, `mongo`.
+
+## 6. Port Detection
+
+- **Docker:** `ports: ["8000:8000"]` -> `app_port=8000`.
+- **Node:** `"start": "PORT=3000 node index.js"` -> `3000`.
+- **Python:** `app.run(port=5000)` -> `5000`.
+- **Spring Boot:** `application.properties` -> `server.port`.
+- **Go:** `http.ListenAndServe(":8080"` -> `8080`.
+
+## 7. Systemd Unit Name
+
+- Search `systemd/` or `deploy/` for `*.service`.
+- Fallback: `{app_name}.service`.
+
+## 8. Log Locations
+
+- **Nginx:** `/var/log/nginx/access.log`, `/var/log/nginx/error.log`.
+- **Systemd:** `journalctl -u {systemd_unit} -e`.
+- **Docker:** `docker compose logs -f {service_name}`.
+
+## 9. Minimal "Human in the Loop"
+
+Only ask if **Critical** fields are missing:
+
+1. `project_type` (if ambigous, e.g., Python AND Node both present).
+2. `env` (default to `production` if unsure for safety).
+3. `app_name` (if no config file found).

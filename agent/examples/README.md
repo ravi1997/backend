@@ -5,14 +5,17 @@ This directory contains complete, real-world examples of using the AI Agent MD P
 ## Available Examples
 
 ### 1. [Example Project Context](example_project_context.md)
+
 **What it shows:** Complete filled `01_PROJECT_CONTEXT.md` for a Flask application
 
 **Use this when:**
+
 - Setting up the AI pack for the first time
 - Unsure what values to fill in AUTO_CONTEXT
 - Want to see a real-world configuration
 
 **Key learnings:**
+
 - Minimum vs. complete configuration
 - How to structure environment-specific settings
 - PHI/PII considerations
@@ -20,16 +23,19 @@ This directory contains complete, real-world examples of using the AI Agent MD P
 ---
 
 ### 2. [Example Incident Workflow](example_incident_workflow.md)
+
 **What it shows:** Complete incident response from 502 error to resolution
 
 **Scenario:** Website returning 502 Bad Gateway due to missing Python dependency
 
 **Use this when:**
+
 - Learning how incident triage works
 - Understanding evidence collection
 - Seeing the complete flow from error to fix
 
 **Key learnings:**
+
 - Evidence-first approach
 - Root cause analysis methodology
 - Quality gates and verification
@@ -40,16 +46,19 @@ This directory contains complete, real-world examples of using the AI Agent MD P
 ---
 
 ### 3. [Example Feature Delivery](example_feature_delivery.md)
+
 **What it shows:** Complete feature implementation from request to PR
 
 **Scenario:** Implementing user login with email/password authentication
 
 **Use this when:**
+
 - Planning a new feature
 - Understanding the development workflow
 - Learning testing and quality gate requirements
 
 **Key learnings:**
+
 - Structured planning (forms → decision records)
 - Test-driven development approach
 - Security considerations
@@ -62,19 +71,24 @@ This directory contains complete, real-world examples of using the AI Agent MD P
 ## How to Use These Examples
 
 ### For First-Time Users
+
 1. Start with **Example Project Context** to understand configuration
 2. Read **Example Incident Workflow** to see how errors are handled
 3. Review **Example Feature Delivery** to understand development flow
 
 ### For AI Agents
+
 These examples demonstrate:
+
 - Expected level of detail in forms and artifacts
 - Quality standards for code and tests
 - Documentation completeness
 - Verification and validation steps
 
 ### For Customization
+
 Use these as templates:
+
 - Copy structure for your own workflows
 - Adapt forms and checklists to your needs
 - Modify quality gates for your standards
@@ -109,20 +123,22 @@ To add a new example:
 1. **Choose a scenario** - Real-world, specific use case
 2. **Follow the structure:**
    ```markdown
+
    # Example: [Name]
-   
+
    ## Scenario
    [Clear description]
-   
+
    ## Step 1: [Phase]
    [Details with commands/code]
-   
+
    ## Step N: [Final Phase]
    [Results and artifacts]
-   
+
    ## Key Takeaways
    [Lessons learned]
-   ```
+```
+
 3. **Include:**
    - Actual commands and output
    - Code snippets where relevant
@@ -136,11 +152,11 @@ To add a new example:
 
 ## Quick Reference
 
-| Example | Type | Complexity | Time | Key Focus |
-|---------|------|------------|------|-----------|
-| Project Context | Setup | Low | 5 min | Configuration |
-| Incident Workflow | Operations | Medium | 15 min | Debugging |
-| Feature Delivery | Development | High | 1.5 hrs | Implementation |
+| Example           | Type        | Complexity   | Time    | Key Focus      |
+|-------------------|-------------|--------------|---------|----------------|
+| Project Context   | Setup       | Low          | 5 min   | Configuration  |
+| Incident Workflow | Operations  | Medium       | 15 min  | Debugging      |
+| Feature Delivery  | Development | High         | 1.5 hrs | Implementation |
 
 ---
 

@@ -1,16 +1,21 @@
 # Release Notes Template
 
 ## Added
+
 - ...
 
 ## Changed
+
 - ...
 
 ## Fixed
+
 - ...
 
 ## Migration Notes
+
 - ...
 
 ## Known Issues
+
 - ...

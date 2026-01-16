@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.0-staging] - 2026-01-16
+
+### Added
+
+- Deployment workflow configuration.
+- Dockerfile for application.
+- `mongomock` and `pytest` to requirements.txt.
+
+### Fixed
+
+- Missing dependencies for testing.
+
 ## [Unreleased]
 
 ### Planned

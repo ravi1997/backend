@@ -4,17 +4,20 @@
 **Package:** {{package_name}}
 
 ## Summary
+
 - **Total Issues:** {{count}}
 - **Errors:** {{errors}}
 - **Warnings:** {{warnings}}
 - **Info:** {{info}}
 
 ## Issues List
-| Severity | Location | Issue |
-|----------|----------|-------|
-| {{sev}} | {{path:line}} | {{message}} |
+
+| Severity   | Location      | Issue       |
+|------------|---------------|-------------|
+| {{sev}}    | {{path:line}} | {{message}} |
 
 ## Recommendations
+
 - [ ] Fix critical errors before commit
 - [ ] Address warnings in `lib/`
 - [ ] Re-run `flutter format .`

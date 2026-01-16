@@ -15,29 +15,37 @@ Do NOT skip any section. Incomplete evidence leads to wrong diagnosis.
 
 ## Section A: Migration Status
 
-### Commands to Run
+### Commands to Run (Migration Status)
+
 ```bash
+
 # For Alembic
+
 alembic current
 alembic history
 alembic heads
 
 # For Flask-Migrate
+
 flask db current
 flask db history
 flask db heads
 
 # For Django
+
 python manage.py showmigrations
+
 ```
 
-### Expected Information
+### Expected Information (Migration Status)
+
 - [ ] Current migration version
 - [ ] Target migration version
 - [ ] Migration history
 - [ ] Multiple heads (if any)
 
-### Red Flags
+### Red Flags (Migration Status)
+
 - ❌ Multiple heads detected
 - ❌ Current version not in history
 - ❌ No migrations found
@@ -46,25 +54,33 @@ python manage.py showmigrations
 
 ## Section B: Migration Error
 
-### Commands to Run
+### Commands to Run (Migration Error)
+
 ```bash
+
 # Try the migration and capture error
+
 alembic upgrade head 2>&1 | tee migration_error.log
 
 # Show last 50 lines
+
 tail -n 50 migration_error.log
 
 # Check migration file
+
 cat alembic/versions/xxxxx_description.py
+
 ```
 
-### Expected Information
+### Expected Information (Migration Error)
+
 - [ ] Exact error message
 - [ ] Which migration failed
 - [ ] SQL statement that failed (if any)
 - [ ] Line number in migration file
 
 ### Common Errors
+
 - `relation "table" already exists` → Table exists
 - `column "col" does not exist` → Schema drift
 - `violates foreign key constraint` → Data issue
@@ -75,36 +91,53 @@ cat alembic/versions/xxxxx_description.py
 
 ## Section C: Database State
 
-### Commands to Run
+### Commands to Run (Database State)
+
 ```bash
+
 # Connect to database
+
 psql mydb
+
 # OR
+
 mysql -u user -p mydb
 
 # List tables
+
 \dt
+
 # OR
+
 SHOW TABLES;
 
 # Describe specific table
+
 \d tablename
+
 # OR
+
 DESCRIBE tablename;
 
 # Check migration table
+
 SELECT * FROM alembic_version;
+
 # OR
+
 SELECT * FROM django_migrations;
+
 ```
 
-### Expected Information
+### Expected Information (Database State)
+
 - [ ] Database is accessible
 - [ ] Migration tracking table exists
 - [ ] Current schema documented
 - [ ] Tables that should/shouldn't exist
 
-### Red Flags
+### Red Flags (Database State)
+
 - ❌ Can't connect to database
 - ❌ Migration table missing
 - ❌ Schema doesn't match migrations
@@ -114,25 +147,33 @@ SELECT * FROM django_migrations;
 
 ## Section D: Migration File Analysis
 
-### Commands to Run
+### Commands to Run (Migration File Analysis)
+
 ```bash
+
 # Show the failing migration
+
 cat alembic/versions/xxxxx_migration.py
 
 # Check for syntax errors
+
 python -m py_compile alembic/versions/xxxxx_migration.py
 
 # Compare with previous migration
+
 diff alembic/versions/xxxxx_prev.py alembic/versions/xxxxx_current.py
+
 ```
 
-### Expected Information
+### Expected Information (Migration File Analysis)
+
 - [ ] Migration file is valid Python
 - [ ] upgrade() function exists
 - [ ] downgrade() function exists
 - [ ] SQL statements are valid
 
-### Red Flags
+### Red Flags (Migration File Analysis)
+
 - ❌ Syntax error in migration
 - ❌ Missing upgrade() or downgrade()
 - ❌ Invalid SQL
@@ -142,26 +183,35 @@ diff alembic/versions/xxxxx_prev.py alembic/versions/xxxxx_current.py
 
 ## Section E: Data Integrity
 
-### Commands to Run
+### Commands to Run (Data Integrity)
+
 ```bash
+
 # Check for data that would violate new constraints
+
 # Example: Adding NOT NULL to column with nulls
+
 SELECT COUNT(*) FROM users WHERE email IS NULL;
 
 # Example: Adding unique constraint with duplicates
+
 SELECT email, COUNT(*) FROM users GROUP BY email HAVING COUNT(*) > 1;
 
 # Example: Foreign key constraint
+
 SELECT COUNT(*) FROM posts WHERE user_id NOT IN (SELECT id FROM users);
+
 ```
 
-### Expected Information
+### Expected Information (Data Integrity)
+
 - [ ] No data violates new constraints
 - [ ] No orphaned foreign keys
 - [ ] No duplicate values where unique needed
 - [ ] No nulls where NOT NULL needed
 
-### Red Flags
+### Red Flags (Data Integrity)
+
 - ❌ Null values in column getting NOT NULL
 - ❌ Duplicate values in column getting UNIQUE
 - ❌ Orphaned foreign key references
@@ -170,25 +220,33 @@ SELECT COUNT(*) FROM posts WHERE user_id NOT IN (SELECT id FROM users);
 
 ## Section F: Dependencies and Conflicts
 
-### Commands to Run
+### Commands to Run (Dependencies and Conflicts)
+
 ```bash
+
 # Check for migration conflicts
+
 alembic branches
 
 # Check migration dependencies
+
 grep "down_revision" alembic/versions/*.py
 
 # Check for circular dependencies
+
 alembic history --verbose
+
 ```
 
-### Expected Information
+### Expected Information (Dependencies and Conflicts)
+
 - [ ] No conflicting migrations
 - [ ] Dependencies are correct
 - [ ] No circular dependencies
 - [ ] Linear migration path
 
-### Red Flags
+### Red Flags (Dependencies and Conflicts)
+
 - ❌ Multiple branches
 - ❌ Circular dependencies
 - ❌ Missing down_revision
@@ -197,25 +255,33 @@ alembic history --verbose
 
 ## Section G: Environment and Permissions
 
-### Commands to Run
+### Commands to Run (Environment and Permissions)
+
 ```bash
+
 # Check database user permissions
+
 psql -c "\du"
 
 # Test connection
+
 psql -h localhost -U dbuser -d mydb -c "SELECT 1"
 
 # Check if user can create tables
+
 psql -c "CREATE TABLE test_permissions (id INT); DROP TABLE test_permissions;"
+
 ```
 
-### Expected Information
+### Expected Information (Environment and Permissions)
+
 - [ ] Database user has required permissions
 - [ ] Can connect to database
 - [ ] Can create/alter tables
 - [ ] Can create/drop indexes
 
-### Red Flags
+### Red Flags (Environment and Permissions)
+
 - ❌ Permission denied
 - ❌ Can't connect
 - ❌ Can't create tables
@@ -244,7 +310,8 @@ Based on evidence, check which applies:
 
 After collecting all evidence, write a 10-line summary:
 
-```
+```text
+
 DIAGNOSIS SUMMARY
 =================
 Migration Tool: [Alembic/Flask-Migrate/Django]
@@ -257,6 +324,7 @@ Evidence: [key evidence]
 Recommended Fix: [specific action]
 Data Impact: [none/low/high]
 Risk Level: [low/medium/high]
+
 ```
 
 ---
@@ -264,6 +332,7 @@ Risk Level: [low/medium/high]
 ## Validation
 
 Before proceeding to fix:
+
 - [ ] All sections A-H completed
 - [ ] Root cause identified
 - [ ] Evidence supports diagnosis

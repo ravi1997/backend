@@ -9,12 +9,12 @@
 
 ## Workflow Contract
 
-| Attribute | Details |
-| :--- | :--- |
-| **Inputs** | Baseline metrics, `PROJECT_FINGERPRINT` |
-| **Outputs** | Profiling report, Fix PR |
-| **Policy** | Do not profile in prod without approval |
-| **Stop Conditions** | No reproduceable issue |
+| Attribute           | Details                                 |
+|:--------------------|:----------------------------------------|
+| **Inputs**          | Baseline metrics, `PROJECT_FINGERPRINT` |
+| **Outputs**         | Profiling report, Fix PR                |
+| **Policy**          | Do not profile in prod without approval |
+| **Stop Conditions** | No reproduceable issue                  |
 
 ---
 
@@ -23,7 +23,9 @@
 Identify stack to select the correct profiler.
 
 ```bash
+
 cat agent/contracts/PROJECT_FINGERPRINT.md
+
 ```
 
 ### Profiler Selection
@@ -42,27 +44,36 @@ cat agent/contracts/PROJECT_FINGERPRINT.md
 
 ## Step 1: Collect Baseline (Universal)
 
-1.  **Latency:** `curl` timing.
-2.  **Resources:** `top`, `docker stats`.
-3.  **DB:** Slow query logs.
+1. **Latency:** `curl` timing.
+2. **Resources:** `top`, `docker stats`.
+3. **DB:** Slow query logs.
 
 ---
 
 ## Step 2: Profile (Stack-Specific)
 
 **Python:**
+
 ```bash
+
 py-spy record -o profile.svg --pid <pid>
+
 ```
 
 **Java:**
+
 ```bash
+
 jcmd <pid> JFR.start duration=60s filename=profile.jfr
+
 ```
 
 **C++:**
+
 ```bash
+
 perf record -g -p <pid>
+
 ```
 
 **Web:**
@@ -72,9 +83,9 @@ Run Lighthouse audit in Chrome.
 
 ## Step 3: Analyze & Fix (Universal)
 
-1.  **Identify:** Find the "hot path" (N+1 queries, tight loops).
-2.  **Fix:** Optimize algorithms, add cache, add indexes.
-3.  **Verify:** Re-run Step 1 and compare.
+1. **Identify:** Find the "hot path" (N+1 queries, tight loops).
+2. **Fix:** Optimize algorithms, add cache, add indexes.
+3. **Verify:** Re-run Step 1 and compare.
 
 ---
 

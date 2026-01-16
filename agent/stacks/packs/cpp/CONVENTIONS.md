@@ -1,6 +1,7 @@
 # C++ Conventions
 
 ## File Structure
+
 - `src/`: Implementation files (.cpp, .cc)
 - `include/`: Header files (.h, .hpp)
 - `tests/`: Unit and integration tests
@@ -8,6 +9,7 @@
 - `CMakeLists.txt`: Root build definition
 
 ## Naming
+
 - **Classes**: PascalCase
 - **Functions/Methods**: camelCase or snake_case (project dependent, consistent)
 - **Variables**: snake_case
@@ -15,6 +17,7 @@
 - **Members**: `m_` prefix or trailing `_` (optional, consistency is key)
 
 ## Code Style
+
 - Use `clang-format` with Google or LLVM style by default.
 - Header guards: `#pragma once` or standard `#ifndef` guards.
 - Prefer `std::unique_ptr` and `std::shared_ptr` over raw pointers.

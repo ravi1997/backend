@@ -3,6 +3,7 @@
 Agents must prefer these variables when generating steps, commands, and artifacts.
 
 ## Canonical variables
+
 - `{APP}` = app_name
 - `{ENV}` = env
 - `{ROOT}` = repo_root
@@ -20,6 +21,7 @@ Agents must prefer these variables when generating steps, commands, and artifact
 - `{UNIT}` = systemd_unit
 
 ## Default values (if missing)
+
 - `{ENV}` = `production` (prod-safe)
 - `{PORT}` = `8000`
 - `{HEALTH}` = `/healthz`

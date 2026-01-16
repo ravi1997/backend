@@ -21,37 +21,57 @@
 ## Step 1: Diagnose the Issue
 
 ### Check Migration Status
+
 ```bash
+
 # Alembic
+
 alembic current
 alembic history
 
 # Flask-Migrate
+
 flask db current
 flask db history
+
 ```
 
 ### Common Issues
 
 **A) Migration Conflict**
+
 ```bash
+
 # Multiple heads detected
+
 alembic heads
+
 # Fix: Merge heads
+
 alembic merge heads -m "merge migrations"
+
 ```
 
 **B) Schema Drift**
+
 ```bash
+
 # Database doesn't match migrations
+
 alembic check
+
 # Fix: Create new migration or manual SQL
+
 ```
 
 **C) Failed Migration**
+
 ```bash
+
 # Check logs for error
+
 # Common: constraint violation, type mismatch
+
 ```
 
 ---
@@ -59,31 +79,44 @@ alembic check
 ## Step 2: Apply Fix
 
 ### For New Migration
+
 ```bash
+
 # Create migration
+
 alembic revision --autogenerate -m "description"
 
 # Review generated file
+
 cat alembic/versions/xxxxx_description.py
 
 # Test upgrade
+
 alembic upgrade head
 
 # Test downgrade
+
 alembic downgrade -1
 alembic upgrade head
+
 ```
 
 ### For Failed Migration
+
 ```bash
+
 # Rollback to previous
+
 alembic downgrade -1
 
 # Fix the migration file
+
 # ... edit ...
 
 # Try again
+
 alembic upgrade head
+
 ```
 
 ---
@@ -91,14 +124,19 @@ alembic upgrade head
 ## Step 3: Verify
 
 ```bash
+
 # Check current version
+
 alembic current
 
 # Verify schema
+
 # Connect to DB and check tables
 
 # Run application tests
+
 pytest tests/
+
 ```
 
 ---
@@ -115,14 +153,19 @@ pytest tests/
 ## Rollback Plan
 
 ```bash
+
 # Downgrade one version
+
 alembic downgrade -1
 
 # Or to specific version
+
 alembic downgrade <revision>
 
 # Restore from backup (production)
+
 # ... restore commands ...
+
 ```
 
 ---

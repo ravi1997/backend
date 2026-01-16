@@ -9,12 +9,12 @@
 
 ## Workflow Contract
 
-| Attribute | Details |
-| :--- | :--- |
-| **Inputs** | `docker-compose.yml`, `PROJECT_FINGERPRINT` |
-| **Outputs** | Working Docker environment |
-| **Policy** | Containers must pass health checks |
-| **Stop Conditions** | Docker daemon not running, disk full |
+| Attribute           | Details                                     |
+|:--------------------|:--------------------------------------------|
+| **Inputs**          | `docker-compose.yml`, `PROJECT_FINGERPRINT` |
+| **Outputs**         | Working Docker environment                  |
+| **Policy**          | Containers must pass health checks          |
+| **Stop Conditions** | Docker daemon not running, disk full        |
 
 ---
 
@@ -23,8 +23,11 @@
 Identify stack to understand container expectations (e.g., JVM vs. Python runtime).
 
 ```bash
+
 # Check fingerprint
+
 cat agent/contracts/PROJECT_FINGERPRINT.md
+
 ```
 
 ### Stack Norms
@@ -43,9 +46,9 @@ cat agent/contracts/PROJECT_FINGERPRINT.md
 
 ## Step 1: Diagnose (Universal)
 
-1.  **Status:** `docker ps`
-2.  **Logs:** `docker-compose logs`
-3.  **Space:** `docker system df`
+1. **Status:** `docker ps`
+2. **Logs:** `docker-compose logs`
+3. **Space:** `docker system df`
 
 ---
 
@@ -60,8 +63,11 @@ Depending on the stack detected in Step 0, apply specific fixes.
 - **Web (NPM):** Node versions mismatch. Check base image.
 
 ```bash
+
 # General Rebuild (Safe)
+
 docker-compose build --no-cache
+
 ```
 
 ---
@@ -69,12 +75,17 @@ docker-compose build --no-cache
 ## Step 3: Verify (Universal)
 
 // turbo
+
 ```bash
+
 # All containers running?
+
 docker-compose ps
 
 # Health endpoints?
+
 curl http://localhost:8000/healthz (or equivalent)
+
 ```
 
 ---

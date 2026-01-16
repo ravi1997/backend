@@ -6,4 +6,5 @@
 - Update issue/ticket status
 
 Artifacts:
+
 - `artifacts/PR_SUMMARY.md`

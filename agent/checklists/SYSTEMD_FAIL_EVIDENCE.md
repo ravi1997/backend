@@ -15,28 +15,37 @@ Do NOT skip any section. Incomplete evidence leads to wrong diagnosis.
 
 ## Section A: Service Status
 
-### Commands to Run
+### Commands to Run (Service Status)
+
 ```bash
+
 # 1. Current status
+
 sudo systemctl status myapp.service
 
 # 2. Service file location
+
 systemctl cat myapp.service
 
 # 3. Check if enabled
+
 systemctl is-enabled myapp.service
 
 # 4. Check dependencies
+
 systemctl list-dependencies myapp.service
+
 ```
 
-### Expected Information
+### Expected Information (Service Status)
+
 - [ ] Service state (active/inactive/failed)
 - [ ] Exit code and signal
 - [ ] Service file path
 - [ ] Whether service is enabled
 
 ### Common States
+
 - `active (running)` → Service is working
 - `inactive (dead)` → Service stopped
 - `failed` → Service crashed
@@ -46,29 +55,39 @@ systemctl list-dependencies myapp.service
 
 ## Section B: Service Logs
 
-### Commands to Run
+### Commands to Run (Service Logs)
+
 ```bash
+
 # 1. Recent logs (last 100 lines)
+
 sudo journalctl -u myapp.service -n 100 --no-pager
 
 # 2. Logs since last boot
+
 sudo journalctl -u myapp.service -b
 
 # 3. Follow logs in real-time
+
 sudo journalctl -u myapp.service -f
+
 # (Ctrl+C to stop)
 
 # 4. Logs with timestamps
+
 sudo journalctl -u myapp.service -n 50 --no-pager -o short-precise
+
 ```
 
-### Expected Information
+### Expected Information (Service Logs)
+
 - [ ] Error messages documented
 - [ ] Stack traces (if any)
 - [ ] Exit codes
 - [ ] Restart attempts
 
 ### Common Error Patterns
+
 - `code=exited, status=203/EXEC` → Can't execute binary
 - `code=exited, status=1` → Application error
 - `code=exited, status=2` → Missing file
@@ -79,26 +98,34 @@ sudo journalctl -u myapp.service -n 50 --no-pager -o short-precise
 
 ## Section C: Service Configuration
 
-### Commands to Run
+### Commands to Run (Service Configuration)
+
 ```bash
+
 # 1. Show full service file
+
 systemctl cat myapp.service
 
 # 2. Check for overrides
+
 systemctl cat myapp.service | grep -A 5 "drop-in"
 
 # 3. Validate service file
+
 systemd-analyze verify myapp.service
+
 ```
 
-### Expected Information
+### Expected Information (Service Configuration)
+
 - [ ] ExecStart command documented
 - [ ] User/Group documented
 - [ ] WorkingDirectory documented
 - [ ] Environment variables documented
 - [ ] Restart policy documented
 
-### Red Flags
+### Red Flags (Service Configuration)
+
 - ❌ ExecStart points to non-existent file
 - ❌ WorkingDirectory doesn't exist
 - ❌ User doesn't exist
@@ -108,30 +135,41 @@ systemd-analyze verify myapp.service
 
 ## Section D: Executable and Permissions
 
-### Commands to Run
+### Commands to Run (Executable and Permissions)
+
 ```bash
+
 # 1. Check if executable exists
+
 ls -la /path/to/executable
 
 # 2. Check if executable
+
 file /path/to/executable
 
 # 3. Test execution manually
+
 /path/to/executable --version
+
 # OR
+
 sudo -u serviceuser /path/to/executable --version
 
 # 4. Check working directory
+
 ls -la /path/to/workdir
+
 ```
 
-### Expected Information
+### Expected Information (Executable and Permissions)
+
 - [ ] Executable exists
 - [ ] Executable has execute permission
 - [ ] Working directory exists
 - [ ] Service user can access files
 
-### Red Flags
+### Red Flags (Executable and Permissions)
+
 - ❌ File not found
 - ❌ Not executable (-rw-r--r--)
 - ❌ Wrong ownership
@@ -141,28 +179,37 @@ ls -la /path/to/workdir
 
 ## Section E: Dependencies and Environment
 
-### Commands to Run
+### Commands to Run (Dependencies and Environment)
+
 ```bash
+
 # 1. Check Python dependencies (if Python app)
+
 sudo -u serviceuser python3 -c "import mymodule"
 
 # 2. Check environment variables
+
 systemctl show myapp.service | grep Environment
 
 # 3. Check if ports are available
+
 sudo ss -tlnp | grep 8000
 
 # 4. Check database connectivity (if applicable)
+
 sudo -u serviceuser psql -h localhost -U dbuser -c "SELECT 1"
+
 ```
 
-### Expected Information
+### Expected Information (Dependencies and Environment)
+
 - [ ] All dependencies installed
 - [ ] Environment variables set
 - [ ] Required ports available
 - [ ] External services reachable
 
-### Red Flags
+### Red Flags (Dependencies and Environment)
+
 - ❌ ImportError / ModuleNotFoundError
 - ❌ Missing environment variable
 - ❌ Port already in use
@@ -172,28 +219,37 @@ sudo -u serviceuser psql -h localhost -U dbuser -c "SELECT 1"
 
 ## Section F: Resource Checks
 
-### Commands to Run
+### Commands to Run (Resource Checks)
+
 ```bash
+
 # 1. Check memory
+
 free -h
 
 # 2. Check disk space
+
 df -h
 
 # 3. Check for OOM kills
+
 sudo dmesg | grep -i "killed process" | grep myapp
 
 # 4. Check file descriptor limits
+
 cat /proc/$(pgrep -f myapp)/limits | grep "open files"
+
 ```
 
-### Expected Information
+### Expected Information (Resource Checks)
+
 - [ ] Available memory
 - [ ] Available disk space
 - [ ] No recent OOM kills
 - [ ] File descriptor limits
 
-### Red Flags
+### Red Flags (Resource Checks)
+
 - ❌ Low memory (< 100MB)
 - ❌ Disk full
 - ❌ OOM killer active
@@ -204,6 +260,7 @@ cat /proc/$(pgrep -f myapp)/limits | grep "open files"
 ## Section G: Recent Changes
 
 ### Questions to Answer
+
 - [ ] What changed recently?
   - Code update?
   - Config change?
@@ -235,7 +292,8 @@ Based on evidence, check which applies:
 
 After collecting all evidence, write a 10-line summary:
 
-```
+```text
+
 DIAGNOSIS SUMMARY
 =================
 Service: myapp.service
@@ -248,6 +306,7 @@ Evidence: [key evidence]
 Recommended Fix: [specific action]
 Estimated Time: [minutes]
 Risk Level: [low/medium/high]
+
 ```
 
 ---
@@ -255,6 +314,7 @@ Risk Level: [low/medium/high]
 ## Validation
 
 Before proceeding to fix:
+
 - [ ] All sections A-H completed
 - [ ] Root cause identified
 - [ ] Evidence supports diagnosis

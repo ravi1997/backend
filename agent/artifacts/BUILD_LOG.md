@@ -5,20 +5,26 @@
 **Target:** {{target}}
 
 ## Build Summary
+
 - **Status:** [SUCCESS / FAIL]
 - **Duration:** {{duration}}
 - **Output Artifacts:** {{output_files}}
 
 ## System Info
+
 - **Compiler/Runtime:** {{compiler_version}}
 - **OS:** {{os_info}}
 
 ## Error Details (if failed)
+
 ```text
+
 {{error_snippet}}
+
 ```
 
 ## Resolution Steps taken
+
 1. {{step_1}}
 2. {{step_2}}
 

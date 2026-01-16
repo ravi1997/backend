@@ -1,6 +1,7 @@
 # SKILL: React + Tailwind Conventions
 
 Prefer:
+
 - consistent component naming
 - utility-first Tailwind with design tokens
 - avoid inline style for repeated patterns

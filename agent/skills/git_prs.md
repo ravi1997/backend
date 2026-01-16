@@ -1,6 +1,7 @@
 # Skill: Git, PRs, and Clean Commits
 
 ## Flow
+
 1. Create branch `fix/<slug>` or `feat/<slug>`
 2. Make smallest coherent changes
 3. Add/adjust tests

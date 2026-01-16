@@ -1,6 +1,7 @@
 # Snippet: systemd gunicorn service (template)
 
 ```ini
+
 [Unit]
 Description=Gunicorn for Flask app
 After=network.target
@@ -16,4 +17,5 @@ RestartSec=3
 
 [Install]
 WantedBy=multi-user.target
+
 ```
