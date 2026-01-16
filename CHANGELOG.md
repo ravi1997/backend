@@ -10,14 +10,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
+
 - Frontend application development
 - Mobile application
 - Real-time collaborative editing
 - Advanced analytics dashboard
 
+## [1.25.0] - 2026-01-16
+
+### Added
+
+- **Agent Route Documentation**:
+  - Added `agent/ROUTE_DOCUMENTATION.md` detailing routing logic for AI Agent integration.
+  - Defines routing priorities (Incidents -> Build -> Feature -> Quality).
+  - Documents intent triggers and target workflows for development efficiency.
+
+### Enhanced
+
+- **Authentication**:
+  - Improved error handling in `register` endpoint.
+  - Now explicitly catches `marshmallow.ValidationError` to return detailed validation messages.
+  - Added warning logs for validation failures.
+
+### Cleanup
+
+- Removed temporary script files (`apply_fix.py`, `debug_eval.py`, etc.).
+
 ## [1.24.0] - 2026-01-09
 
 ### Fixed
+
 - **Critical Test Fix - Approval Workflow**:
   - Fixed `test_approval_workflow` failure caused by UUID serialization issue in mongomock.
   - Updated `ApprovalStep` model in `Form.py` to use `binary=False` for `UUIDField`.
@@ -25,16 +47,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All 78 tests now passing (100% pass rate).
 
 ### Enhanced
+
 - **Test Reporting System**:
   - Enhanced `scripts/run_tests_with_report.py` to include `-o junit_logging=all` for comprehensive output capture.
   - Improved `TEST_FAILURE_REPORT.md` generation with detailed stack traces and contextual information.
   - Added industry-standard failure reporting with actionable fix suggestions.
 
 ### Added
+
 - **Frontend SRS Documentation (v2.0)**:
   - **Comprehensive Specification**: 4-part detailed Frontend Software Requirements Specification matching backend SRS depth.
   - **Part 1 (Main)**: Enhanced introduction, complete tech stack with versions, role-based access matrix, detailed navigation structure.
-  - **Part 2 (Functional Requirements)**: 
+  - **Part 2 (Functional Requirements)**:
     - 8 detailed modules: Authentication, Dashboard, Form Builder, Public Submission, Response Management, Approval Workflow, AI Features, Workflows.
     - 40+ functional requirements with UI mockups, implementation details, and API integration specs.
     - Complete UHID/OTP integration UI specifications.
@@ -55,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Gap Analysis Report**: Identified and documented all critical gaps, missing specifications, and required improvements.
 
 ### Documentation
+
 - Created `FRONTEND_SRS.md` - Main frontend specification document (v2.0).
 - Created `FRONTEND_SRS_PART2.md` - Detailed functional requirements (Sections 4-7).
 - Created `FRONTEND_SRS_PART3.md` - Data models, API reference, validation (Sections 10-12).
@@ -64,6 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated test configuration in `conftest.py` for proper UUID handling.
 
 ### Technical Debt Resolved
+
 - MongoDB UUID representation standardized across test and production environments.
 - Test suite now fully compatible with mongomock 4.3.0.
 - Eliminated all UUID serialization warnings and errors.
@@ -71,6 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.23.0] - 2026-01-09
 
 ### Added
+
 - **Workflow Engine (Phase 2)**:
   - **Form Workflows**: Create and manage conditional logic between forms (`FR-WORK-001`).
   - **CRUD API**: Endpoints for creating, listing, updating, and deleting workflows.
@@ -82,6 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.22.0] - 2026-01-09
 
 ### Added
+
 - **Dynamic Dashboards**:
   - **Customizable Views**: Create role-specific dashboards with configured widgets (`FR-DASH-001`).
   - **Widget Types**: Supported widgets include `counter`, `list_view`, `chart_bar`, `chart_pie`, and `shortcut`.
@@ -92,6 +120,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.14.0] - 2026-01-09
 
 ### Added
+
 - **Bulk Response Export**:
   - New `POST /form/export/bulk` endpoint to export multiple forms' responses into a single ZIP file.
   - Re-usable CSV generation logic for individual and bulk exports.
@@ -102,6 +131,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.21.0] - 2026-01-09
 
 ### Added
+
 - **Automated AI Security Audit**:
   - Scanning engine for form definitions to proactively identify vulnerabilities.
   - **Exposure Detection**: Flags sensitive fields (SSN, Passwords) configured in publicly accessible forms.
@@ -113,6 +143,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.20.0] - 2026-01-09
 
 ### Added
+
 - **AI Deep Content Moderation**:
   - **Sensitive PII Discovery**: Detects SSNs, Credit Card numbers, and other identity markers.
   - **PHI Identification**: Special medical terminology scanning to protect health-specific data.
@@ -123,6 +154,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.19.0] - 2026-01-09
 
 ### Added
+
 - **AI Anomaly Detection**:
   - Automatically identifies suspicious response patterns using statistical analysis and heuristics.
   - **Duplicate Detection**: Flags near-identical submissions (spam control).
@@ -133,6 +165,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.18.0] - 2026-01-09
 
 ### Added
+
 - **Enhanced AI Response Analysis**:
   - **Bulk Sentiment Trends**: Aggregate sentiment distribution (Positive/Negative/Neutral) and average scoring for all form responses.
   - **Expanded Sentiment Dictionary**: Integration of 30+ new emotional keywords (e.g., "helpful", "useless", "efficient", "difficult").
@@ -141,6 +174,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.17.0] - 2026-01-09
 
 ### Added
+
 - **AI Form Template Generation**:
   - New catalog of industry-standard form templates (HR, Medical, Safety, events).
   - New endpoints: `GET /ai/templates` (list) and `GET /ai/templates/<id>` (fetch).
@@ -151,6 +185,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.16.0] - 2026-01-09
 
 ### Added
+
 - **Advanced Response Management**:
   - **Response Merge**: Combine multiple submissions into a single record with intelligent `None` value handling.
   - **Multi-step Approval Workflow**: Support for sequential approval steps based on user roles (e.g., Manager -> Admin).
@@ -167,6 +202,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.15.0] - 2026-01-09
 
 ### Added
+
 - **Response Management Enhancements**:
   - Comprehensive **Edit History** tracking (Creation, Updates, Status Changes, Deletion, Restoration).
   - **Internal Commenting** system for responses to aid team collaboration.
@@ -177,10 +213,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - API endpoints to create new versions and switch the currently active version.
   - Validation and submission logic now prioritize the selected active version.
 
-
 ## [1.13.0] - 2026-01-09
 
 ### Added
+
 - **Multi-language Support**:
   - Implemented localized labels and options for forms (`FR-FORM-017`).
   - Added `translations` field to `FormVersion` model to store language-specific strings.
@@ -189,10 +225,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated `GET /form/<id>` to support the `lang` query parameter for delivering merged, localized forms.
   - Integrated translation logic into the Server-Side Rendering (SSR) `view_form` route.
 
-
 ## [1.12.0] - 2026-01-09
 
 ### Added
+
 - **Response Drafts / Auto-save**:
   - Implemented `is_draft` functionality for responses (`FR-RESP-014`).
   - Added lenient validation for drafts, allowing incomplete submissions to be saved without triggering required field errors or minimum limit checks.
@@ -206,6 +242,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.11.0] - 2026-01-09
 
 ### Added
+
 - **Custom Script Execution**:
   - Implemented secure server-side script execution for fields (`FR-API-004`).
   - Added `execute_safe_script` utility with restricted globals and allowed modules (math, random, datetime, json, re).
@@ -217,11 +254,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented `POST /forms/<id>/preview` (FR-FORM-016).
   - Allows strict validation of form data including logic and scripts without creating a database record.
 
-
-
 ## [1.10.0] - 2026-01-09
 
 ### Added
+
 - **Advanced Validation**:
   - Implemented form-level `custom_validations` for cross-field logic (e.g. `start_date < end_date`).
   - Added expression evaluation in `validate_form_submission`.
@@ -235,6 +271,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.9.0] - 2026-01-09
 
 ### Added
+
 - **Form Analytics**:
   - `GET /analytics/summary`: Real-time submission totals and status breakdown.
   - `GET /analytics/timeline`: Daily submission counts for trend analysis.
@@ -245,6 +282,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.8.0] - 2026-01-09
 
 ### Added
+
 - **Data Integrity**:
   - Enhanced `validate_form_submission` to return valid, cleaned data.
   - Automatically strips hidden fields (where `visibility_condition` is false) from submissions.
@@ -256,6 +294,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.7.0] - 2026-01-09
 
 ### Added
+
 - **Scheduled Publishing**:
   - Added `publish_at` to `Form` model.
   - Implemented logic to block access to future forms (unless Editor).
@@ -266,6 +305,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.6.0] - 2026-01-09
 
 ### Added
+
 - **Response Status Management**:
   - Added `status` (pending/approved/rejected) and `status_log` to `FormResponse`.
   - Created `PATCH /responses/<id>/status` endpoint for approval workflows.
@@ -275,6 +315,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.5.0] - 2026-01-09
 
 ### Added
+
 - **Email Notifications**:
   - Added `notification_emails` to Form model.
   - Implemented generic `EmailService` utility.
@@ -284,6 +325,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.0] - 2026-01-08
 
 ### Added
+
 - **Response Edit History**:
   - Implemented `ResponseHistory` model to track changes.
   - Added audit trail for updates and deletions (`data_before` vs `data_after`).
@@ -296,38 +338,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented HMAC-signed triggers for `submitted`, `updated`, and `deleted` events.
 
 ### Fixed
+
 - **Submission Versioning**: Added `version` field to `FormResponse` to track form version at time of submission.
 - **Soft Delete Refactor**: Unified soft delete logic across all response endpoints.
 - **Permission Bug**: Fixed `has_form_permission` to correctly handle UUID objects.
 
 ---
 
-
 ## [1.3.1] - 2026-01-08
 
 ### Added
+
 - **Conditional Required Fields**:
   - Added `required_condition` to Question model to make fields mandatory based on logic.
   - Implemented shared validation service `validate_form_submission`.
   - Added UUID sanitization for safe evaluation of conditions.
 
 ### Fixed
+
 - **Public Submission Validation**:
   - Integrated validation service into `public_submit` endpoint to prevent invalid data from anonymous users.
 
 ---
 
-
 ## [1.3.0] - 2026-01-08
 
 ### Added
-- **Backend Test Suite**: 
+
+- **Backend Test Suite**:
   - Implemented 30 comprehensive tests using `pytest` and `mongomock`.
   - Covered Authentication, User Management, Form CRUD, Responses, Analytics, and API Integrations.
   - Configured `conftest.py` for fully isolated database testing.
 - **Improved Data Filtering**: Added global filtering for archived/deleted responses in listing and search endpoints.
 
 ### Fixed
+
 - **Authentication Resilience**: Fixed `AttributeError` for `request.current_user` by switching to `get_current_user()` helper.
 - **Model Security**: Resolved datetime comparison `TypeError` in `User` model by ensuring consistent timezone-aware objects.
 - **User Management**: Fixed manual `User` instantiation in `create_user` route that caused 500 errors.
@@ -340,7 +385,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.2.0] - 2026-01-08
 
 ### Added
-- **Security Enhancements**: 
+
+- **Security Enhancements**:
   - Implemented account locking check in login flow.
   - Implemented password expiration check in login flow.
   - Added failed login attempt tracking logic.
@@ -357,6 +403,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Documentation & Roadmap
+
 - **Comprehensive SRS Document**: 2300+ lines covering 9 major areas including AI integration roadmaps and security matrices.
 - **Detailed Implementation Plan**: Phase-based roadmap (P0-P3) for completing and hardening the system.
 - **Form Builder Specifications**: Detailed technical guide for field types, visibility logic, and validation.
@@ -364,6 +411,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **User-Form Integration Matrix**: Permission inheritance models and data flow documentation.
 
 #### Project Configuration
+
 - **Agent Workspace Setup**: Configured project context for AI agent auto-detection and workflow optimization.
 - **Project Structure Audit**: Completed thorough analysis of models, routes, and schemas to identify system gaps.
 
@@ -374,6 +422,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Authentication Module
+
 - User registration with email/username/employee_id
 - Password-based login for employee users
 - OTP-based login for all users
@@ -383,6 +432,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Password expiration (90 days)
 
 #### User Management
+
 - Full CRUD operations for users
 - Role-based access control (8 roles)
 - Account lock/unlock functionality
@@ -391,6 +441,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Password expiry extension
 
 #### Form Management
+
 - Create forms with sections and questions
 - 12 field types support (input, textarea, select, radio, checkbox, etc.)
 - 4 UI layouts: flex, grid-cols-2, tabbed, custom
@@ -400,12 +451,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Repeatable sections and questions support
 
 #### Response Management
+
 - Submit responses with file upload support
 - Advanced search with cursor-based pagination
 - Response archiving and duplicate check
 - Metadata tracking for submissions
 
 #### Infrastructure & Security
+
 - MongoDB with MongoEngine ODM integration
 - File upload management with MIME type security
 - External API integrations (UHID, SMS OTP)
@@ -416,6 +469,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2025-12-15
 
 ### Added
+
 - Initial project setup
 - Flask application factory
 - MongoDB connection
@@ -427,6 +481,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.25.0 | 2026-01-16 | Agent Route Docs & Auth Validation |
+| 1.24.0 | 2026-01-09 | Critical Tests & Frontend SRS |
+| 1.23.0 | 2026-01-09 | Workflow Engine |
 | 1.22.0 | 2026-01-09 | Dynamic Dashboards & Widgets |
 | 1.21.0 | 2026-01-09 | Automated Form Security Audit |
 | 1.20.0 | 2026-01-09 | Deep Content Moderation |
@@ -460,18 +517,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### From 0.1.0 to 1.0.0
 
 1. **Database Migration**: Run migrations for new fields
+
    ```bash
    # No automated migrations - manual verification required
    python -c "from app import create_app; create_app()"
    ```
 
 2. **Environment Variables**: Add new required variables
+
    ```
    JWT_SECRET_KEY=your-secret-key
    UPLOAD_FOLDER=uploads
    ```
 
 3. **Dependencies**: Install new packages
+
    ```bash
    pip install -r requirements.txt
    ```

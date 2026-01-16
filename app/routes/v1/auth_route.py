@@ -5,6 +5,7 @@ from app.config import Config
 from app.models.User import User
 from app.models.TokenBlocklist import TokenBlocklist
 from app.schemas.user_schema import UserSchema
+from marshmallow import ValidationError
 from flask_jwt_extended import (
     create_access_token, jwt_required,
     get_jwt, set_access_cookies, unset_jwt_cookies
@@ -27,6 +28,9 @@ def register():
     try:
         # Validate and deserialize data using Marshmallow
         user = user_schema.load(data)
+    except ValidationError as e:
+        current_app.logger.warning(f"❌ Validation error: {e.messages}")
+        return jsonify(message="Validation failed", details=e.messages), 400
     except Exception as e:
         current_app.logger.exception("❌ Error deserializing user data")
         return jsonify(message="Invalid user data"), 400
