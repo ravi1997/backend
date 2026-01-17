@@ -3,7 +3,7 @@ from werkzeug.utils import secure_filename
 from flask import current_app
 import uuid
 from datetime import datetime, timezone
-import magic  # python-magic library for file type detection
+import puremagic as magic  # pure-python library for file type detection (no libmagic needed)
 
 # Configure upload settings
 ALLOWED_EXTENSIONS = {
@@ -19,8 +19,7 @@ def allowed_file(filename):
 def get_file_mimetype(filepath):
     """Get the actual MIME type of a file"""
     try:
-        mime = magic.Magic(mime=True)
-        return mime.from_file(filepath)
+        return magic.from_file(filepath, mime=True)
     except:
         return None
 

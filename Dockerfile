@@ -1,15 +1,14 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install system dependencies (if any)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+# Copy the wheels from the host
+COPY wheels /wheels
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install the packages from the local wheels directory
+RUN pip install --no-index --find-links=/wheels /wheels/*
 
+# Copy the rest of the application
 COPY . .
 
 EXPOSE 5000

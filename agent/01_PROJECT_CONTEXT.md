@@ -30,9 +30,9 @@ Copy/paste and edit. **Leave unknowns blank** - agent will infer.
 
 # ============================================
 
-app_name: "backend"              # REQUIRED (e.g., "my-fintech-app")
-project_type: "python"          # REQUIRED (python|nodejs|java|cpp|go|rust|flutter|static)
-env: "dev"                # REQUIRED (dev|staging|production)
+app_name: "backend"
+project_type: "python"
+env: "production"
 
 # ============================================
 
