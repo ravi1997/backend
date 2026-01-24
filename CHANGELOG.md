@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.26.0] - 2026-01-24
+
+### Added
+
+- **Form Version Management**:
+  - Implemented GET and PUT endpoints for specific form versions (`/<form_id>/versions/<v_str>`).
+  - Added list endpoint for all versions of a form (`/<form_id>/versions`).
+  - Updated API documentation in `route_documentation.md` for new versioning features.
+- **AI Form Generation (Local LLM)**:
+  - Integrated local LLM support via Ollama for dynamic form structure generation.
+  - Implemented `AIService` for prompt-to-JSON transformation and post-processing (UUID generation, field type normalization).
+  - Added LLM configuration settings (Provider, URL, Model).
+- **Service Infrastructure**:
+  - Added `ollama` service to Docker configuration.
+  - Implemented healthchecks and dedicated networks (`app_net`, `db_net`) in `docker-compose.yml`.
+  - Added `.env` file support and production-ready `gunicorn` command for backend service.
+
+### Enhanced
+
+- **Authentication & Logging**:
+  - Improved login security by redacting sensitive fields (passwords, OTPs) from debug logs.
+  - Refined user lookup logic in login endpoint.
+  - Restricted CORS allowed origins for better security.
+- **Database Connection**:
+  - Enhanced MongoDB connection logic to support authenticated instances and configurable URI options.
+
 ## [0.1.0-staging] - 2026-01-16
 
 ### Added
@@ -493,6 +519,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.26.0 | 2026-01-24 | Form Versioning, Local LLM Integration & Infra Hardening |
 | 1.25.0 | 2026-01-16 | Agent Route Docs & Auth Validation |
 | 1.24.0 | 2026-01-09 | Critical Tests & Frontend SRS |
 | 1.23.0 | 2026-01-09 | Workflow Engine |

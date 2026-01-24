@@ -1,0 +1,23 @@
+services:
+  backend:
+    environment:
+      FLASK_ENV: development
+      FLASK_DEBUG: "1"
+
+      # helps when file change events don't propagate perfectly (common on some setups)
+      WATCHFILES_FORCE_POLLING: "true"
+
+    # mount the *entire repo* so changes on host reflect in container
+    volumes:
+      - .:/app
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+
+    # dev command: gunicorn reload (keeps your gunicorn flow)
+    command: >
+      gunicorn
+      --bind 0.0.0.0:5000
+      --workers 1
+      --reload
+      --reload-extra-file /app/.env
+      run:app

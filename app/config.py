@@ -63,6 +63,11 @@ class Config:
     EHOSPITAL_HOSPITAL_ID=os.getenv("EHOSPITAL_HOSPITAL_ID",0)
     EHOSPITAL_API_TOKEN=os.getenv("EHOSPITAL_API_TOKEN","")
 
+    # LLM Settings
+    LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")
+    LLM_API_URL = os.getenv("LLM_API_URL", "http://ollama:11434/v1")
+    LLM_MODEL = os.getenv("LLM_MODEL", "llama3")
+
 class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.getenv("DEVELOPMENT_DATABASE_URI", "sqlite:///dev.db")
     MY_ENVIRONMENT = "DEVELOPMENT"

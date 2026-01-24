@@ -36,7 +36,11 @@ def create_form():
                 except ValueError:
                     pass # Let MongoEngine handle or raise error if invalid format
 
-        form = Form(**data)
+        # Filter fields that exist in Form model
+        valid_fields = set(Form._fields.keys())
+        filtered_data = {k: v for k, v in data.items() if k in valid_fields}
+
+        form = Form(**filtered_data)
         form.created_by = str(current_user.id)
         form.editors = [str(current_user.id)]
         if form.versions:
@@ -139,7 +143,11 @@ def update_form(form_id):
         current_user = get_current_user()
         if not has_form_permission(current_user, form, "edit"):
             return jsonify({"error": "Unauthorized to edit"}), 403
-        form.update(**data)
+        # Filter fields that exist in Form model
+        valid_fields = set(Form._fields.keys())
+        filtered_data = {k: v for k, v in data.items() if k in valid_fields}
+        
+        form.update(**filtered_data)
         return jsonify({"message": "Form updated"}), 200
     except DoesNotExist:
         return jsonify({"error": "Form not found"}), 404
@@ -283,6 +291,7 @@ def reorder_sections(form_id):
             
         data = request.get_json()
         new_order = data.get("order") # List of section IDs
+        v_str = request.args.get("v")
         
         if not new_order or not isinstance(new_order, list):
             return jsonify({"error": "Invalid order list"}), 400
@@ -290,8 +299,15 @@ def reorder_sections(form_id):
         if not form.versions:
             return jsonify({"error": "Form has no versions"}), 400
             
-        latest_version = form.versions[-1]
-        existing_sections = {str(s.id): s for s in latest_version.sections}
+        # Find target version
+        if v_str:
+            target_version = next((v for v in form.versions if v.version == v_str), None)
+            if not target_version:
+                return jsonify({"error": f"Version {v_str} not found"}), 404
+        else:
+            target_version = form.versions[-1]
+
+        existing_sections = {str(s.id): s for s in target_version.sections}
         
         if len(new_order) != len(existing_sections):
             return jsonify({"error": "Order list length mismatch"}), 400
@@ -308,11 +324,10 @@ def reorder_sections(form_id):
         for idx, section in enumerate(reordered_sections):
             section.order = idx
             
-        latest_version.sections = reordered_sections
+        target_version.sections = reordered_sections
         form.save()
         
         return jsonify({"message": "Sections reordered successfully"}), 200
-        
     except DoesNotExist:
         return jsonify({"error": "Form not found"}), 404
     except Exception as e:
@@ -331,6 +346,7 @@ def reorder_questions(form_id, section_id):
             
         data = request.get_json()
         new_order = data.get("order") # List of question IDs
+        v_str = request.args.get("v")
         
         if not new_order or not isinstance(new_order, list):
             return jsonify({"error": "Invalid order list"}), 400
@@ -338,10 +354,16 @@ def reorder_questions(form_id, section_id):
         if not form.versions:
             return jsonify({"error": "Form has no versions"}), 400
             
-        latest_version = form.versions[-1]
+        # Find target version
+        if v_str:
+            target_version = next((v for v in form.versions if v.version == v_str), None)
+            if not target_version:
+                return jsonify({"error": f"Version {v_str} not found"}), 404
+        else:
+            target_version = form.versions[-1]
         
         target_section = None
-        for s in latest_version.sections:
+        for s in target_version.sections:
             if str(s.id) == section_id:
                 target_section = s
                 break
@@ -367,7 +389,6 @@ def reorder_questions(form_id, section_id):
         form.save()
         
         return jsonify({"message": "Questions reordered successfully"}), 200
-        
     except DoesNotExist:
         return jsonify({"error": "Form not found"}), 404
     except Exception as e:
@@ -385,6 +406,7 @@ def bulk_import_options(form_id, section_id, question_id):
             return jsonify({"error": "Unauthorized to edit form"}), 403
 
         replace = request.args.get("replace", "false").lower() == "true"
+        v_str = request.args.get("v")
         file = request.files.get("file")
         
         if not file:
@@ -411,9 +433,16 @@ def bulk_import_options(form_id, section_id, question_id):
         if not form.versions:
             return jsonify({"error": "Form has no versions"}), 400
             
-        latest_version = form.versions[-1]
+        # Find target version
+        if v_str:
+            target_version = next((v for v in form.versions if v.version == v_str), None)
+            if not target_version:
+                return jsonify({"error": f"Version {v_str} not found"}), 404
+        else:
+            target_version = form.versions[-1]
+            
         target_question = None
-        for s in latest_version.sections:
+        for s in target_version.sections:
             if str(s.id) == section_id:
                 for q in s.questions:
                     if str(q.id) == question_id:
@@ -431,7 +460,6 @@ def bulk_import_options(form_id, section_id, question_id):
             
         form.save()
         return jsonify({"message": f"Imported {len(new_options)} options"}), 200
-
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
@@ -480,6 +508,28 @@ def create_new_version(form_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+@form_bp.route("/<form_id>/versions", methods=["GET"])
+@jwt_required()
+def list_form_versions(form_id):
+    try:
+        current_user = get_current_user()
+        form = Form.objects.get(id=form_id)
+        if not has_form_permission(current_user, form, "view"):
+            return jsonify({"error": "Unauthorized"}), 403
+            
+        versions = []
+        for v in form.versions:
+            v_dict = v.to_mongo().to_dict()
+            versions.append(v_dict)
+            
+        return jsonify(versions), 200
+        
+    except DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
 @form_bp.route("/<form_id>/versions/<v_str>/activate", methods=["PATCH"])
 @jwt_required()
 def activate_version(form_id, v_str):
@@ -500,6 +550,71 @@ def activate_version(form_id, v_str):
     except DoesNotExist:
         return jsonify({"error": "Form not found"}), 404
     except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@form_bp.route("/<form_id>/versions/<v_str>", methods=["GET"])
+@jwt_required()
+def get_form_version(form_id, v_str):
+    try:
+        form = Form.objects.get(id=form_id)
+        current_user = get_current_user()
+        if not has_form_permission(current_user, form, "view"):
+            return jsonify({"error": "Unauthorized"}), 403
+
+        version = next((v for v in form.versions if v.version == v_str), None)
+        if not version:
+            return jsonify({"error": "Version not found"}), 404
+
+        return jsonify(version.to_mongo().to_dict()), 200
+    except DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@form_bp.route("/<form_id>/versions/<v_str>", methods=["PUT"])
+@jwt_required()
+def update_form_version(form_id, v_str):
+    try:
+        form = Form.objects.get(id=form_id)
+        current_user = get_current_user()
+        if not has_form_permission(current_user, form, "edit"):
+            return jsonify({"error": "Unauthorized"}), 403
+
+        data = request.get_json()
+        
+        # Find the index of the version to update
+        version_idx = next((i for i, v in enumerate(form.versions) if v.version == v_str), None)
+        if version_idx is None:
+            return jsonify({"error": "Version not found"}), 404
+
+        # Validate data using schema
+        from app.schemas.form_schema import FormVersionSchema
+        from app.models.Form import FormVersion
+        
+        # We might need to handle the case where version ID (v_str) is being updated in the data
+        # But usually version string should be the identifier provided.
+        # Ensure the 'version' in data matches v_str or we allow renaming?
+        # For simplicity, we use v_str as the identifier and let data override it if present.
+        
+        version_dict = FormVersionSchema().load(data)
+        
+        # Update the version in the list
+        update_key = f"set__versions__{version_idx}"
+        form.update(**{update_key: version_dict})
+        
+        # If this was the active version and the version string changed, update active_version
+        if form.active_version == v_str and version_dict.get("version") != v_str:
+            form.update(active_version=version_dict.get("version"))
+
+        return jsonify({"message": f"Version {v_str} updated"}), 200
+        
+    except DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+    except Exception as e:
+        import traceback
+        current_app.logger.error(f"Update version error: {str(e)}\n{traceback.format_exc()}")
         return jsonify({"error": str(e)}), 400
 
 

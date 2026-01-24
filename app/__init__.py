@@ -49,30 +49,71 @@ def create_app(config_class=Config):
 
     # Init MongoDB
     try:
-        db_name = app.config['MONGODB_SETTINGS']['db']
-        username = app.config['MONGODB_SETTINGS']['username']
-        password = app.config['MONGODB_SETTINGS'].get('password')
-        host = app.config['MONGODB_SETTINGS'].get('host')
-        port = app.config['MONGODB_SETTINGS'].get('port')
-        auth_source = app.config['MONGODB_SETTINGS'].get('auth_source')
+        mongo_settings = app.config['MONGODB_SETTINGS']
+        db_name = mongo_settings['db']
+        host = mongo_settings.get('host')
+        port = mongo_settings.get('port')
+        auth_source = mongo_settings.get('auth_source') or 'admin'
+        # Fall back to init variables so docker secrets still work if the app env is missing
+        username = mongo_settings.get('username') or os.getenv("MONGO_INITDB_ROOT_USERNAME")
+        password = mongo_settings.get('password') or os.getenv("MONGO_INITDB_ROOT_PASSWORD")
+        use_auth = bool(username and password)
+
+        mongo_kwargs = {
+            'alias': 'default',
+            'db': db_name,
+            'host': host,
+            'port': port,
+            'uuidRepresentation': 'standard',
+        }
+
+        if use_auth:
+            mongo_kwargs.update({
+                'username': username,
+                'password': password,
+                'authentication_source': auth_source,
+            })
+        else:
+            app.logger.warning(
+                "MongoDB credentials are missing; attempting unauthenticated connection to %s:%s/%s",
+                host,
+                port,
+                db_name,
+            )
 
         if app.config.get('TESTING'):
             import mongomock
             mongo(db_name, host='mongodb://localhost', mongo_client_class=mongomock.MongoClient, uuidRepresentation='standard')
             app.logger.info("MongoDB connected via MOCK")
         else:
-            # Construct the connection string
-            connection_string = f"mongodb://{host}:{port}/{db_name}?authSource={auth_source}&uuidRepresentation=standard"
-            mongo(host=connection_string)
-            app.logger.info("MongoDB connected: %s", connection_string)
+            mongo(**mongo_kwargs)
+            app.logger.info(
+                "MongoDB connected (auth=%s): host=%s:%s db=%s authSource=%s",
+                "enabled" if use_auth else "disabled",
+                host,
+                port,
+                db_name,
+                auth_source if use_auth else "n/a",
+            )
 
         if not app.config.get('TESTING'):
-            # Extract parameters from connection string
-            client = MongoClient(connection_string)
-            # Run a ping command
-            client.admin.command('ping')
-            print("✅ MongoDB connection successful.")
-            app.logger.info("✅ MongoDB connection successful.")
+            client_kwargs = {
+                'host': host,
+                'port': port,
+                'uuidRepresentation': 'standard',
+            }
+
+            if use_auth:
+                client_kwargs.update({
+                    'username': username,
+                    'password': password,
+                    'authSource': auth_source,
+                })
+
+            with MongoClient(**client_kwargs) as client:
+                client.admin.command('ping')
+                print("✅ MongoDB connection successful.")
+                app.logger.info("✅ MongoDB connection successful.")
 
     except ConnectionFailure as e:
         app.logger.error("❌ MongoDB connection failed: %s", e)
@@ -80,7 +121,7 @@ def create_app(config_class=Config):
         app.logger.exception("❌ MongoDB connection failed: %s", e)
 
     Compress(app)
-    CORS(app,supports_credentials=True)
+    CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}}, supports_credentials=True)
     app.logger.info("Middleware loaded: Compress, CORS")
 
     try:

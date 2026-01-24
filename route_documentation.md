@@ -562,7 +562,97 @@ curl -X POST http://localhost:5000/form/api/v1/form/65af.../responses \
 
 ---
 
-### 10.7 List Responses
+---
+
+### 10.7 List Form Versions
+
+Retrieve all versions available for a specific form.
+
+* **Endpoint:** `/<form_id>/versions`
+* **Method:** `GET`
+* **Auth Required:** Yes
+
+**Example Request:**
+
+```bash
+curl -X GET http://localhost:5000/form/api/v1/form/65af.../versions \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 10.8 Get Form Version
+
+Retrieve a specific version of a form.
+
+* **Endpoint:** `/<form_id>/versions/<v_str>`
+* **Method:** `GET`
+* **Auth Required:** Yes
+
+**Example Request:**
+
+```bash
+curl -X GET http://localhost:5000/form/api/v1/form/65af.../versions/1.1 \
+  -H "Authorization: Bearer <token>"
+```
+
+---
+
+### 10.9 Update Form Version
+
+Update structure and settings for a specific form version.
+
+* **Endpoint:** `/<form_id>/versions/<v_str>`
+* **Method:** `PUT`
+* **Auth Required:** Yes (Editor)
+
+**Input Schema:**
+Same as **Create Form Version**.
+
+---
+
+### 10.10 Reorder Sections
+
+Change the order of sections in a form version.
+
+* **Endpoint:** `/<form_id>/reorder-sections`
+* **Method:** `PATCH`
+* **Params:** `v` (optional version string, defaults to latest).
+* **Auth Required:** Yes (Editor)
+
+**Input:** `{"order": ["section_id_1", "section_id_2"]}`
+
+---
+
+### 10.11 Reorder Questions
+
+Change the order of questions within a section.
+
+* **Endpoint:** `/<form_id>/section/<section_id>/reorder-questions`
+* **Method:** `PATCH`
+* **Params:** `v` (optional version string, defaults to latest).
+* **Auth Required:** Yes (Editor)
+
+**Input:** `{"order": ["q_id_1", "q_id_2"]}`
+
+---
+
+### 10.12 Bulk Import Options
+
+Import choices for a question from a CSV file.
+
+* **Endpoint:** `/<form_id>/section/<section_id>/question/<question_id>/options/import`
+* **Method:** `POST`
+* **Params:**
+  * `replace` (boolean, default false)
+  * `v` (optional version string, defaults to latest)
+* **Auth Required:** Yes (Editor)
+
+**Input:** Multipart form-data with `file` field.
+
+---
+
+### 10.13 List Responses
 
 Retrieve submissions for a form.
 

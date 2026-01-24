@@ -63,10 +63,14 @@ def login():
     current_app.logger.info("Received login request")
     try:
         data = request.get_json(force=True)
-        current_app.logger.debug(f"Request JSON data: {data}")
     except Exception as e:
         data = request.form or {}
-        current_app.logger.warning(f"Failed to parse JSON data, falling back to form data: {data}, error: {str(e)}")
+        current_app.logger.warning("Failed to parse JSON data, falling back to form data: %s, error: %s",
+                                   {k: ("***" if k.lower() in {"password", "otp"} else v) for k, v in data.items()}, str(e))
+
+    # Redact sensitive fields before logging
+    sanitized_data = {k: ("***" if k.lower() in {"password", "otp"} else v) for k, v in data.items()}
+    current_app.logger.debug("Request JSON data (sanitized): %s", sanitized_data)
 
     identifier_fields = ['email', 'username', 'employee_id']
     password = data.get('password')
@@ -81,7 +85,6 @@ def login():
         current_app.logger.info(f"Employee login attempt with identifier: {identifier}")
         if identifier:
             user = User.objects(
-                user_type='employee',
                 __raw__={"$or": [
                     {"email": identifier},
                     {"username": identifier},
