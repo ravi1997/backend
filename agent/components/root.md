@@ -2,31 +2,35 @@
 
 **Component ID**: `root`
 **Path**: `.`
-**Confidence**: `Manual`
-**Description**: The root of the `ai-agent-md-pack` repository.
+**Confidence**: `High`
+**Description**: The backend project repository for the Brain AI, built with Python and Flask.
 
 ## Detected Stacks
 
-- **markdown**: Documentation and agent configuration files.
-- **bash**: Helper scripts (e.g., `setup-antigravity.sh`).
+- **python**: Core language for the backend application.
+- **flask**: Web framework used for the API.
+- **docker**: Containerization for development and deployment.
+- **markdown**: Documentation and agent configuration.
 
 ## Capabilities
 
 | Category  | Command                  | Description                                       |
 |:----------|:-------------------------|:--------------------------------------------------|
-| **Build** | *None*                   | No build required for this repo.                  |
-| **Test**  | *None*                   | No automated tests currently configured for root. |
-| **Run**   | `./setup-antigravity.sh` | Runs the setup script.                            |
-| **Lint**  | *None*                   | Markdown linting is manual/IDE-based.             |
+| **Build** | `docker compose build`   | Build the backend services.                       |
+| **Test**  | `pytest`                 | Run the test suite.                               |
+| **Run**   | `docker compose up`      | Run the application stack locally.                |
+| **Lint**  | `ruff check .`           | Lint the codebase using Ruff.                     |
+| **Format**| `ruff format .`          | Format the codebase using Ruff.                   |
 
 ## Dependencies
 
-- *None*
+- **python**: 3.10+
+- **docker**: Engine & Compose
 
 ## Deploy / Release
 
-- **Type**: `library` / `configuration-pack`
-- **Release**: Tagging a new version in git.
+- **Type**: `service`
+- **Release**: Deployment via Docker artifacts.
 
 ## Component Dependencies
 
@@ -35,10 +39,11 @@
 ## Paths
 
 - **owned_paths**:
-  - `agent/components/*.md` (Component Definitions)
-  - `agent/workflows/*.md` (Workflow Definitions)
-  - `*.sh` (Root scripts)
-  - `*.md` (Root documentation)
+  - `app/` (Application Source)
+  - `agent/` (Agent Configuration)
+  - `tests/` (Test Suite)
+  - `*.py` (Root scripts)
+  - `docker-compose*.yml` (Infrastructure)
 
 - **shared_paths**:
-  - `agent/workflows/_stack/*.md` (Shared stack workflows)
+  - `agent/workflows/_stack/*.md`
