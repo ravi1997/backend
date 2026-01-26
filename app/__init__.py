@@ -121,7 +121,10 @@ def create_app(config_class=Config):
         app.logger.exception("❌ MongoDB connection failed: %s", e)
 
     Compress(app)
-    CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}}, supports_credentials=True)
+    CORS(app, 
+         supports_credentials=True,
+         expose_headers=["Content-Type", "Authorization", "Set-Cookie"],
+         allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept"])
     app.logger.info("Middleware loaded: Compress, CORS")
 
     try:

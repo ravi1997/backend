@@ -19,19 +19,18 @@ services:
     command: gunicorn --bind 0.0.0.0:5000 --timeout 120 run:app
     networks:
       - app_net
-      - db_net
 
   db:
     image: mongo:6.0
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASS}
-      MONGO_INITDB_DATABASE: ${MONGODB_DB}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASS:-password123}
+      MONGO_INITDB_DATABASE: ${MONGODB_DB:-ai_backend}
     volumes:
       - mongodb_data:/data/db
     restart: always
     networks:
-      - db_net
+      - app_net
     healthcheck:
       test: [ "CMD-SHELL", "mongosh --quiet -u $$MONGO_INITDB_ROOT_USERNAME -p $$MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --eval 'db.adminCommand({ ping: 1 })' >/dev/null || exit 1" ]
       interval: 10s
@@ -54,7 +53,3 @@ volumes:
 networks:
   app_net:
     driver: bridge
-    external: true
-  db_net:
-    driver: bridge
-    external: true

@@ -298,37 +298,64 @@ List all users in the system.
 * **Method:** `GET`
 * **Auth Required:** Yes (Admin/Superadmin)
 
-**Example Request:**
+---
 
-```bash
-curl -X GET http://localhost:5000/form/api/v1/user/users \
-  -H "Authorization: Bearer <admin_token>"
-```
+### 7.4 Get Specific User (Admin)
+
+Retrieve details of a specific user.
+
+* **Endpoint:** `/users/<user_id>`
+* **Method:** `GET`
+* **Auth Required:** Yes (Admin/Superadmin)
 
 ---
 
-### 7.4 Reset Password (Admin)
+### 7.5 Create User (Admin)
 
-Reset a user's password.
+Create a new user manually.
 
-* **Endpoint:** `/reset-password`
+* **Endpoint:** `/users`
 * **Method:** `POST`
-* **Auth Required:** Yes
+* **Auth Required:** Yes (Admin/Superadmin)
 
-**Input Schema:**
+---
 
-| Parameter | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| `user_id` | string | Yes | User ID to reset. |
-| `new_password` | string | Yes | New password. |
+### 7.6 Update User (Admin)
 
-**Example Request:**
+Update user details.
 
-```bash
-curl -X POST http://localhost:5000/form/api/v1/user/reset-password \
-  -H "Authorization: Bearer <admin_token>" \
-  -d '{"user_id": "123", "new_password": "newpass"}'
-```
+* **Endpoint:** `/users/<user_id>`
+* **Method:** `PUT`
+* **Auth Required:** Yes (Admin/Superadmin)
+
+---
+
+### 7.7 Delete User (Admin)
+
+Remove a user from the system.
+
+* **Endpoint:** `/users/<user_id>`
+* **Method:** `DELETE`
+* **Auth Required:** Yes (Admin/Superadmin)
+
+---
+
+### 7.8 Lock/Unlock User (Admin)
+
+* **Endpoints:**
+  * `/<user_id>/lock` (POST)
+  * `/<user_id>/unlock` (POST)
+* **Auth Required:** Yes (Admin/Superadmin)
+
+---
+
+### 7.9 Security Utilities
+
+* **Endpoints:**
+  * `/security/extend-password-expiry` (POST) - Extend password validity.
+  * `/security/lock-status/<user_id>` (GET) - Check if account is locked.
+  * `/security/resend-otp` (POST) - Resend OTP to mobile.
+  * `/<user_id>/reset-otp-count` (POST) - Reset OTP resend attempts.
 
 ---
 
@@ -336,7 +363,17 @@ curl -X POST http://localhost:5000/form/api/v1/user/reset-password \
 
 **Base path:** `/form/api/v1/dashboards`
 
-### 8.1 Create Dashboard
+### 8.1 List Dashboards
+
+List dashboards accessible to the current user.
+
+* **Endpoint:** `/`
+* **Method:** `GET`
+* **Auth Required:** Yes
+
+---
+
+### 8.2 Create Dashboard
 
 Create a new dashboard configuration.
 
@@ -352,30 +389,25 @@ Create a new dashboard configuration.
 | `slug` | string | Yes | Unique URL Identifier. |
 | `widgets` | array | No | List of widget objects. |
 
-**Example Request:**
-
-```bash
-curl -X POST http://localhost:5000/form/api/v1/dashboards/ \
-  -H "Authorization: Bearer <token>" \
-  -d '{"title": "Ops", "slug": "ops", "widgets": []}'
-```
-
 ---
 
-### 8.2 Get Dashboard
+### 8.3 Get Dashboard
 
-Fetch a dashboard by slug.
+Fetch a dashboard by slug, including widget data.
 
 * **Endpoint:** `/<slug>`
 * **Method:** `GET`
 * **Auth Required:** Yes
 
-**Example Request:**
+---
 
-```bash
-curl -X GET http://localhost:5000/form/api/v1/dashboards/ops \
-  -H "Authorization: Bearer <token>"
-```
+### 8.4 Update Dashboard
+
+Update an existing dashboard configuration.
+
+* **Endpoint:** `/<id>`
+* **Method:** `PUT`
+* **Auth Required:** Yes (Admin)
 
 ---
 
@@ -383,7 +415,18 @@ curl -X GET http://localhost:5000/form/api/v1/dashboards/ops \
 
 **Base path:** `/form/api/v1/workflows`
 
-### 9.1 Create Workflow
+### 9.1 List Workflows
+
+List available workflows.
+
+* **Endpoint:** `/`
+* **Method:** `GET`
+* **Auth Required:** Yes (Admin)
+* **Params:** `trigger_form_id` (optional).
+
+---
+
+### 9.2 Create Workflow
 
 * **Endpoint:** `/`
 * **Method:** `POST`
@@ -395,15 +438,32 @@ curl -X GET http://localhost:5000/form/api/v1/dashboards/ops \
 | :--- | :--- | :--- | :--- |
 | `name` | string | Yes | Workflow Name. |
 | `trigger_form_id` | string | Yes | Which form triggers this. |
-| `actions` | array | No | List of actions (email, webhook). |
+| `trigger_condition` | string | No | Python expression for triggering. |
+| `actions` | array | No | List of actions (target_form, mapping). |
 
-**Example Request:**
+---
 
-```bash
-curl -X POST http://localhost:5000/form/api/v1/workflows/ \
-  -H "Authorization: Bearer <token>" \
-  -d '{"name": "Notify", "trigger_form_id": "123", "actions": []}'
-```
+### 9.3 Get Workflow
+
+* **Endpoint:** `/<id>`
+* **Method:** `GET`
+* **Auth Required:** Yes (Admin)
+
+---
+
+### 9.4 Update Workflow
+
+* **Endpoint:** `/<id>`
+* **Method:** `PUT`
+* **Auth Required:** Yes (Admin)
+
+---
+
+### 9.5 Delete Workflow
+
+* **Endpoint:** `/<id>`
+* **Method:** `DELETE`
+* **Auth Required:** Yes (Admin)
 
 ---
 
@@ -477,16 +537,29 @@ Retrieve the structure (questions, logic) of a form.
 * **Method:** `GET`
 * **Auth Required:** Yes
 
-**Example Request:**
+---
 
-```bash
-curl -X GET http://localhost:5000/form/api/v1/form/65af... \
-  -H "Authorization: Bearer <token>"
-```
+### 10.4 Update Form
+
+Update basic form settings.
+
+* **Endpoint:** `/<form_id>`
+* **Method:** `PUT`
+* **Auth Required:** Yes (Editor/Admin)
 
 ---
 
-### 10.4 Clone Form
+### 10.5 Delete Form
+
+Permanently delete a form and all its responses.
+
+* **Endpoint:** `/<form_id>`
+* **Method:** `DELETE`
+* **Auth Required:** Yes (Admin/Superadmin)
+
+---
+
+### 10.6 Clone Form
 
 Duplicate an existing form structure.
 
@@ -511,7 +584,7 @@ curl -X POST http://localhost:5000/form/api/v1/form/65af.../clone \
 
 ---
 
-### 10.5 Create Form Version
+### 10.7 Create Form Version
 
 Snapshot the current form structure as a numbered version.
 
@@ -537,7 +610,7 @@ curl -X POST http://localhost:5000/form/api/v1/form/65af.../versions \
 
 ---
 
-### 10.6 Submit Response
+### 10.8 Submit Response
 
 Submit a filled form entry.
 
@@ -564,7 +637,7 @@ curl -X POST http://localhost:5000/form/api/v1/form/65af.../responses \
 
 ---
 
-### 10.7 List Form Versions
+### 10.9 List Form Versions
 
 Retrieve all versions available for a specific form.
 
@@ -572,16 +645,19 @@ Retrieve all versions available for a specific form.
 * **Method:** `GET`
 * **Auth Required:** Yes
 
-**Example Request:**
+---
 
-```bash
-curl -X GET http://localhost:5000/form/api/v1/form/65af.../versions \
-  -H "Authorization: Bearer <token>"
-```
+### 10.10 Activate Version
+
+Set a specific version as the active version for submissions.
+
+* **Endpoint:** `/<form_id>/versions/<v_str>/activate`
+* **Method:** `PATCH`
+* **Auth Required:** Yes (Editor)
 
 ---
 
-### 10.8 Get Form Version
+### 10.11 Get Form Version
 
 Retrieve a specific version of a form.
 
@@ -598,7 +674,7 @@ curl -X GET http://localhost:5000/form/api/v1/form/65af.../versions/1.1 \
 
 ---
 
-### 10.9 Update Form Version
+### 10.12 Update Form Version
 
 Update structure and settings for a specific form version.
 
@@ -606,12 +682,20 @@ Update structure and settings for a specific form version.
 * **Method:** `PUT`
 * **Auth Required:** Yes (Editor)
 
-**Input Schema:**
-Same as **Create Form Version**.
+---
+
+### 10.13 Update Translations
+
+Add or update translations for a specific language.
+
+* **Endpoint:** `/<form_id>/translations`
+* **Method:** `POST`
+* **Auth Required:** Yes (Editor)
+* **Input:** `{"lang_code": "es", "translations": {...}}`
 
 ---
 
-### 10.10 Reorder Sections
+### 10.14 Reorder Sections
 
 Change the order of sections in a form version.
 
@@ -624,7 +708,7 @@ Change the order of sections in a form version.
 
 ---
 
-### 10.11 Reorder Questions
+### 10.15 Reorder Questions
 
 Change the order of questions within a section.
 
@@ -637,7 +721,7 @@ Change the order of questions within a section.
 
 ---
 
-### 10.12 Bulk Import Options
+### 10.16 Bulk Import Options
 
 Import choices for a question from a CSV file.
 
@@ -652,7 +736,7 @@ Import choices for a question from a CSV file.
 
 ---
 
-### 10.13 List Responses
+### 10.17 List Responses
 
 Retrieve submissions for a form.
 
@@ -682,47 +766,88 @@ Generate a form schema from a text description.
 * **Method:** `POST`
 * **Auth Required:** Yes
 
-**Input Schema:**
-
-| Parameter | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| `prompt` | string | Yes | Description of the form. |
-
-**Example Request:**
-
-```bash
-curl -X POST http://localhost:5000/form/api/v1/ai/generate \
-  -H "Authorization: Bearer <token>" \
-  -d '{"prompt": "Job application form"}'
-```
-
-**Response:**
-
-```json
-{
-  "suggestion": {
-    "title": "Job Application Form",
-    "sections": []
-  }
-}
-```
+**Input:** `{"prompt": "Job application form"}`
 
 ---
 
 ### 11.2 Analyze Response
 
-Perform sentiment analysis on a response.
+Perform sentiment analysis and PII scanning on a response.
 
 * **Endpoint:** `/<form_id>/responses/<id>/analyze`
 * **Method:** `POST`
 * **Auth Required:** Yes
 
-**Example Request:**
+---
 
-```bash
-curl -X POST http://localhost:5000/form/api/v1/ai/65af.../responses/res1/analyze \
-  -H "Authorization: Bearer <token>"
-```
+### 11.3 Content Moderation
+
+Perform deep moderation (Profanity, Injection, PHI detection).
+
+* **Endpoint:** `/<form_id>/responses/<id>/moderate`
+* **Method:** `POST`
+* **Auth Required:** Yes
+
+---
+
+### 11.4 Field Suggestions
+
+Get AI-powered field suggestions based on a theme.
+
+* **Endpoint:** `/suggestions`
+* **Method:** `POST`
+* **Auth Required:** Yes
+* **Input:** `{"theme": "feedback"}`
+
+---
+
+### 11.5 AI Templates
+
+* **Endpoints:**
+  * `GET /templates` - List AI form templates.
+  * `GET /templates/<template_id>` - Get specific template structure.
+* **Auth Required:** Yes
+
+---
+
+### 11.6 Sentiment Trends
+
+Get aggregate sentiment distribution for a form.
+
+* **Endpoint:** `/<form_id>/sentiment`
+* **Method:** `GET`
+* **Auth Required:** Yes
+
+---
+
+### 11.7 AI Powered Search
+
+Natural language search that translates to filters.
+
+* **Endpoint:** `/<form_id>/search`
+* **Method:** `POST`
+* **Auth Required:** Yes
+* **Input:** `{"query": "patients over 60"}`
+
+---
+
+### 11.8 Anomaly Detection
+
+Scan for duplicates, outliers, and low-quality responses.
+
+* **Endpoint:** `/<form_id>/anomalies`
+* **Method:** `POST`
+* **Auth Required:** Yes
+
+---
+
+### 11.9 Security Scan
+
+Analyze form definition for vulnerabilities.
+
+* **Endpoint:** `/<form_id>/security-scan`
+* **Method:** `POST`
+* **Auth Required:** Yes
 
 ---
 

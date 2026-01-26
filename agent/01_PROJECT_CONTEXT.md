@@ -32,7 +32,7 @@ Copy/paste and edit. **Leave unknowns blank** - agent will infer.
 
 app_name: "backend"
 project_type: "python"
-env: "production"
+env: "dev"
 
 # ============================================
 
@@ -64,7 +64,7 @@ app_port: 5000            # Internal port the app listens on
 
 uses_docker: true        # true/false
 compose_file: "docker-compose.yml"          # docker-compose.yml
-compose_service_name: "linter"  # The main app service name in compose
+compose_service_name: "backend"  # The main app service name in compose
 deployment_type: "docker"       # docker|systemd|k8s|serverless
 
 # ============================================
