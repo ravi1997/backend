@@ -220,6 +220,18 @@ def validate_form_submission(form, submitted_data, logger, is_draft=False):
                             msg = "Expected file upload for file_upload field type"
                             validation_errors.append({"id": qid, "error": msg})
                             logger.warning(f"{qid}: {msg}")
+                    elif question.field_type == "slider":
+                        try:
+                            val_num = float(ans)
+                            meta = question.meta_data or {}
+                            min_val = meta.get("min")
+                            max_val = meta.get("max")
+                            if min_val is not None and val_num < min_val:
+                                validation_errors.append({"id": qid, "error": f"Value must be at least {min_val}"})
+                            if max_val is not None and val_num > max_val:
+                                validation_errors.append({"id": qid, "error": f"Value must be at most {max_val}"})
+                        except (ValueError, TypeError):
+                            validation_errors.append({"id": qid, "error": "Invalid numeric value for slider"})
 
                     # Custom validation rules
                     if question.validation_rules and not is_draft:

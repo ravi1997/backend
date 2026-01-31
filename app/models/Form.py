@@ -221,3 +221,11 @@ class SavedSearch(Document):
     name = StringField(required=True)
     filters = DictField()
     created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+
+class CustomFieldTemplate(Document):
+    meta = {'collection': 'custom_field_templates'}
+    user_id = StringField(required=True)
+    name = StringField(required=True)
+    category = StringField()
+    question_data = EmbeddedDocumentField(Question)
+    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))

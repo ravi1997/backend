@@ -754,6 +754,19 @@ curl -X GET http://localhost:5000/form/api/v1/form/65af.../responses?status=pend
 
 ---
 
+---
+
+### 10.18 Preview Submission
+
+Validate submission data against the form schema without saving it. Useful for testing.
+
+* **Endpoint:** `/<form_id>/preview`
+* **Method:** `POST`
+* **Auth Required:** Yes
+* **Input Schema:** Same as **Submit Response**.
+
+---
+
 ## 11. AI Service
 
 **Base path:** `/form/api/v1/ai`
@@ -961,6 +974,34 @@ Same as **Submit Response**.
 
 ---
 
+---
+
+### 13.7 Expire Form
+
+Set a date/time after which the form will no longer accept submissions.
+
+* **Endpoint:** `/<form_id>/expire`
+* **Method:** `PATCH`
+* **Auth Required:** Yes (Admin/Superadmin)
+
+**Input Schema:**
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `expires_at` | string | Yes | ISO 8601 Datetime (e.g., "2023-12-31T23:59:59Z") |
+
+---
+
+### 13.8 List Expired Forms
+
+List all forms that have passed their expiration date.
+
+* **Endpoint:** `/expired`
+* **Method:** `GET`
+* **Auth Required:** Yes (Admin/Superadmin)
+
+---
+
 ## 14. Response Management (Detailed)
 
 **Base path:** `/form/api/v1/form`
@@ -1082,6 +1123,32 @@ View audit log of a response.
 * **Endpoint:** `/<form_id>/responses/<response_id>/history`
 * **Method:** `GET`
 * **Auth Required:** Yes
+
+---
+
+---
+
+### 14.11 List Responses (Paginated)
+
+Retrieve responses with server-side pagination.
+
+* **Endpoint:** `/<form_id>/responses/paginated`
+* **Method:** `GET`
+* **Auth Required:** Yes
+* **Params:**
+  * `page` (default: 1)
+  * `limit` (default: 10)
+  * `is_draft` (boolean, default: false)
+
+**Response:**
+
+```json
+{
+  "total": 50,
+  "page": 1,
+  "responses": [...]
+}
+```
 
 ---
 

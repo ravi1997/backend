@@ -8,7 +8,7 @@ FIELD_TYPE_CHOICES = (
     "input", "textarea", "select", "checkbox", "radio",
     "boolean", 
     "rating", "date", "file_upload", "api_search", "calculated",
-    "file"
+    "file", "signature", "slider", "image", "divider", "spacer", "matrix_choice"
 )
 
 

@@ -16,7 +16,7 @@ down: ## Stop all services
 	docker-compose down
 
 logs: ## View logs from all services
-	docker-compose logs -f
+	docker-compose logs -f backend
 
 shell: ## Enter the backend container shell
 	docker-compose exec backend bash
