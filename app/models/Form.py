@@ -143,6 +143,15 @@ class Form(Document):
     approval_enabled = BooleanField(default=False)
     approval_steps = ListField(EmbeddedDocumentField(ApprovalStep))
 
+    # M-11/M-12/M-17 Additions
+    title_i18n = DictField()  # {'en': 'Title', 'es': 'Título'}
+    style = DictField()       # JSON bucket for styling
+    workflows = DictField()   # JSON bucket for workflow rules
+    
+    @property
+    def is_published(self):
+        return self.status == 'published'
+
 # --- Individual Response model ---
 class FormResponse(Document):
     meta = {

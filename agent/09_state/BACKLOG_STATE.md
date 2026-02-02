@@ -12,6 +12,9 @@
 | T-04 | Setup basic GitHub Actions workflow | Medium | TODO | DevOps |
 | T-05 | Document Deployment & Env variables | Medium | DONE | Architect |
 | T-M2-01 | Implement multi-form cross-analysis API | High | DONE | Implementer |
+| T-M11 | Implement aggregated form analytics | High | DONE | Implementer |
+| T-M12 | Implement form publishing & versioning logic | High | DONE | Implementer |
+| T-M17 | Implement embedded workflow execution | High | DONE | Implementer |
 | T-M2-02 | Integrate NLP summarization (Ollama) | Medium | TODO | AI Engineer |
 | T-M2-03 | Add AI analysis report export (PDF/JSON) | Medium | TODO | Implementer |
 | T-M3-01 | Implement Webhook retry & failure logging | High | TODO | Implementer |

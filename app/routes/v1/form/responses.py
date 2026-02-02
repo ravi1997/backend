@@ -231,6 +231,29 @@ def submit_response(form_id):
             except Exception as e:
                 current_app.logger.error(f"Error evaluating workflows: {e}")
 
+            # 2. Check embedded workflows (M-17/User Request)
+            try:
+                if getattr(form, 'workflows', None):
+                    # Expecting 'on_submit' key
+                    rules = form.workflows.get('on_submit', [])
+                    if isinstance(rules, list):
+                        current_app.logger.info(f"Processing {len(rules)} embedded workflow rules")
+                        for rule in rules:
+                            action_type = rule.get('action')
+                            if action_type == 'email_notification':
+                                # Server-side email execution
+                                target_email = rule.get('target', current_user.email) # Default to submitter? Or fixed.
+                                # Check if target is a field mapping?
+                                if target_email and "@" in target_email:
+                                     send_email_notification(
+                                         [target_email],
+                                         f"Workflow Notification: {form.title}",
+                                         f"Ref: Response {response.id}"
+                                     )
+                            # Add more action types here (e.g. webhook)
+            except Exception as e:
+                current_app.logger.error(f"Error processing embedded workflows: {e}")
+
         response_payload = {"message": msg, "response_id": response.id}
         if workflow_action:
             response_payload["workflow_action"] = workflow_action

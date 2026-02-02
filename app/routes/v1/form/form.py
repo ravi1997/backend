@@ -618,3 +618,88 @@ def update_form_version(form_id, v_str):
         return jsonify({"error": str(e)}), 400
 
 
+        return jsonify({"error": str(e)}), 400
+
+@form_bp.route("/<form_id>/publish", methods=["POST"])
+@jwt_required()
+def publish_form(form_id):
+    """
+    M-12 Publishing Logic
+    1. Sets status to published (isPublished = True)
+    2. Snapshots current version
+    3. Prepares next version (increments semver)
+    """
+    try:
+        current_user = get_current_user()
+        form = Form.objects.get(id=form_id)
+        
+        if not has_form_permission(current_user, form, "edit"):
+            return jsonify({"error": "Unauthorized to publish"}), 403
+
+        if not form.versions:
+            return jsonify({"error": "No content to publish"}), 400
+
+        # 1. Publish current latest
+        latest = form.versions[-1]
+        
+        # Update Form Metadata
+        form.status = 'published'
+        form.active_version = latest.version
+        form.publish_at = datetime.now(timezone.utc)
+        
+        # 2. Logic: Should we create a NEW draft version immediately?
+        # Standard flow: Publish freezes V1. System creates V2 (draft) for new edits.
+        
+        # Helper to increment semver
+        v_parts = latest.version.split('.')
+        if len(v_parts) >= 3:
+            # 1.0.0 -> 1.0.1
+            try:
+                v_parts[2] = str(int(v_parts[2]) + 1)
+            except:
+                v_parts[-1] = str(int(v_parts[-1]) + 1)
+        elif len(v_parts) == 2:
+            try:
+                v_parts[1] = str(int(v_parts[1]) + 1)
+            except:
+                 pass
+        else:
+             # Basic
+             try:
+                 v_parts[0] = str(int(v_parts[0]) + 1)
+             except:
+                 v_parts[0] = "2"
+                 
+        new_version_str = ".".join(v_parts)
+        
+        # Create new draft version (Clone of latest)
+        new_v_dict = latest.to_mongo().to_dict()
+        new_v_dict["version"] = new_version_str
+        new_v_dict["created_at"] = datetime.now(timezone.utc)
+        new_v_dict["created_by"] = str(current_user.id)
+        # Clear specific version metadata? 
+        # Usually we keep content.
+        
+        # We need to instantiate EmbeddedDocument from dict
+        from app.models.Form import FormVersion
+        # Ideally use Schema, but for clone we can direct inject if trusted
+        # Note: EmbeddedDocumentField expects object or dict (MongoEngine usually handles dicts if structure matches)
+        # However, to be safe, let's keep it as dict and push
+        
+        form.update(
+            set__status='published',
+            set__active_version=latest.version,
+            set__publish_at=datetime.now(timezone.utc),
+            push__versions=new_v_dict
+        )
+        
+        return jsonify({
+            "message": "Form published", 
+            "published_version": latest.version,
+            "next_draft_version": new_version_str
+        }), 200
+
+    except DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400

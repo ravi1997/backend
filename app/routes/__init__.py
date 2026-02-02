@@ -11,7 +11,7 @@ from app.routes.v1.workflow_route import workflow_bp
 
 def register_blueprints(app):
     app.register_blueprint(form_bp, url_prefix='/form/api/v1/form')
-    app.register_blueprint(library_bp, url_prefix='/form/api/v1/field-library')
+    app.register_blueprint(library_bp, url_prefix='/form/api/v1/custom-fields')
     app.register_blueprint(permissions_bp, url_prefix='/form/api/v1/form')
     app.register_blueprint(view_bp, url_prefix='/form/')
     app.register_blueprint(user_bp, url_prefix='/form/api/v1/user')
