@@ -1,0 +1,80 @@
+# Backend Implementation Prompt
+
+**Context**: You are building the backend for "Agent OS Form Builder", a high-performance Flutter application. The frontend has recently completed several advanced features (Analytics, Versioning, Custom Field Library, Workflows) and now requires a persistent API to back them.
+
+**Tech Stack**: Python (FastAPI), MongoDB (recommended for flexible JSON documents).
+
+## 1. Data Models (Pydantic / DB Schemas)
+
+Please define the following models to match the Frontend entities:
+
+### A. `BuilderForm` (The core form entity)
+*   **Fields**:
+    *   `id`: String (UUID)
+    *   `title`: Union[str, Dict[str, str]] (Supports i18n maps e.g., `{"en": "Title", "es": "Título"}`)
+    *   `status`: String ('draft', 'published', 'archived')
+    *   `isPublished`: Boolean
+    *   `version`: String (SemVer e.g., '1.0.1')
+    *   `isLatest`: Boolean
+    *   `sections`: List[Section] (Nested structure)
+    *   `style`: Dict (JSON bucket for detailed styling options)
+    *   `workflows`: Dict (JSON bucket for {trigger: action} rules)
+    *   `versionHistory`: List[VersionLog]
+    *   `updatedAt`: DateTime
+
+### B. `CustomFieldTemplate` (The Field Library)
+*   **Fields**:
+    *   `id`: String
+    *   `name`: String
+    *   `category`: String (e.g., "Personal Info", "NPS")
+    *   `question`: Dict (The full `FormQuestion` object JSON)
+    *   `userId`: String (Owner)
+
+### C. `FormResponse` (Submissions)
+*   **Fields**:
+    *   `id`: String
+    *   `formId`: String
+    *   `submittedAt`: DateTime
+    *   `answers`: Dict[String, Any] (Keyed by question ID)
+
+## 2. API Endpoints Required
+
+Please implement the following endpoints using standard RESTful practices:
+
+### 📦 Custom Field Library
+*   `GET /custom-fields`:
+    *   **Query Params**: `category` (optional).
+    *   **Logic**: Return list of shared templates.
+*   `POST /custom-fields`:
+    *   **Body**: `CustomFieldTemplate`
+    *   **Logic**: Save a new question template for reuse.
+
+### 📊 Form Analytics (M-11)
+*   `GET /forms/{form_id}/analytics`:
+    *   **Logic**: This is an aggregation endpoint. Do NOT just return raw data.
+    *   **Returns**: `FormAnalytics` object.
+        *   `totalSubmissions`: Count of responses for this `form_id`.
+        *   `completionRate`: (Calculated or mocked as 0.0-1.0).
+        *   `trends`: List of `{date: "2024-01-01", value: 10}` (Group submissions by day for the last 7 days).
+        *   `fieldDistributions`: Map of `{ fieldLabel: [ {label: "Option A", count: 10, percentage: 50.0} ] }`. Use the actual distribution of answers for Multiple Choice/Rating questions.
+
+### 📝 Forms & Versioning (M-12)
+*   `POST /forms/{id}/publish`:
+    *   **Logic**:
+        1.  Find current "latest" form.
+        2.  Create a snapshot in `versionHistory`.
+        3.  Increment `version` (e.g., 1.0.0 -> 1.0.1).
+        4.  Set `isPublished = true`.
+        5.  Save.
+
+### ⚡ Workflows (M-17)
+*   `POST /forms/{id}/submissions`:
+    *   **Logic**:
+        1.  Save the `FormResponse`.
+        2.  **Trigger Workflows**: Retrieve the `BuilderForm` and check its `workflows` config.
+        3.  **Execute**: If a workflow exists (e.g., `email_notification`), perform the action server-side (optional: or just acknowledge receipt if frontend handles execution). *Prefer server-side execution for security.*
+
+## 3. Special Considerations
+
+*   **Internationalization**: The `title` and label fields might be JSON objects (Maps) instead of plain strings. Ensure the DB schema is flexible (Use `Dict` or `Json` types).
+*   **Performance**: The Analytics endpoint should use efficient aggregation queries (e.g., MongoDB Aggregation Pipeline) rather than fetching all records to Python.

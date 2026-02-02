@@ -1,0 +1,16 @@
+# ERD Template: Mermaid
+
+```mermaid
+erDiagram
+    USER ||--o{ POST : writes
+    USER {
+        string username
+        string email
+        string password_hash
+    }
+    POST {
+        string title
+        string content
+        datetime created_at
+    }
+```
