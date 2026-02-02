@@ -622,3 +622,85 @@ def scan_form_security_ai(form_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+@ai_bp.route("/cross-analysis", methods=["POST"])
+@jwt_required()
+def compare_forms_ai():
+    """
+    Compare multiple forms' performance and sentiment.
+    Payload: { "form_ids": ["id1", "id2"] }
+    """
+    try:
+        data = request.get_json()
+        form_ids = data.get("form_ids", [])
+        
+        if not form_ids or not isinstance(form_ids, list):
+            return jsonify({"error": "form_ids list is required"}), 400
+            
+        current_user = get_current_user()
+        
+        results = []
+        global_stats = {
+            "total_forms": len(form_ids),
+            "total_responses": 0,
+            "average_sentiment_score": 0
+        }
+        
+        total_sentiment_sum = 0
+        forms_with_sentiment = 0
+        
+        for fid in form_ids:
+            try:
+                form = Form.objects.get(id=fid)
+                # Check permission for each form
+                if not has_form_permission(current_user, form, "view"):
+                    # For security, we can either fail hard or skip. 
+                    # Failing hard is safer to prevent enumeration.
+                    return jsonify({"error": f"Unauthorized access to form {fid}"}), 403
+                
+                responses = FormResponse.objects(form=fid, deleted=False)
+                resp_count = len(responses)
+                
+                # Aggregation
+                sentiment_counts = {"positive": 0, "negative": 0, "neutral": 0, "unprocessed": 0}
+                form_total_score = 0
+                analyzed_count = 0
+                
+                for r in responses:
+                    res = getattr(r, 'ai_results', {})
+                    sent = res.get('sentiment')
+                    if sent:
+                        label = sent.get('label', 'neutral')
+                        sentiment_counts[label] = sentiment_counts.get(label, 0) + 1
+                        form_total_score += sent.get('score', 0)
+                        analyzed_count += 1
+                    else:
+                        sentiment_counts["unprocessed"] += 1
+                
+                avg_score = (form_total_score / analyzed_count) if analyzed_count > 0 else 0
+                
+                results.append({
+                    "form_id": str(form.id),
+                    "title": form.title,
+                    "response_count": resp_count,
+                    "sentiment_distribution": sentiment_counts,
+                    "average_sentiment": avg_score
+                })
+                
+                global_stats["total_responses"] += resp_count
+                if analyzed_count > 0:
+                    total_sentiment_sum += avg_score
+                    forms_with_sentiment += 1
+                    
+            except Form.DoesNotExist:
+                return jsonify({"error": f"Form {fid} not found"}), 404
+        
+        global_stats["average_sentiment_score"] = (total_sentiment_sum / forms_with_sentiment) if forms_with_sentiment > 0 else 0
+        
+        return jsonify({
+            "summary": global_stats,
+            "details": results
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400

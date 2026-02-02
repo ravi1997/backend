@@ -133,5 +133,11 @@ def create_app(config_class=Config):
     except Exception as e:
         app.logger.exception("Error registering blueprints: %s", e)
 
+    @jwt.token_in_blocklist_loader
+    def check_if_token_in_blocklist(jwt_header, jwt_payload):
+        jti = jwt_payload["jti"]
+        token = TokenBlocklist.objects(jti=jti).first()
+        return token is not None
+
     app.logger.info("✅ Flask app created successfully.")
     return app
