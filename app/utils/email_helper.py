@@ -5,7 +5,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import current_app
 
-def send_email_notification(to_emails, subject, body_html):
+def send_email_notification(to_emails: list[str], subject: str, body_html: str) -> bool:
     """
     Sends an email to the specified list of recipients.
     

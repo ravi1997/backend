@@ -1,10 +1,12 @@
 import hmac
 import hashlib
+from typing import Any
 from flask import json
 import requests
 from flask import current_app
+from app.models.Form import Form
 
-def trigger_webhooks(form, event, data):
+def trigger_webhooks(form: Form, event: str, data: dict[str, Any]) -> None:
     """
     Triggers all active webhooks for a given form and event.
     data should be a JSON-serializable dictionary.

@@ -1,4 +1,6 @@
 import os
+from typing import Any
+from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 from flask import current_app
 import uuid
@@ -11,19 +13,19 @@ ALLOWED_EXTENSIONS = {
 }
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
-def allowed_file(filename):
+def allowed_file(filename: str) -> bool:
     """Check if file extension is allowed"""
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def get_file_mimetype(filepath):
+def get_file_mimetype(filepath: str) -> str | None:
     """Get the actual MIME type of a file"""
     try:
         return magic.from_file(filepath, mime=True)
     except:
         return None
 
-def save_uploaded_file(file, form_id, question_id):
+def save_uploaded_file(file: FileStorage, form_id: str, question_id: str) -> dict[str, Any] | None:
     """Save an uploaded file and return the file info"""
     if not file or file.filename == '':
         return None
@@ -66,11 +68,11 @@ def save_uploaded_file(file, form_id, question_id):
         'upload_date': datetime.now(timezone.utc)
     }
 
-def get_file_url(file_info, form_id, question_id):
+def get_file_url(file_info: dict[str, Any], form_id: str, question_id: str) -> str:
     """Generate a URL for accessing the stored file"""
     return f"/form/api/v1/form/{form_id}/files/{question_id}/{file_info['stored_filename']}"
 
-def delete_file(file_path):
+def delete_file(file_path: str) -> bool:
     """Delete a file from the filesystem"""
     try:
         if os.path.exists(file_path):
