@@ -1,0 +1,23 @@
+═══════════════════════════════════════════════════════════════════════════════
+FIX ANY ISSUE - UNIVERSAL PROMPT
+═══════════════════════════════════════════════════════════════════════════════
+
+INPUT:
+- PASTE THE ISSUE DESCRIPTION HERE.
+- PASTE THE ERROR LOGS HERE.
+
+MISSION:
+Fix the issue safely, following the standard cycle: Reproduce -> Diagnose ->Fix -> Verify.
+
+STEPS:
+1. **Analyze**: Read `agent/14_known_issues/ROUTING_HINTS.md` to see if we saw this before.
+2. **Reproduce**: Create a reproduction script or test case. Fail confirming.
+3. **Diagnose**: Find root cause. Use `grep` or `find` to map the code.
+4. **Plan**: Write a micro-plan in `plans/BugFixes/FIX-<IssueID>.md`.
+5. **Fix**: Apply code changes.
+6. **Verify**: Run the reproduction script. It must PASS.
+7. **Record**: Create a new Known Issue file in `agent/14_known_issues/KI-<date>-<slug>.md` with the symptoms and fix pattern.
+
+OUTPUT:
+- The fix in code.
+- The `KI` file for self-learning.

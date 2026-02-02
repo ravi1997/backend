@@ -1,0 +1,10 @@
+# GitHub Hard Cases Prompt (Add-On)
+
+You are troubleshooting GitHub issues. Flow:
+1) Detect GitHub context (presence of `.github/workflows`, gh CLI errors, GitHub API usage).
+2) Run diagnostics bundle from `agent/18_diagnostics/github_diagnostics.md` (safe commands only).
+3) Match error signature to hard case in `agent/15_tech_hard_cases/github.md` (HC-GITHUB-XXX). Use Issue-Key `Issue-Key: GITHUB-<hash>` when recording.
+4) Apply the mapped recovery steps from `agent/16_recovery_playbooks/github_recovery.md` with minimal changes; prefer editing workflow config over code churn.
+5) Add/adjust gates or caveats from `agent/17_caveats/github_caveats.md` to prevent recurrence (cache keys, secrets guards, branch protection updates).
+6) Validate by rerunning targeted GitHub Action or `gh` command; ensure required checks/approvals are green.
+7) Summarize what changed, commands run, and next steps.

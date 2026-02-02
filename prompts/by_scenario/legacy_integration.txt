@@ -1,0 +1,46 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: LEGACY CODE INTEGRATION
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Integrate with or modernize legacy codebases that lack tests, docs, or modern tooling.
+
+SCENARIO
+Execute: `agent/01_entrypoints/scenarios/scenario_legacy_integration.md`
+
+INPUTS REQUIRED
+- Legacy module/codebase location
+- Integration requirement
+
+MANDATORY EXECUTION ORDER
+1. **Archaeology** (Adopt `agent/03_profiles/profile_rule_checker.md`):
+   - Map code structure
+   - Capture behavior (characterization tests)
+   - Audit dependencies
+2. **Stabilization** (Adopt `agent/03_profiles/profile_tester.md`):
+   - Write test harness
+   - Approval tests
+   - Establish baseline
+3. **Modernization** (Adopt `agent/03_profiles/profile_implementer.md`):
+   - Strangler Fig pattern
+   - Facade layer
+   - Incremental refactor
+4. **Migration** (Adopt `agent/03_profiles/profile_architect.md`):
+   - Dual-run validation
+   - Feature flags
+   - Deprecation schedule
+
+ARTIFACTS
+- Test harness
+- Facade/adapter code
+- `plans/Architecture/LEGACY_INTEGRATION_PLAN.md`
+
+STOP CONDITIONS
+- Legacy code encapsulated or replaced
+- All tests pass
+- Performance maintained
+
+FINAL RESPONSE
+Report: Integration strategy, tests added, modernization progress, deprecation timeline.

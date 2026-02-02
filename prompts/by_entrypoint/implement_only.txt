@@ -1,0 +1,42 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: IMPLEMENTATION ONLY
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Implement features from an approved backlog with rigorous testing and quality gates.
+
+ENTRYPOINT
+Execute: `agent/01_entrypoints/run_implement_only.md`
+
+INPUTS REQUIRED
+- Approved backlog in `agent/09_state/BACKLOG_STATE.md`
+- Approved SRS and Architecture
+
+MANDATORY EXECUTION ORDER
+1. Adopt `agent/03_profiles/profile_implementer.md`
+2. Select highest priority task from backlog (status: PENDING)
+3. Execute `agent/04_workflows/06_feature_implementation_loop.md`:
+   - Phase 1: Scaffolding & Design
+   - Phase 2: Implementation & Self-Correction
+   - Phase 3: Recursive Verification
+   - Phase 4: Finalization
+4. Verify `agent/05_gates/global/gate_global_quality.md`
+5. Run stack-specific gates from `agent/05_gates/by_stack/`
+6. Update `agent/09_state/BACKLOG_STATE.md` (mark task as DONE)
+7. Repeat for next task or stop
+
+ARTIFACTS TO WRITE
+- Source code files (in appropriate src/ or app/ directories)
+- Test files (in tests/ or __tests__/)
+- `plans/Features/FEATURE_[ID]_SUMMARY.md`
+- `agent/09_state/TEST_STATE.md`
+
+STOP CONDITIONS
+- All tasks in current milestone are DONE
+- All tests pass
+- All gates pass
+
+FINAL RESPONSE
+Report: Tasks completed, files modified, test results, gate status, next milestone or release readiness.

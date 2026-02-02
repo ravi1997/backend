@@ -1,0 +1,41 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: RELEASE PREPARATION ONLY
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Finalize a version for production deployment with all necessary documentation and verification.
+
+ENTRYPOINT
+Execute: `agent/01_entrypoints/run_release_only.md`
+
+INPUTS REQUIRED
+- Current stable branch/commit
+- Target version number (SemVer)
+
+MANDATORY EXECUTION ORDER
+1. Adopt `agent/03_profiles/profile_release_manager.md`
+2. Execute `agent/04_workflows/10_release_process.md`:
+   - Verify ALL gates pass (quality, security, docs, release)
+   - Update CHANGELOG.md
+   - Update version numbers in package files
+   - Create git tag
+   - Generate release notes
+3. Verify `agent/05_gates/global/gate_global_release.md`
+4. Apply `agent/12_checks/checklists/release_checklist.md`
+
+ARTIFACTS TO WRITE
+- `plans/Release/RELEASE_NOTES_V[X.Y.Z].md`
+- Updated CHANGELOG.md
+- Git tag (v[X.Y.Z])
+- `agent/09_state/RELEASE_STATE.md`
+
+STOP CONDITIONS
+- All gates pass
+- Release notes approved
+- Tag created
+- Artifacts packaged (if applicable)
+
+FINAL RESPONSE
+Report: Version number, release notes location, gate status, deployment readiness, rollback plan.

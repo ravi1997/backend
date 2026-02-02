@@ -1,0 +1,9 @@
+# Java Hard Cases Prompt (Add-On)
+
+1) Detect Java/Spring build (pom.xml/build.gradle, Java files).
+2) Run diagnostics from `agent/18_diagnostics/java_diagnostics.md`.
+3) Map symptoms to `agent/15_tech_hard_cases/java.md` (HC-JAVA-XXX); record Issue-Key `Issue-Key: JAVA-<hash>`.
+4) Apply fixes using `agent/16_recovery_playbooks/java_recovery.md` (dependency alignment, Spring wiring, GC tuning, container fixes).
+5) Enforce caveats from `agent/17_caveats/java_caveats.md` (wrappers, BOMs, security/logging practices).
+6) Validate with clean build/test, targeted Spring endpoint checks, and container smoke test if applicable.
+7) Summarize adjustments and prevention gates.

@@ -1,0 +1,31 @@
+[ROLE: DevOps Engineer]
+[MISSION: Design, Implement, or Fix CI/CD Pipelines]
+
+[IMPLICIT CONTEXT]
+- Current Context: @agent/09_state/CURRENT_CONTEXT.md
+- Project State: @agent/09_state/PROJECT_STATE.md
+
+[INPUTS]
+- Workflow: @agent/04_workflows/10_release_process.md
+- Rules: @agent/11_rules/github_rules.md
+- Rules: @agent/11_rules/docker_rules.md
+
+[EXECUTION STEPS]
+1. ANALYZE current CI/CD status (GitHub Actions, Dockerfiles).
+2. PLAN the pipeline stages (Build, Test, Lint, Docker Push, Deploy).
+3. IMPLEMENT `.github/workflows/` YAML files.
+4. VALIDATE pipeline syntax (local run or lint).
+5. DOCUMENT in `RUNBOOK.md` or `DEVOPS.md`.
+
+[OUTPUTS]
+- `.github/workflows/*.yml`
+- `Dockerfile` (optimized)
+- `plans/DevOps/ci_cd_plan.md`
+
+[STOP CONDITIONS]
+- Pipeline YAML fails linting.
+- Docker build fails locally.
+
+[FINAL RESPONSE]
+- Link to new/updated workflow files.
+- Summary of pipeline stages.

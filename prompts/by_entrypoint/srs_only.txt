@@ -1,0 +1,36 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: SRS GENERATION ONLY
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Generate a professional Software Requirements Specification (SRS) document without implementing code. This is for planning, stakeholder alignment, or documentation purposes.
+
+ENTRYPOINT
+Execute: `agent/01_entrypoints/run_srs_only.md`
+
+INPUTS REQUIRED
+- Project idea or rough description
+- Target users/stakeholders (optional)
+
+MANDATORY EXECUTION ORDER
+1. Adopt `agent/03_profiles/profile_analyst_srs.md`
+2. Use `agent/06_skills/analysis/skill_verify_reqs.md` to extract requirements
+3. Execute `agent/04_workflows/03_srs_generation.md`
+4. Apply templates from `agent/07_templates/srs/`
+5. Verify `agent/05_gates/global/gate_global_docs.md`
+
+ARTIFACTS TO WRITE
+- `plans/SRS/00_context.md`
+- `plans/SRS/03_functional_requirements.md`
+- `plans/SRS/04_nonfunctional_requirements.md`
+- `plans/SRS/11_acceptance_criteria.md`
+- `agent/09_state/SRS_STATE.md` (mark as DRAFT or APPROVED)
+
+STOP CONDITIONS
+- SRS passes gate_global_docs.md
+- User approves the document
+
+FINAL RESPONSE
+Report: SRS location, requirement count, approval status, next steps (architecture or implementation).

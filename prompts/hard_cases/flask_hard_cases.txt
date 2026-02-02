@@ -1,0 +1,9 @@
+# Flask Hard Cases Prompt (Add-On)
+
+1) Detect Flask context (flask package, app.py/wsgi.py, blueprints, FLASK_APP env).
+2) Run diagnostics from `agent/18_diagnostics/flask_diagnostics.md`.
+3) Map findings to `agent/15_tech_hard_cases/flask.md` (HC-FLASK-XXX); log Issue-Key `Issue-Key: FLASK-<hash>`.
+4) Apply fixes using `agent/16_recovery_playbooks/flask_recovery.md` (app factory, config, DB/migrations, proxy/security).
+5) Reinforce caveats in `agent/17_caveats/flask_caveats.md`; add cookie/security headers, rate limits, and migration gates.
+6) Validate: run app under gunicorn/dev server, hit health/static/upload endpoints, and run migration checks.
+7) Summarize changes and prevention steps.

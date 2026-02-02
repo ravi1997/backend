@@ -1,0 +1,45 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: DATABASE MIGRATION & SCHEMA EVOLUTION
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Safely evolve database schemas without losing data or breaking production.
+
+SCENARIO
+Execute: `agent/01_entrypoints/scenarios/scenario_data_migration.md`
+
+INPUTS REQUIRED
+- Proposed schema change
+- Production database access (or copy)
+
+MANDATORY EXECUTION ORDER
+1. **Planning** (Adopt `agent/03_profiles/profile_architect.md`):
+   - Impact analysis
+   - Choose migration strategy
+   - Define rollback plan
+2. **Implementation** (Adopt `agent/03_profiles/profile_implementer.md`):
+   - Backup first
+   - Write idempotent migration script
+   - Test on staging
+3. **Execution** (Adopt `agent/03_profiles/profile_security_auditor.md`):
+   - Schedule maintenance window
+   - Monitor during migration
+4. **Verification** (Adopt `agent/03_profiles/profile_tester.md`):
+   - Data integrity check
+   - Run full test suite
+   - Performance audit
+
+ARTIFACTS
+- Migration scripts (SQL or ORM migrations)
+- `plans/Architecture/MIGRATION_PLAN.md`
+- Backup confirmation
+
+STOP CONDITIONS
+- Migration complete
+- All tests pass
+- Rollback plan documented
+
+FINAL RESPONSE
+Report: Schema changes, data volume migrated, integrity check results, rollback readiness.

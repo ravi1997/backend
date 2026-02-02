@@ -1,0 +1,42 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: CIRCULAR DEPENDENCY RESOLUTION
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Identify and break circular dependencies in code modules or services.
+
+SCENARIO
+Execute: `agent/01_entrypoints/scenarios/scenario_circular_dependency.md`
+
+INPUTS REQUIRED
+- Build error logs OR module names
+
+MANDATORY EXECUTION ORDER
+1. **Detection** (Adopt `agent/03_profiles/profile_architect.md`):
+   - Create dependency graph
+   - Highlight circular paths
+   - Assess impact
+2. **Analysis** (Adopt `agent/03_profiles/profile_implementer.md`):
+   - Identify root cause
+   - Choose breaking strategy (DI, extraction, events)
+3. **Refactoring** (Adopt `agent/03_profiles/profile_implementer.md`):
+   - Break one cycle at a time
+   - Ensure high test coverage
+   - Verify build after each change
+4. **Prevention** (Adopt `agent/03_profiles/profile_rule_checker.md`):
+   - Add rule to `agent/11_rules/code_style_rules.md`
+   - Add CI check
+
+ARTIFACTS
+- Refactored source files
+- Dependency graph diagram
+- `plans/Architecture/DEPENDENCY_CLEANUP.md`
+
+STOP CONDITIONS
+- All cycles resolved
+- Prevention in place
+
+FINAL RESPONSE
+Report: Cycles found, breaking strategy, files modified, CI check added.

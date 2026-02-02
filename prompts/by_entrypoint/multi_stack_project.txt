@@ -1,0 +1,122 @@
+[ROLE: Lead Architect + Multi-Stack Orchestrator]
+[MISSION: Coordinate Full Build and Deployment Across Multi-Stack Repository]
+
+[AUTHORITY]
+You are executing: @agent/01_entrypoints/run_multi_stack_project.md
+Follow: @agent/AGENT_MANIFEST.md as the source of truth.
+
+[IMPLICIT CONTEXT]
+- Current Context: @agent/09_state/CURRENT_CONTEXT.md
+- Project State: @agent/09_state/PROJECT_STATE.md
+- Stack State: @agent/09_state/STACK_STATE.md
+
+[INPUTS REQUIRED]
+1. Repository path (absolute)
+2. Target environment (dev/staging/prod)
+3. Build scope (all stacks or specific subset)
+
+[MANDATORY EXECUTION ORDER]
+
+PHASE 1: MULTI-STACK DETECTION
+1. EXECUTE @agent/02_detection/detect_multi_stack.md
+2. GENERATE `plans/Detection/STACK_MAP.md` with:
+   - All detected stacks (languages, frameworks)
+   - Shared libraries and dependencies
+   - Inter-project relationships
+3. REQUEST user confirmation of stack map accuracy
+4. STOP if user rejects stack map
+
+PHASE 2: DEPENDENCY ANALYSIS
+1. ANALYZE dependency graph from STACK_MAP.md
+2. DETERMINE topological build order
+3. GENERATE `plans/Detection/BUILD_ORDER.md` with:
+   - Ordered list of projects
+   - Dependency relationships
+   - Parallel build opportunities
+4. IDENTIFY shared services (databases, APIs, etc.)
+
+PHASE 3: ORCHESTRATED BUILD
+1. ADOPT @agent/03_profiles/profile_architect.md
+2. FOLLOW @agent/04_workflows/11_multi_stack_orchestration.md
+3. FOR EACH project in BUILD_ORDER:
+   a. Switch context to project directory
+   b. Load stack-specific rules from @agent/11_rules/stack_rules/
+   c. Execute stack-specific gates from @agent/05_gates/by_stack/
+   d. Run build and tests
+   e. Collect artifacts
+   f. Log results to `plans/Build/[stack]_build_log.md`
+4. AGGREGATE all build results
+
+PHASE 4: INTEGRATION TESTING
+1. EXECUTE @agent/05_gates/global/gate_global_ci_github.md
+2. SPIN UP shared environment using Docker Compose
+3. RUN integration tests across stack boundaries
+4. VERIFY API contracts between services
+5. GENERATE `plans/Tests/integration_test_report.md`
+
+PHASE 5: RELEASE PREPARATION
+1. APPLY @agent/05_gates/global/gate_global_release.md
+2. GENERATE release artifacts:
+   - Docker images for each service
+   - Compiled binaries
+   - Static assets
+3. CREATE `plans/Release/MULTI_STACK_RELEASE_NOTES.md`
+4. UPDATE @agent/09_state/RELEASE_STATE.md
+
+[ARTIFACTS TO WRITE]
+- `plans/Detection/STACK_MAP.md` (stack inventory)
+- `plans/Detection/BUILD_ORDER.md` (dependency order)
+- `plans/Build/[stack]_build_log.md` (per-stack logs)
+- `plans/Tests/integration_test_report.md` (cross-stack tests)
+- `plans/Release/MULTI_STACK_RELEASE_NOTES.md` (release summary)
+- `agent/09_state/STACK_STATE.md` (updated)
+- `agent/09_state/RELEASE_STATE.md` (updated)
+
+[STOP CONDITIONS]
+- Stack detection fails or user rejects STACK_MAP
+- Circular dependency detected in BUILD_ORDER
+- Critical shared service fails (blocks all dependents)
+- Any global gate fails (quality, security, release)
+- User requests halt
+
+[FAILURE HANDLING]
+- **Partial Failure**: If leaf project fails, mark failed but continue parallel branches
+- **Critical Failure**: If shared library/service fails, STOP all dependent builds
+- **Integration Failure**: Roll back to last known good state
+- **Document**: All failures in `plans/Build/FAILURE_REPORT.md`
+
+[FINAL RESPONSE FORMAT]
+```
+✅ MULTI-STACK BUILD COMPLETE
+
+Stacks Processed: [count]
+Build Order: [list]
+Successful Builds: [count]
+Failed Builds: [count]
+Integration Tests: [PASS/FAIL]
+
+Artifacts:
+- STACK_MAP: plans/Detection/STACK_MAP.md
+- BUILD_ORDER: plans/Detection/BUILD_ORDER.md
+- Build Logs: plans/Build/
+- Test Report: plans/Tests/integration_test_report.md
+- Release Notes: plans/Release/MULTI_STACK_RELEASE_NOTES.md
+
+Next Steps:
+[What to do next - deploy, fix failures, etc.]
+```
+
+[GATES TO ENFORCE]
+- @agent/05_gates/global/gate_global_build.md
+- @agent/05_gates/global/gate_global_quality.md
+- @agent/05_gates/global/gate_global_security.md
+- @agent/05_gates/global/gate_global_docker.md
+- @agent/05_gates/global/gate_global_ci_github.md
+- @agent/05_gates/global/gate_global_release.md
+- All stack-specific gates from @agent/05_gates/by_stack/
+
+[RULES TO FOLLOW]
+- @agent/11_rules/multi_stack_rules.md
+- @agent/11_rules/docker_rules.md
+- @agent/11_rules/github_rules.md
+- Stack-specific rules from @agent/11_rules/stack_rules/

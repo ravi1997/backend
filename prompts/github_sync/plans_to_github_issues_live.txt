@@ -1,0 +1,24 @@
+═══════════════════════════════════════════════════════════════════════════════
+SYNC PLANS TO GITHUB ISSUES
+═══════════════════════════════════════════════════════════════════════════════
+
+MISSION:
+Read markdown plans from `plans/` and synchronize them to GitHub Issues.
+
+STEPS:
+1. **Index**: Scan `plans/**/*.md` for PENDING items or "Plan" blocks.
+2. **Hash**: Generate `Issue-Key: PLAN-<filename>-<hash>` for each item.
+3. **Sync**:
+   - Loop through items.
+   - Check `gh issue list --search "Issue-Key: ..."`
+   - **Create**: If missing, `gh issue create`.
+   - **Update**: If plan item is marked [x], `gh issue close`.
+   - **status**: Write `plans/IssueTracker/SYNC_REPORT.md`.
+
+OUTPUT:
+- Synced GitHub Issues.
+- `plans/IssueTracker/SYNC_REPORT.md`.
+
+RULES:
+- NEVER delete an issue. Only Close.
+- Always include the 'Issue-Key' in the issue body (hidden comment or bottom text).

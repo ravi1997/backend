@@ -1,0 +1,26 @@
+# EXAMPLE: Existing Project Orchestration
+
+## USER REQUEST
+"I have an existing Node.js project. I need to add a new authentication module using JWT and re-run all security tests."
+
+## ORCHESTRATOR ANALYSIS
+1. **Scenario**: Feature update / security audit.
+2. **Primary Prompt**: `prompts/by_entrypoint/existing_project.txt`.
+3. **Supporting Prompts**: `prompts/by_entrypoint/security_audit_only.txt`.
+
+## TASKBOARD (ABBREVIATED)
+1. **Analyst (SRS)**: Update requirements to include JWT auth flows.
+2. **Architect**: Design the middleware for JWT validation.
+3. **Implementer**: Code the auth module and integrate into existing routes.
+4. **Security Auditor**: Conduct full threat model on the new auth module.
+5. **Tester**: Verify JWT token expiration and invalid token rejection.
+
+## EXECUTION LOG (SUB-AGENT OUTPUTS)
+- `plans/Orchestration/subagents/analyst_srs_output.md` -> SUCCESS.
+- `plans/Orchestration/subagents/architect_output.md` -> SUCCESS.
+- `plans/Orchestration/subagents/implementer_output.md` -> SUCCESS.
+- `plans/Orchestration/subagents/security_auditor_output.md` -> SUCCESS.
+
+## FINAL STATE
+- **PROJECT_STATE.md**: `DEV`.
+- **SECURITY_STATE.md**: Updated with JWT threat model.

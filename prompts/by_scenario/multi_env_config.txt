@@ -1,0 +1,44 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: MULTI-ENVIRONMENT CONFIGURATION MANAGEMENT
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Manage different configurations for dev, staging, and production without hardcoding or leaking secrets.
+
+SCENARIO
+Execute: `agent/01_entrypoints/scenarios/scenario_multi_env_config.md`
+
+INPUTS REQUIRED
+- List of environments needed
+- Configuration parameters
+
+MANDATORY EXECUTION ORDER
+1. **Design** (Adopt `agent/03_profiles/profile_architect.md`):
+   - Define environment taxonomy
+   - Choose config strategy
+   - Create schema
+2. **Implementation** (Adopt `agent/03_profiles/profile_implementer.md`):
+   - Write config loader
+   - Create example files
+   - Update .gitignore
+3. **Security** (Adopt `agent/03_profiles/profile_security_auditor.md`):
+   - Audit for leaked secrets
+   - Document access control
+   - Define rotation policy
+4. **Deployment** (Adopt `agent/03_profiles/profile_release_manager.md`):
+   - Verify configs per environment
+   - Run smoke tests
+
+ARTIFACTS
+- Config loader code
+- `.env.example`, `config/example.json`
+- `plans/Security/ACCESS_CONTROL.md`
+
+STOP CONDITIONS
+- All envs have valid configs
+- No secrets in version control
+
+FINAL RESPONSE
+Report: Environments configured, config strategy, security status, deployment readiness.

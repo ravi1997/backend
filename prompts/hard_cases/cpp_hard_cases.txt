@@ -1,0 +1,9 @@
+# C++ Hard Cases Prompt (Add-On)
+
+1) Detect C++ context (CMakeLists, .cpp/.hpp, toolchain files).
+2) Run diagnostics from `agent/18_diagnostics/cpp_diagnostics.md` (safe, no sudo unless necessary).
+3) Match symptoms to `agent/15_tech_hard_cases/cpp.md` (HC-CPP-XXX). Note Issue-Key `Issue-Key: CPP-<hash>`.
+4) Apply fixes using `agent/16_recovery_playbooks/cpp_recovery.md`; prefer CMake target-based changes over global flags.
+5) Add caveats/prevention from `agent/17_caveats/cpp_caveats.md` (toolchain pinning, stdlib alignment, sanitizer gates).
+6) Validate with clean configure+build, sanitizer run, and targeted tests/benchmarks.
+7) Summarize changes and next checks (packaging/install test if relevant).

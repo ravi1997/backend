@@ -1,0 +1,39 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: TESTING & VALIDATION ONLY
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Execute comprehensive testing suite and validate code quality without implementing new features.
+
+ENTRYPOINT
+Execute: `agent/01_entrypoints/run_test_only.md`
+
+INPUTS REQUIRED
+- Existing codebase with tests
+
+MANDATORY EXECUTION ORDER
+1. Adopt `agent/03_profiles/profile_tester.md`
+2. Execute `agent/04_workflows/07_testing_and_validation.md`:
+   - Discover all test files
+   - Run unit tests
+   - Run integration tests
+   - Run E2E tests (if applicable)
+   - Generate coverage report
+3. Use `agent/06_skills/testing/skill_discover_edge_cases.md`
+4. Verify `agent/05_gates/global/gate_global_quality.md`
+
+ARTIFACTS TO WRITE
+- `plans/Tests/LATEST_RESULTS.md`
+- `plans/Tests/COVERAGE_REPORT.md`
+- `plans/Tests/EDGE_CASES.md`
+- `agent/09_state/TEST_STATE.md`
+
+STOP CONDITIONS
+- All tests executed
+- Coverage report generated
+- Quality gate evaluated (pass or fail documented)
+
+FINAL RESPONSE
+Report: Test count (passed/failed), coverage %, gate status, bugs found (if any).

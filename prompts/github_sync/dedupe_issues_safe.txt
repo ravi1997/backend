@@ -1,0 +1,26 @@
+═══════════════════════════════════════════════════════════════════════════════
+SAFE ISSUE DEDUPLICATION
+═══════════════════════════════════════════════════════════════════════════════
+
+MISSION:
+Identify and strictly merge duplicate GitHub issues without losing data.
+
+STEPS:
+1. **Fetch**: `gh issue list --state open --limit 100`.
+2. **Cluster**:
+   - Exact match on Title.
+   - Exact match on `Issue-Key`.
+   - High similarity (>85%) on Body.
+3. **Select Canonical**:
+   - Oldest issue OR
+   - Issue with most comments/PRs attached.
+4. **Merge**:
+   - Post a comment on Canonical: "Consolidating duplicate info from #{ID}..."
+   - Post a comment on Duplicate: "Duplicate of #{CANONICAL_ID}. Closing."
+5. **Close**: `gh issue close {DUPLICATE_ID} --reason "not planned"`.
+6. **Report**: Append to `plans/IssueTracker/DEDUPE_REPORT.md`.
+
+OUTPUT:
+- Deduplication report in `plans/IssueTracker/DEDUPE_REPORT.md`
+- Closed duplicate issues on GitHub.
+

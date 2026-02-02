@@ -1,0 +1,45 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: PERFORMANCE INVESTIGATION & OPTIMIZATION
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Diagnose and resolve performance issues (slow response, high memory, CPU spikes).
+
+SCENARIO
+Execute: `agent/01_entrypoints/scenarios/scenario_performance_investigation.md`
+
+INPUTS REQUIRED
+- Performance complaint (e.g., "API response > 2s")
+- Access to profiling tools
+
+MANDATORY EXECUTION ORDER
+1. **Measurement** (Adopt `agent/03_profiles/profile_tester.md`):
+   - Capture baseline metrics
+   - Create load test
+   - Run profiling
+2. **Analysis** (Adopt `agent/03_profiles/profile_implementer.md`):
+   - Identify hotspots
+   - Check for N+1 queries
+   - Review algorithm complexity
+3. **Optimization** (Adopt `agent/03_profiles/profile_architect.md`):
+   - Quick wins (indexes, caching)
+   - Algorithmic improvements
+   - Architectural changes if needed
+4. **Verification** (Adopt `agent/03_profiles/profile_tester.md`):
+   - Re-run load test
+   - Compare to baseline
+   - Regression check
+
+ARTIFACTS
+- Optimized source files
+- `plans/Architecture/PERFORMANCE_NOTES.md`
+- `plans/Tests/LOAD_TEST_RESULTS.md`
+
+STOP CONDITIONS
+- Performance meets SRS targets
+- No regressions
+
+FINAL RESPONSE
+Report: Baseline vs current metrics, optimizations applied, performance gain %.

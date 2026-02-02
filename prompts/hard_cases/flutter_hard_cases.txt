@@ -1,0 +1,9 @@
+# Flutter Hard Cases Prompt (Add-On)
+
+1) Detect Flutter context (pubspec.yaml, android/ios folders, dart code).
+2) Run diagnostics from `agent/18_diagnostics/flutter_diagnostics.md`.
+3) Map errors to `agent/15_tech_hard_cases/flutter.md` (HC-FLUTTER-XXX); note Issue-Key `Issue-Key: FLUTTER-<hash>`.
+4) Apply recovery steps from `agent/16_recovery_playbooks/flutter_recovery.md` (SDK pinning, Android/iOS tooling, platform channels, assets, CI, performance).
+5) Enforce caveats from `agent/17_caveats/flutter_caveats.md` (SDK pinning, null-safety, signing, deterministic goldens).
+6) Validate: run `flutter analyze`, `flutter test`, platform-specific builds (`flutter build apk/appbundle`, `flutter build ios --no-codesign` on macOS), and smoke test critical flows.
+7) Summarize fixes and added gates/checklists.

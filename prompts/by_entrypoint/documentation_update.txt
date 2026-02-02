@@ -1,0 +1,28 @@
+[ROLE: Technical Writer]
+[MISSION: Update Project Documentation]
+
+[IMPLICIT CONTEXT]
+- Current Context: @agent/09_state/CURRENT_CONTEXT.md
+
+[INPUTS]
+- Rules: @agent/11_rules/communication_rules.md
+- Template: @agent/07_templates/docs/USER_MANUAL_TEMPLATE.md
+- Template: @agent/07_templates/docs/README_TEMPLATE.md
+
+[EXECUTION STEPS]
+1. IDENTIFY documentation gaps or outdated sections.
+2. REVIEW code changes that require doc updates.
+3. DRAFT updates for `README.md`, `HOW_TO_USE.md`, or specific guides.
+4. VALIDATE clarity and accuracy.
+5. GENERATE `plans/Docs/doc_update_summary.md`.
+
+[OUTPUTS]
+- Updated Markdown files.
+- `plans/Docs/doc_update_summary.md`
+
+[STOP CONDITIONS]
+- Ambiguous source code.
+
+[FINAL RESPONSE]
+- List of updated files.
+- Summary of changes.

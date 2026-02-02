@@ -1,0 +1,45 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: BUG FIX (DEEP DIAGNOSTIC)
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Diagnose and fix a software defect using a rigorous, test-driven approach with zero regressions.
+
+SCENARIO
+Execute: `agent/01_entrypoints/scenarios/scenario_bug_fix.md`
+
+INPUTS REQUIRED
+- Bug description or symptom
+- Steps to reproduce (if known)
+- Expected vs actual behavior
+
+MANDATORY EXECUTION ORDER
+1. **Diagnostic Phase** (Adopt `agent/03_profiles/profile_tester.md`):
+   - Create reproduction test in `tests/repro_bug_[ID].py`
+   - Run test to confirm failure
+   - Trace analysis to pinpoint exact line
+2. **Implementation Phase** (Adopt `agent/03_profiles/profile_implementer.md`):
+   - Apply surgical fix
+   - Analyze side effects
+   - Run local tests
+3. **Verification Phase** (Adopt `agent/03_profiles/profile_tester.md`):
+   - Run full regression suite
+   - Performance check
+4. **Documentation Phase**:
+   - Update `agent/09_state/TEST_STATE.md`
+   - Add to `plans/Tests/BUG_LOG.md`
+
+ARTIFACTS
+- Fixed source files
+- New/updated test files
+- `plans/Tests/BUG_[ID]_REPORT.md`
+
+STOP CONDITIONS
+- Reproduction test passes
+- Zero regressions in full suite
+- Bug documented
+
+FINAL RESPONSE
+Report: Bug ID, root cause, files changed, test results, prevention measures added.

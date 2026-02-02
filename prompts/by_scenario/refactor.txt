@@ -1,0 +1,43 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: CODE REFACTORING (BEHAVIOR-PRESERVING)
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Improve code structure, readability, or performance without altering observable behavior.
+
+SCENARIO
+Execute: `agent/01_entrypoints/scenarios/scenario_refactor.md`
+
+INPUTS REQUIRED
+- Target file/module to refactor
+- Rationale (reduce complexity, remove duplication, improve performance)
+
+MANDATORY EXECUTION ORDER
+1. **Preparation** (Adopt `agent/03_profiles/profile_tester.md`):
+   - Verify 100% test pass
+   - Check coverage (must be ≥90% or write tests first)
+   - Snapshot metrics
+2. **Execution** (Adopt `agent/03_profiles/profile_implementer.md`):
+   - Atomic transformations
+   - Test after each step
+   - Follow `agent/11_rules/stack_rules/`
+3. **Validation** (Adopt `agent/03_profiles/profile_tester.md`):
+   - Behavior verification
+   - Performance audit
+4. **Completion**:
+   - Update backlog
+   - Document decisions
+
+ARTIFACTS
+- Refactored source files
+- `plans/Architecture/REFACTOR_NOTES.md`
+
+STOP CONDITIONS
+- Code is cleaner
+- 100% tests pass
+- No performance regression
+
+FINAL RESPONSE
+Report: Complexity reduction, lines changed, test status, performance impact.

@@ -1,0 +1,22 @@
+═══════════════════════════════════════════════════════════════════════════════
+ENTRYPOINT: RUN TESTS & REPORT TO GITHUB
+═══════════════════════════════════════════════════════════════════════════════
+
+MISSION:
+Run the project test suite. If tests fail, create GitHub issues automatically for each failure.
+
+STEPS:
+1. **Detect Test Runner**: Identify if `npm test`, `pytest`, etc.
+2. **Execute**: Run the tests. Capture output.
+3. **Parse**: Identify distinct failures.
+4. **Auth Check**: Verify `gh auth status`. If failed, STOP and save valid issues to `plans/IssueTracker/pending_issues.md`.
+5. **Dedupe**:
+   - For each failure, generate a hash/key: `TEST-<hash_of_error_message>`.
+   - Search existing issues: `gh issue list --search "Issue-Key: TEST-<hash>"`
+   - If exists: Do NOTHING (or add comment).
+   - If new: `gh issue create --title "Test Failure: <Name>" --body "Logs... Issue-Key: TEST-<hash>"`
+6. **Report**: Update `agent/09_state/TEST_STATE.md` with pass/fail counts.
+
+OUTPUT:
+- List of issues created.
+- Test pass rate.

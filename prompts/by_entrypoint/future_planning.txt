@@ -1,0 +1,40 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: FUTURE PLANNING
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+To analyze the existing codebase and strategically map out detailed future capabilities (Epics) without immediate implementation. This is purely a planning and documentation exercise.
+
+ENTRYPOINT
+Execute: `agent/01_entrypoints/run_future_planning.md`
+
+INPUTS REQUIRED
+- Existing codebase (`src/`)
+- Existing plans (`plans/`)
+
+MANDATORY EXECUTION ORDER
+1. Adopt `agent/03_profiles/profile_planner.md`
+2. Execute `agent/06_skills/planning/skill_future_planning.md` which will:
+   - Analyze technical context from `src/`.
+   - Read current roadmap from `plans/` to avoid duplication.
+   - Brainstorm future opportunities (Epics).
+   - Create `future_plans/` directory.
+   - Populate `future_plans/<epic_name>/` with SRS-level specs.
+   - Create/Update `future_plans/README.md` index.
+3. Verify `agent/05_gates/global/gate_global_docs.md` on the generated documents.
+
+ARTIFACTS TO WRITE
+- `future_plans/<epic_name>/00_executive_summary.md`
+- `future_plans/<epic_name>/01_functional_requirements.md`
+- `future_plans/<epic_name>/02_technical_architecture.md`
+- `future_plans/<epic_name>/03_risk_analysis.md`
+- `future_plans/README.md` (Index)
+
+STOP CONDITIONS
+- Future plans are generated, detailed, and indexed.
+- Documentation passes global gates.
+
+FINAL RESPONSE
+Report: Summary of generated Epics, their locations, and high-level feasibility assessment.

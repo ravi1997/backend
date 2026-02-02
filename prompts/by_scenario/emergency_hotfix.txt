@@ -1,0 +1,50 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: EMERGENCY PRODUCTION HOTFIX
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Deploy critical fix to production with minimal risk and complete audit trail.
+
+SCENARIO
+Execute: `agent/01_entrypoints/scenarios/scenario_emergency_hotfix.md`
+
+INPUTS REQUIRED
+- Critical bug description
+- Severity (P0/P1/P2)
+- Production tag/commit to patch
+
+MANDATORY EXECUTION ORDER
+1. **Triage** (Adopt `agent/03_profiles/profile_security_auditor.md`):
+   - Classify severity
+   - Assess impact scope
+   - Verify rollback capability
+2. **Development** (Adopt `agent/03_profiles/profile_implementer.md`):
+   - Create hotfix branch from production tag
+   - Implement MINIMAL fix
+   - Local verification
+3. **Testing** (Adopt `agent/03_profiles/profile_tester.md`):
+   - Run critical path tests
+   - Deploy to staging
+   - Smoke tests
+4. **Deployment** (Adopt `agent/03_profiles/profile_release_manager.md`):
+   - Deploy to production
+   - Monitor closely
+5. **Post-Mortem**:
+   - Root cause analysis
+   - Prevention measures
+   - Backport to main
+
+ARTIFACTS
+- Hotfix branch
+- `plans/Security/INCIDENT_LOG.md`
+- `plans/Release/HOTFIX_V[X.Y.Z].md`
+
+STOP CONDITIONS
+- Production stable
+- Issue resolved
+- Post-mortem complete
+
+FINAL RESPONSE
+Report: Severity, fix description, deployment time, monitoring status, backport status.

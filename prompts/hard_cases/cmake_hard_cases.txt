@@ -1,0 +1,9 @@
+# CMake Hard Cases Prompt (Add-On)
+
+1) Detect CMake usage (CMakeLists.txt present) and generator/toolchain context.
+2) Run diagnostics from `agent/18_diagnostics/cmake_diagnostics.md`.
+3) Map errors to `agent/15_tech_hard_cases/cmake.md` (HC-CMAKE-XXX) and log Issue-Key `Issue-Key: CMAKE-<hash>`.
+4) Apply fixes following `agent/16_recovery_playbooks/cmake_recovery.md`; prefer target-based corrections and clean reconfigure over ad-hoc flags.
+5) Enforce caveats from `agent/17_caveats/cmake_caveats.md` (golden patterns, WERROR gating, generator hygiene).
+6) Validate with clean configure+build, `ctest` if available, and install dry-run.
+7) Summarize changes and any gates added.

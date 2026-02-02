@@ -1,0 +1,42 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: DEPENDENCY UPDATE & MAINTENANCE
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Safely upgrade external libraries while mitigating breaking changes and security risks.
+
+SCENARIO
+Execute: `agent/01_entrypoints/scenarios/scenario_dependency_update.md`
+
+INPUTS REQUIRED
+- Package(s) to update OR security alert (CVE)
+
+MANDATORY EXECUTION ORDER
+1. **Assessment** (Adopt `agent/03_profiles/profile_security_auditor.md`):
+   - Review changelog for breaking changes
+   - Map impact (grep for imports/usage)
+   - Create upgrade plan
+2. **Implementation** (Adopt `agent/03_profiles/profile_implementer.md`):
+   - Update package in isolation
+   - Run build
+   - Migrate API usage if needed
+3. **Verification** (Adopt `agent/03_profiles/profile_tester.md`):
+   - Run targeted tests
+   - Run full integration suite
+4. **Conclusion**:
+   - Update lockfile
+   - Update `agent/09_state/STACK_STATE.md`
+
+ARTIFACTS
+- Updated package files (package.json, requirements.txt, etc.)
+- `plans/Security/DEP_UPGRADE_PLAN.md`
+
+STOP CONDITIONS
+- Build stable
+- All tests pass
+- Lockfile committed
+
+FINAL RESPONSE
+Report: Packages updated, breaking changes handled, test results, security improvements.

@@ -1,0 +1,39 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: CONFLICTING REQUIREMENTS RESOLUTION
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Handle contradictory requirements or stakeholder feedback that conflicts with architecture.
+
+SCENARIO
+Execute: `agent/01_entrypoints/scenarios/scenario_conflict_resolution.md`
+
+INPUTS REQUIRED
+- Conflicting requirements description
+
+MANDATORY EXECUTION ORDER
+1. **Detection** (Adopt `agent/03_profiles/profile_analyst_srs.md`):
+   - Flag contradictions
+   - Map stakeholders
+2. **Analysis** (Adopt `agent/03_profiles/profile_architect.md`):
+   - Create trade-off matrix
+   - Assess technical feasibility
+   - Search for precedents
+3. **Resolution** (Adopt `agent/03_profiles/profile_rule_checker.md`):
+   - Present options to user
+   - Capture decision
+   - Update SRS
+   - Sync architecture
+
+ARTIFACTS
+- `plans/Questions/CONFLICT_ANALYSIS.md`
+- Updated SRS with rejected requirements marked
+
+STOP CONDITIONS
+- Conflict resolved
+- SRS internally consistent
+
+FINAL RESPONSE
+Report: Conflict description, options presented, decision made, SRS status.

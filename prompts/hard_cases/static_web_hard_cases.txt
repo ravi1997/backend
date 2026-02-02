@@ -1,0 +1,9 @@
+# Static Web Hard Cases Prompt (Add-On)
+
+1) Detect static web context (HTML/CSS/JS, bundler configs, static hosting).
+2) Run diagnostics from `agent/18_diagnostics/static_web_diagnostics.md`.
+3) Map issues to `agent/15_tech_hard_cases/static_web.md` (HC-STATICWEB-XXX); log Issue-Key `Issue-Key: STATICWEB-<hash>`.
+4) Apply fixes from `agent/16_recovery_playbooks/static_web_recovery.md` focusing on minimal config/content changes.
+5) Enforce caveats from `agent/17_caveats/static_web_caveats.md` (paths, CSP, a11y, caching, cross-browser support).
+6) Validate with local build/serve, Lighthouse/axe, and cross-browser smoke tests.
+7) Summarize changes and prevention gates.

@@ -1,0 +1,33 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: PLANNING & BACKLOG GENERATION ONLY
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Generate technical roadmap, milestones, and backlog from an existing SRS without implementing code.
+
+ENTRYPOINT
+Execute: `agent/01_entrypoints/run_plan_only.md`
+
+INPUTS REQUIRED
+- Existing SRS in `plans/SRS/` (must exist)
+
+MANDATORY EXECUTION ORDER
+1. Adopt `agent/03_profiles/profile_planner.md`
+2. Execute `agent/04_workflows/05_milestones_and_backlog.md`
+3. Use `agent/06_skills/planning/skill_map_backlog.md`
+4. Adopt `agent/03_profiles/profile_architect.md`
+5. Execute `agent/04_workflows/04_architecture_and_design.md`
+
+ARTIFACTS TO WRITE
+- `plans/Milestones/MILESTONE_PLAN.md`
+- `plans/Architecture/ARCH_OVERVIEW.mermaid.md`
+- `agent/09_state/BACKLOG_STATE.md`
+
+STOP CONDITIONS
+- Backlog has tasks for at least Milestone 1
+- User approves the plan
+
+FINAL RESPONSE
+Report: Milestone count, task count, architecture diagrams created, ready for implementation.

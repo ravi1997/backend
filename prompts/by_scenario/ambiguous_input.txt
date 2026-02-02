@@ -1,0 +1,39 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: AMBIGUOUS USER INPUT CLARIFICATION
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Handle vague, incomplete, or contradictory user instructions.
+
+SCENARIO
+Execute: `agent/01_entrypoints/scenarios/scenario_ambiguous_input.md`
+
+INPUTS REQUIRED
+- User's vague request
+
+MANDATORY EXECUTION ORDER
+1. **Clarification** (Adopt `agent/03_profiles/profile_analyst_srs.md`):
+   - Generate structured questions (Who, What, Why, Success Criteria)
+   - Save to `plans/Questions/CLARIFICATION_[ID].md`
+   - Review existing SRS for context
+2. **Interpretation** (Adopt `agent/03_profiles/profile_rule_checker.md`):
+   - Document assumptions
+   - Flag HIGH RISK assumptions
+   - Do NOT proceed with HIGH RISK without approval
+3. **Execution** (Adopt `agent/03_profiles/profile_implementer.md`):
+   - Implement minimal viable change
+   - Demo to user
+   - Iterate based on feedback
+
+ARTIFACTS
+- `plans/Questions/CLARIFICATION_[ID].md`
+- `plans/Questions/ASSUMPTIONS.md`
+
+STOP CONDITIONS
+- User confirms interpretation
+- Implementation approved
+
+FINAL RESPONSE
+Report: Questions asked, assumptions made, interpretation confirmed, next steps.

@@ -1,0 +1,26 @@
+# EXAMPLE: Bug Fix Orchestration
+
+## USER REQUEST
+"The database connection keeps timing out under load. Need to investigate and fix."
+
+## ORCHESTRATOR ANALYSIS
+1. **Scenario**: Bug Fix / Performance.
+2. **Primary Prompt**: `prompts/by_scenario/bug_fix.txt`.
+3. **Supporting Prompts**: `prompts/by_scenario/performance_investigation.txt`.
+
+## TASKBOARD (ABBREVIATED)
+1. **Implementer**: Investigate logs and reproduce the timeout.
+2. **Architect**: Analyze connection pooling settings.
+3. **Implementer**: Apply code fix (increased pool size, optimized queries).
+4. **Tester**: Run load test to verify the fix.
+5. **Rule Checker**: Verify no credentials leaked during debugging.
+
+## EXECUTION LOG (SUB-AGENT OUTPUTS)
+- `plans/Orchestration/subagents/implementer_output.md` (Investigation) -> FOUND logic issue in pool config.
+- `plans/Orchestration/subagents/architect_output.md` -> RECOMENDED new pool settings.
+- `plans/Orchestration/subagents/implementer_output.md` (Fix) -> SUCCESS.
+- `plans/Orchestration/subagents/tester_output.md` -> SUCCESS (No more timeouts).
+
+## FINAL STATE
+- **PROJECT_STATE.md**: Back to stable `DEV`.
+- **GATES**: Pass.

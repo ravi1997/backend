@@ -1,0 +1,42 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: FLAKY TEST INVESTIGATION & STABILIZATION
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Diagnose and fix tests that pass/fail inconsistently (non-deterministic behavior).
+
+SCENARIO
+Execute: `agent/01_entrypoints/scenarios/scenario_flaky_test.md`
+
+INPUTS REQUIRED
+- Flaky test name/file
+- CI/CD logs (if available)
+
+MANDATORY EXECUTION ORDER
+1. **Detection** (Adopt `agent/03_profiles/profile_tester.md`):
+   - Run test 100 times, record failure rate
+   - Categorize cause (timing, state, external, resource)
+2. **Investigation** (Adopt `agent/03_profiles/profile_implementer.md`):
+   - Run in isolation
+   - Replace randomness with fixed seeds
+   - Audit async operations
+3. **Stabilization** (Adopt `agent/03_profiles/profile_implementer.md`):
+   - Add proper waits
+   - Mock external deps
+   - Clean up state
+4. **Verification** (Adopt `agent/03_profiles/profile_tester.md`):
+   - Run 1000 times
+   - Verify 100% pass rate
+
+ARTIFACTS
+- Fixed test files
+- `plans/Tests/FLAKY_TEST_LOG.md`
+
+STOP CONDITIONS
+- 100% pass rate over 1000 runs
+- Root cause documented
+
+FINAL RESPONSE
+Report: Root cause, fix applied, pass rate before/after, prevention measures.

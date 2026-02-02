@@ -1,0 +1,25 @@
+# EXAMPLE: Security Audit Orchestration
+
+## USER REQUEST
+"The client demands a full security audit before we go live. Check everything."
+
+## ORCHESTRATOR ANALYSIS
+1. **Scenario**: Security Audit.
+2. **Primary Prompt**: `prompts/by_entrypoint/security_audit_only.txt`.
+3. **Supporting Prompts**: `prompts/by_entrypoint/test_only.txt`.
+
+## TASKBOARD (ABBREVIATED)
+1. **Security Auditor**: Perform static analysis, threat modeling, and secret scanning.
+2. **Architect**: Review data flow for GDPR compliance.
+3. **Tester**: Run penetration tests on API endpoints.
+4. **Rule Checker**: Validate all code against secure coding rules in `agent/11_rules/`.
+5. **Release Manager**: Compile Audit Report for client.
+
+## EXECUTION LOG (SUB-AGENT OUTPUTS)
+- `plans/Orchestration/subagents/security_auditor_output.md` -> FOUND 2 MEDIUM risks.
+- `plans/Orchestration/subagents/architect_output.md` -> MITIGATED risks via architectural change.
+- `plans/Orchestration/subagents/tester_output.md` -> SUCCESS (Tests pass).
+
+## FINAL STATE
+- **PROJECT_STATE.md**: `AUDIT`.
+- **SECURITY_STATE.md**: 100% compliant.

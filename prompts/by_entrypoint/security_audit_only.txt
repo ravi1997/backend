@@ -1,0 +1,37 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: SECURITY AUDIT ONLY
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Perform deep security scan of the codebase, dependencies, and configurations.
+
+ENTRYPOINT
+Execute: `agent/01_entrypoints/run_security_audit_only.md`
+
+INPUTS REQUIRED
+- Access to all source code and dependencies
+
+MANDATORY EXECUTION ORDER
+1. Adopt `agent/03_profiles/profile_security_auditor.md`
+2. Execute `agent/04_workflows/08_security_review.md`:
+   - Run `agent/06_skills/security/skill_scrub_secrets.md` (scan for leaked secrets)
+   - Run dependency audit (npm audit, pip-audit, etc.)
+   - Check against `agent/10_security/security_baseline.md`
+   - Apply `agent/10_security/threat_model_template.md`
+3. Verify `agent/05_gates/global/gate_global_security.md`
+
+ARTIFACTS TO WRITE
+- `plans/Security/AUDIT_REPORT.md`
+- `plans/Security/THREAT_MODEL.md`
+- `plans/Security/VULNERABILITIES.md` (if any found)
+- `agent/09_state/SECURITY_STATE.md`
+
+STOP CONDITIONS
+- All scans complete
+- Security gate evaluated
+- Remediation plan created for any findings
+
+FINAL RESPONSE
+Report: Vulnerability count by severity, secrets found (masked), gate status, remediation steps.

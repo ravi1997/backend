@@ -1,0 +1,27 @@
+# EXAMPLE: New Project Orchestration
+
+## USER REQUEST
+"Build a new inventory management system using Python and FastAPI. It needs to have a Dockerfile and deploy to GitHub Actions."
+
+## ORCHESTRATOR ANALYSIS
+1. **Scenario**: New Project.
+2. **Primary Prompt**: `prompts/by_entrypoint/new_project.txt`.
+3. **Supporting Prompts**: `prompts/examples_devops/docker_github_end_to_end.md`.
+
+## TASKBOARD (ABBREVIATED)
+1. **Planner**: Create scope and 4 milestones (Spec, Arch, Auth, Deployment).
+2. **Analyst (SRS)**: Define Inventory, Item, and Category models.
+3. **Architect**: Design FastAPI structure + Docker architecture.
+4. **Implementer**: Code the backend + Dockerfile + CI pipeline.
+5. **Tester**: Write pytest cases for Inventory API.
+6. **Security Auditor**: Check Docker image for vulnerabilities.
+
+## EXECUTION LOG (SUB-AGENT OUTPUTS)
+- `plans/Orchestration/subagents/planner_output.md` -> SUCCESS.
+- `plans/Orchestration/subagents/analyst_srs_output.md` -> SUCCESS.
+- `plans/Orchestration/subagents/architect_output.md` -> SUCCESS.
+- `plans/Orchestration/subagents/implementer_output.md` -> SUCCESS.
+
+## FINAL STATE
+- **PROJECT_STATE.md**: `PLAN` -> `DEV`.
+- **GATES**: All passed.

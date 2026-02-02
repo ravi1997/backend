@@ -1,0 +1,9 @@
+# Python Hard Cases Prompt (Add-On)
+
+1) Detect Python context (pyproject.toml/requirements.txt, .py files).
+2) Run diagnostics from `agent/18_diagnostics/python_diagnostics.md`.
+3) Map symptoms to `agent/15_tech_hard_cases/python.md` (HC-PY-XXX); log Issue-Key `Issue-Key: PYTHON-<hash>`.
+4) Apply fixes using `agent/16_recovery_playbooks/python_recovery.md` with minimal file churn (env/lock fixes before code refactors).
+5) Add prevention steps from `agent/17_caveats/python_caveats.md` (venv enforcement, lockfiles, security bans).
+6) Validate with clean venv build, pytest (include async fixtures), and packaging check (`python -m build`).
+7) Summarize changes and gates added.

@@ -1,0 +1,41 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: EXTERNAL API DEPENDENCY FAILURE HANDLING
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Handle situations where third-party APIs become unavailable, deprecated, or rate-limited.
+
+SCENARIO
+Execute: `agent/01_entrypoints/scenarios/scenario_api_failure.md`
+
+INPUTS REQUIRED
+- API error logs
+- Dependency details
+
+MANDATORY EXECUTION ORDER
+1. **Detection** (Adopt `agent/03_profiles/profile_tester.md`):
+   - Classify failure (transient, rate limit, permanent)
+   - Identify impact scope
+2. **Mitigation** (Adopt `agent/03_profiles/profile_implementer.md`):
+   - Create mock/stub for testing
+   - Implement circuit breaker
+   - Add fallback strategy
+3. **Testing** (Adopt `agent/03_profiles/profile_tester.md`):
+   - Chaos engineering (disable API intentionally)
+   - Validate mocks
+4. **Documentation**:
+   - Update `plans/Architecture/EXTERNAL_DEPENDENCIES.md`
+
+ARTIFACTS
+- Mock implementations
+- Circuit breaker code
+- `plans/Architecture/EXTERNAL_DEPENDENCIES.md`
+
+STOP CONDITIONS
+- App handles failures gracefully
+- All external deps documented
+
+FINAL RESPONSE
+Report: Failure type, fallback strategy, test results, documentation status.

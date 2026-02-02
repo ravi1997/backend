@@ -1,0 +1,34 @@
+═══════════════════════════════════════════════════════════════════════════════
+PROMPT: PULL REQUEST REVIEW ONLY
+═══════════════════════════════════════════════════════════════════════════════
+
+[INCLUDE: agent/prompts/00_master_prompt.txt]
+
+ROLE & MISSION
+Review code changes (diff or branch) against project standards and provide structured feedback.
+
+ENTRYPOINT
+Execute: `agent/01_entrypoints/run_pr_review_only.md`
+
+INPUTS REQUIRED
+- Diff of changes OR branch name
+- Link to related task/issue (optional)
+
+MANDATORY EXECUTION ORDER
+1. Adopt `agent/03_profiles/profile_pr_reviewer.md`
+2. Execute `agent/04_workflows/09_pr_review_loop.md`
+3. Apply `agent/12_checks/checklists/pr_review_checklist.md`
+4. Apply `agent/12_checks/rubrics/code_quality_rubric.md`
+5. Check against `agent/11_rules/code_style_rules.md`
+6. Verify stack-specific rules from `agent/11_rules/stack_rules/`
+
+ARTIFACTS TO WRITE
+- `plans/Release/REVIEWS/PR_[ID]_REVIEW.md`
+- Inline comments (if using GitHub/GitLab integration)
+
+STOP CONDITIONS
+- Review is complete with APPROVE or REQUEST_CHANGES decision
+- Feedback is documented
+
+FINAL RESPONSE
+Report: Decision (APPROVE/REQUEST_CHANGES), issue count by category, quality score (1-10), specific action items.

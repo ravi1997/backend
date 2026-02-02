@@ -1,0 +1,36 @@
+═══════════════════════════════════════════════════════════════════════════════
+ISSUE FIX LOOP (AUTONOMOUS)
+═══════════════════════════════════════════════════════════════════════════════
+
+MISSION:
+Autonomously pick the highest priority issue, fix it, verify it, and deploy the fix. Repeat until the queue is empty or blocked.
+
+LOOP:
+1. **Fetch**: `gh issue list --label "bug" --sort "priority" --limit 1`.
+2. **Setup**:
+   - `git checkout -b fix/issue-{ID}`
+   - Read Issue Body.
+3. **Orchestrate Fix**:
+   - Call Sub-agents to Plan, Edit, and Debug.
+4. **Verification**:
+   - Run ALL tests. Must pass 100%.
+   - Run `gate_global_docker` and `gate_global_ci_github`.
+5. **Publish**:
+   - `git commit -am "fix: resolve issue #{ID}"`
+   - `git push -u origin fix/issue-{ID}`
+   - `gh pr create --fill`
+6. **Cleanup**:
+   - Merge PR (if auto-merge enabled) or wait.
+   - Using `gh issue close {ID}` if merged.
+   - Run `prompts/github_sync/dedupe_issues_safe.txt` to close duplicates.
+7. **Repeat**: Go to Step 1.
+
+STOP CONDITIONS:
+- No open issues.
+- Critical Gate Failure (cannot fix build).
+- 3 consecutive failures to fix an issue (skip and mark 'blocked').
+
+OUTPUT:
+- Resolved GitHub Issues (PRs merged).
+- Updated `plans/IssueFixLoop/` logs.
+
