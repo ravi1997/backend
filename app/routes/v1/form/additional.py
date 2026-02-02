@@ -11,16 +11,6 @@ from app.models.Form import Form, FormResponse
 
 # -------------------- Additional Functional Routes --------------------
 
-@form_bp.route("/<form_id>/publish", methods=["PATCH"])
-@jwt_required()
-@require_roles(Role.EDITOR.value, Role.ADMIN.value)
-def publish_form(form_id):
-    try:
-        form = Form.objects.get(id=form_id)
-        form.update(status="published")
-        return jsonify({"message": "Form published"}), 200
-    except DoesNotExist:
-        return jsonify({"error": "Form not found"}), 404
 
 
 @form_bp.route("/slug-available", methods=["GET"])

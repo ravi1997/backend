@@ -166,10 +166,21 @@ def get_full_analytics(form_id):
         responses = FormResponse.objects(form=form.id, deleted=False).only("submitted_at", "data")
         total = responses.count()
         
-        # 2. Trends (Last 7 days)
+        # 2. Trends (Last 7 days including today)
         now = datetime.now(timezone.utc)
-        seven_days_ago = now - timedelta(days=7)
-        timeline_responses = [r for r in responses if r.submitted_at >= seven_days_ago]
+        start_date = now - timedelta(days=6)
+        # timeline_responses = [r for r in responses if r.submitted_at >= seven_days_ago]
+        
+        timeline_responses = []
+        for r in responses:
+            if r.submitted_at:
+                r_dt = r.submitted_at
+                # Handle naive datetimes (assume UTC if naive)
+                if r_dt.tzinfo is None:
+                    r_dt = r_dt.replace(tzinfo=timezone.utc)
+                
+                if r_dt >= start_date:
+                    timeline_responses.append(r)
         
         date_counts = Counter()
         for r in timeline_responses:
@@ -180,7 +191,7 @@ def get_full_analytics(form_id):
         # Fill zeros for last 7 days
         trends = []
         for i in range(7):
-            d = (seven_days_ago + timedelta(days=i)).strftime("%Y-%m-%d")
+            d = (start_date + timedelta(days=i)).strftime("%Y-%m-%d")
             trends.append({"date": d, "value": date_counts.get(d, 0)})
             
         # 3. Field Distributions

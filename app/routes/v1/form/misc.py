@@ -13,23 +13,6 @@ from app.utils.webhooks import trigger_webhooks
 from app.utils.email_helper import send_email_notification
 
 
-# -------------------- Form Analytics --------------------
-@form_bp.route("/<form_id>/analytics", methods=["GET"])
-@jwt_required()
-def get_form_analytics(form_id):
-    try:
-        form = Form.objects.get(id=form_id)
-        current_user = get_current_user()
-        if not has_form_permission(current_user, form, "view"):
-            return jsonify({"error": "Unauthorized"}), 403
-
-        responses = FormResponse.objects(form=form.id).order_by("-submitted_at")
-        total = responses.count()
-        latest = responses.first().submitted_at if total > 0 else None
-
-        return jsonify({"total_responses": total, "latest_submission": latest}), 200
-    except DoesNotExist:
-        return jsonify({"error": "Form not found"}), 404
 
 # -------------------- Public Anonymous Submission --------------------
 @form_bp.route("/<form_id>/public-submit", methods=["POST"])
