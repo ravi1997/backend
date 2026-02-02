@@ -1,26 +1,111 @@
-# Form Builder Backend - Project Overview
+# AIOS Advanced Form Management Backend
 
-## Introduction
+**Version**: 1.1.0  
+**Status**: Development  
+**License**: Proprietary
 
-This backend is designed to support a high-performance, dynamic form builder application. It manages form configurations (JSON-based layout), user-defined field templates, form versioning, and respondent submissions.
+---
 
-## Core Technologies (Recommended)
+## 📖 Overview
 
-- **Runtime**: Node.js (TypeScript) / Go / Python (FastAPI)
-- **Database**: PostgreSQL (with JSONB support) or MongoDB
-- **Cache**: Redis (for session management and rate limiting)
-- **Storage**: AWS S3 or Google Cloud Storage (for images and signatures)
+The AIOS Backend is a robust, scalable, and AI-native form management engine built using **Flask**, **MongoDB**, and **JWT-based Authentication**. It enables organizations to create complex, dynamic forms with advanced validation, AI-driven analysis, and automated workflows.
 
-## Key Challenges
+---
 
-1. **Dynamic Schema**: The form structure is recursive and deeply nested (Sections -> Questions -> Metadata).
-2. **Metadata Consistency**: Advanced fields like Matrix Choice and Rating rely on custom JSON keys in the `metadata` field.
-3. **Form Versioning**: Snapshooting forms when published to ensure submissions are linked to the correct form version.
+## ✨ Features
 
-## Documentation Structure
+- **Dynamic Form Engine**: Support for hierarchical sections, conditional logic, and versioning.
+- **AI-Powered Insights**: Automated sentiment analysis, PII detection, and form generation via local LLM (Ollama).
+- **Automated Workflows**: Trigger-based actions and approval processes.
+- **Secure RBAC**: Granular Role-Based Access Control and secure session management with JWT blocklisting.
+- **Analytics**: Real-time tracking and exportable reporting.
 
-- `/docs/schema/DATABASE_SCHEMA.md`: Data models and relationships.
-- `/docs/api/ENDPOINTS.md`: REST API specifications for the builder.
-- `/docs/api/SUBMISSIONS.md`: Validation and storage of respondent data.
-- `VERSIONING.md`: Strategy for form versioning and snapshots.
-- `FIELD_LIBRARY.md`: Implementation of the custom field template registry.
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Python**: 3.12+
+- **Database**: MongoDB 6.0+
+- **AI Provider**: Ollama (optional, for AI features)
+- **Docker**: For containerized deployment
+
+### Installation
+
+```bash
+# Clone the repository
+git clone [repository-url]
+cd backend
+
+# Install dependencies (using virtual environment)
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your local settings (MongoDB URI, Secret keys)
+```
+
+### Running the Application
+
+```bash
+# Start the development server
+python run.py
+```
+
+---
+
+## 📚 Documentation
+
+- **[Deployment Guide](docs/DEPLOYMENT.md)**: Server setup and environment variables.
+- **[User Manual](docs/USER_MANUAL.md)**: Guide for managing forms and responses.
+- **[API Documentation](docs/routes/README.md)**: Detailed endpoint definitions and examples.
+- **[Architecture](plans/Architecture/OVERVIEW.md)**: System design and ERD.
+
+---
+
+## 🛠️ Configuration
+
+Refer to [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for a full list of environment variables.
+
+---
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+pytest
+
+# Run authentication tests
+pytest tests/test_auth.py tests/test_auth_edge_cases.py
+```
+
+---
+
+## 🏗️ Project Structure
+
+```
+backend/
+├── app/              # Main application logic
+│   ├── routes/       # API Blueprints
+│   ├── models/       # MongoDB Models
+│   └── utils/        # Shared decorators and helpers
+├── tests/            # Automated test suite
+├── docs/             # Technical documentation
+├── plans/            # Strategic roadmaps and architecture
+├── logs/             # Application logs
+└── run.py            # Entry point
+```
+
+---
+
+## 🗺️ Roadmap
+
+See **[plans/ROADMAP.md](plans/ROADMAP.md)** for planned features and improvements.
+
+---
+
+**Last Updated**: 2026-02-02  
+**Maintained By**: Antigravity AI Team
