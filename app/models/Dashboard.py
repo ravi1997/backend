@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 from mongoengine import Document, EmbeddedDocument, StringField, ListField, ReferenceField, DateTimeField, EmbeddedDocumentField, UUIDField, IntField, DictField
 from app.models.User import User
@@ -36,9 +36,9 @@ class Dashboard(Document):
     widgets = ListField(EmbeddedDocumentField(DashboardWidget))
     
     created_by = ReferenceField(User)
-    created_at = DateTimeField(default=datetime.utcnow)
-    updated_at = DateTimeField(default=datetime.utcnow)
+    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    updated_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
 
     def save(self, *args, **kwargs):
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)
         return super(Dashboard, self).save(*args, **kwargs)

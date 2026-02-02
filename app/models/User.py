@@ -241,7 +241,7 @@ class User(Document):
             user.increment_failed_logins()
             return None
 
-        user.last_login = datetime.utcnow()
+        user.last_login = datetime.now(timezone.utc)
         user.reset_failed_logins()
         user.save()
         logger.info(f"Successful OTP login for user {user.id}")

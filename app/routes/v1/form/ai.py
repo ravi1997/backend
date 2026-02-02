@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required
 from app.models.Form import Form, FormResponse
 from app.routes.v1.form.helper import get_current_user, has_form_permission
-from datetime import datetime
+from datetime import datetime, timezone
 import re
 
 ai_bp = Blueprint("ai", __name__)
@@ -72,7 +72,7 @@ def analyze_response_ai(form_id, response_id):
             "sentiment": {
                 "label": sentiment,
                 "score": score,
-                "analyzed_at": datetime.utcnow().isoformat()
+                "analyzed_at": datetime.now(timezone.utc).isoformat()
             },
             "pii_scan": {
                 "found_count": len(pii_found["emails"]) + len(pii_found["phones"]),
@@ -163,7 +163,7 @@ def moderate_response_ai(form_id, response_id):
             "flags": flags,
             "pii_summary": found_pii,
             "phi_detected": found_phi,
-            "evaluated_at": datetime.utcnow().isoformat()
+            "evaluated_at": datetime.now(timezone.utc).isoformat()
         }
         
         current_results = getattr(response, 'ai_results', {})
@@ -612,7 +612,7 @@ def scan_form_security_ai(form_id):
             "status": status,
             "findings": findings,
             "recommendations": recommendations,
-            "scanned_at": datetime.utcnow().isoformat()
+            "scanned_at": datetime.now(timezone.utc).isoformat()
         }
 
         # Store report in form if necessary (optional)
