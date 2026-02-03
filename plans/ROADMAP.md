@@ -1,12 +1,20 @@
 # Strategic Roadmap
 
-## Current Status: M1 Hardening
+## Current Status: M1 COMPLETED ✅
 
-The system is being stabilized. Basic security and environment issues have been resolved.
+**Completed:** 2026-02-03
+
+- ✅ Docker-compose v1 to v2 upgrade (FIX-20260203-ContainerConfig)
+- ✅ Docker/Logs permissions fixed (uploads/ directory created)
+- ✅ Test suite verified (88 tests passed)
+- ✅ CI/CD workflow stubs added (.github/workflows/)
+- ✅ Dependency drift analysis completed (45 outdated packages identified)
 
 ---
 
 ## Phase 1: AI-Driven Intelligence (M2)
+
+**Current:** In Progress
 
 **Goal**: Move from data collection to data insight.
 
