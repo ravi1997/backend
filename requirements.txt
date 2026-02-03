@@ -1,7 +1,7 @@
 argcomplete==3.1.4
 attrs==23.2.0
 Babel==2.10.3
-bcrypt==3.2.2
+bcrypt==4.2.0
 blinker
 click==8.1.6
 oauthlib==3.2.2
@@ -12,13 +12,13 @@ pytz==2024.1
 puremagic==1.30
 pyxdg==0.28
 PyYAML==6.0.1
-requests==2.31.0
+requests==2.32.3
 rich==13.7.1
 six==1.16.0
 argcomplete==3.1.4
 attrs==23.2.0
 Babel==2.10.3
-bcrypt==3.2.2
+bcrypt==4.2.0
 Brotli==1.1.0
 certifi==2025.4.26
 cffi==1.17.1
@@ -58,7 +58,7 @@ python-dotenv==1.1.0
 pytz==2024.1
 pyxdg==0.28
 PyYAML==6.0.1
-requests==2.31.0
+requests==2.32.3
 rich==13.7.1
 six==1.16.0
 SQLAlchemy==2.0.40
