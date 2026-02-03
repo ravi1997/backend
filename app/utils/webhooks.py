@@ -2,14 +2,18 @@ import hmac
 import hashlib
 from typing import Any
 from flask import json
-import requests
 from flask import current_app
 from app.models.Form import Form
+from app.services.webhook_service import WebhookService
+
 
 def trigger_webhooks(form: Form, event: str, data: dict[str, Any]) -> None:
     """
-    Triggers all active webhooks for a given form and event.
+    Triggers all active webhooks for a given form and event with retry mechanism.
     data should be a JSON-serializable dictionary.
+    
+    Uses WebhookService for reliable delivery with exponential backoff retry logic.
+    All webhook attempts are logged to the webhook_logs collection.
     """
     if not form.webhooks:
         return
@@ -48,10 +52,26 @@ def trigger_webhooks(form: Form, event: str, data: dict[str, Any]) -> None:
             ).hexdigest()
             headers["X-Form-Signature"] = f"sha256={signature}"
 
+        # Use WebhookService for reliable delivery with retry logic
         try:
-            # We use a timeout to prevent blocking the main request for too long
-            # In a production app, this should be offloaded to a task queue (Celery/RQ)
-            response = requests.post(url, data=encoded_payload, headers=headers, timeout=5)
-            current_app.logger.info(f"Webhook sent to {url} for event {event}. Status: {response.status_code}")
+            result = WebhookService.send_webhook(
+                url=url,
+                payload=payload,
+                max_retries=3,
+                headers=headers,
+                timeout=10
+            )
+            
+            if result["status"] == "success":
+                current_app.logger.info(
+                    f"Webhook delivered successfully to {url} for event {event}. "
+                    f"Attempt: {result['attempt_count']}, Log ID: {result['log_id']}"
+                )
+            else:
+                current_app.logger.error(
+                    f"Webhook failed to deliver to {url} for event {event}. "
+                    f"Error: {result.get('error', 'Unknown error')}, "
+                    f"Log ID: {result['log_id']}"
+                )
         except Exception as e:
             current_app.logger.error(f"Failed to send webhook to {url}: {str(e)}")

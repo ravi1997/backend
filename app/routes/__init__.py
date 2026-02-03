@@ -8,6 +8,7 @@ from app.routes.v1.form.library import library_bp
 from app.routes.v1.form.permissions import permissions_bp
 from app.routes.v1.dashboard_route import dashboard_bp 
 from app.routes.v1.workflow_route import workflow_bp
+from app.routes.v1.webhooks import webhooks_bp
 
 def register_blueprints(app):
     app.register_blueprint(form_bp, url_prefix='/form/api/v1/form')
@@ -19,4 +20,5 @@ def register_blueprints(app):
     app.register_blueprint(ai_bp, url_prefix='/form/api/v1/ai')
     app.register_blueprint(dashboard_bp, url_prefix='/form/api/v1/dashboards')
     app.register_blueprint(workflow_bp, url_prefix='/form/api/v1/workflows')
-    app.logger.info("Blueprints registered: form, user, auth, ai, dashboards, workflows")
+    app.register_blueprint(webhooks_bp, url_prefix='/api/v1/webhooks')
+    app.logger.info("Blueprints registered: form, user, auth, ai, dashboards, workflows, webhooks")
