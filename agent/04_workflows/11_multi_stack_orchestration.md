@@ -49,7 +49,7 @@ For each subproject (in topological order of dependency):
 ### 3.1 Environment Setup
 
 - **Action**: Spin up all dependency containers (DB, Redis).
-- **Action**: Start Backend services (using `docker-compose`).
+- **Action**: Start Backend services (using `docker compose`).
 
 ### 3.2 Cross-Stack Tests
 

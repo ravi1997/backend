@@ -178,7 +178,7 @@ docker logs test
 ```bash
 docker network ls
 docker network inspect <network-name>
-docker-compose ps
+docker compose ps
 ```
 
 **Step 2: Test DNS Resolution**
@@ -394,10 +394,10 @@ command: ["wait-for-it", "db:5432", "--", "node", "server.js"]
 **Step 5: Validate Startup Order**
 
 ```bash
-docker-compose up -d
-docker-compose logs -f
+docker compose up -d
+docker compose logs -f
 # Verify db/redis healthy before app starts
-docker-compose ps  # Check health status
+docker compose ps  # Check health status
 ```
 
 ---
@@ -656,7 +656,7 @@ export DOCKER_BUILDKIT=1
 docker build .
 
 # Or in docker-compose.yml:
-COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose build
+COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker compose build
 ```
 
 **Step 5: Validate Improvement**

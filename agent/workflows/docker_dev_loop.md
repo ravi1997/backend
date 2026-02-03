@@ -47,7 +47,7 @@ cat agent/contracts/PROJECT_FINGERPRINT.md
 ## Step 1: Diagnose (Universal)
 
 1. **Status:** `docker ps`
-2. **Logs:** `docker-compose logs`
+2. **Logs:** `docker compose logs`
 3. **Space:** `docker system df`
 
 ---
@@ -66,7 +66,7 @@ Depending on the stack detected in Step 0, apply specific fixes.
 
 # General Rebuild (Safe)
 
-docker-compose build --no-cache
+docker compose build --no-cache
 
 ```
 
@@ -80,7 +80,7 @@ docker-compose build --no-cache
 
 # All containers running?
 
-docker-compose ps
+docker compose ps
 
 # Health endpoints?
 

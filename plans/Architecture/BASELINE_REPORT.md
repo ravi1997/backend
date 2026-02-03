@@ -8,7 +8,7 @@
 
 ## Current Health
 
-- **Build Status**: `docker-compose config` passed. Dockerfile exists.
+- **Build Status**: `docker compose config` passed. Dockerfile exists.
 - **Test Status**: `pytest` runs and tests (e.g., `test_auth.py`) pass. 38 test files exist covering most modules.
 - **Environment**: Virtual environment exists (`.venv`). Requirements are mostly satisfied (had to install `puremagic`).
 - **Permissions**: `logs/app.log` was owned by root (fixed by removal).

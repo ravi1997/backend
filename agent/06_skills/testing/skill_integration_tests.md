@@ -6,7 +6,7 @@ Verifying the interaction between multiple components or external services (DB, 
 
 ## Execution Procedure
 
-1. **Environment Setup**: Ensure test databases or mock servers are running (e.g., via `docker-compose`).
+1. **Environment Setup**: Ensure test databases or mock servers are running (e.g., via `docker compose`).
 2. **State Initialization**: Prepare the system state (e.g., seed database).
 3. **Flow Execution**: Trigger the multi-step process being tested.
 4. **Verification**: Check side effects in the database or external state.

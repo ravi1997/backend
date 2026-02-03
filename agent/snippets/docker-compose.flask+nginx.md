@@ -1,4 +1,4 @@
-# Snippet: docker-compose (flask + nginx) minimal
+# Snippet: docker compose (flask + nginx) minimal
 
 ```yaml
 

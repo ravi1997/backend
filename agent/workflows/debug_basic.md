@@ -90,7 +90,7 @@ python wsgi.py
 
 # or
 
-docker-compose up
+docker compose up
 
 # Trigger the error
 

@@ -14,16 +14,20 @@ This project is set up to run with Docker and Docker Compose. This ensures a con
 
 2. **Start Development Server**:
    Run the following command to start the backend with hot-reloading enabled:
+
    ```bash
    make up-dev
    ```
+
    Or without `make`:
+
    ```bash
-   docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
    ```
 
 3. **Install LLM Models (Ollama)**:
    Once the services are up, you need to pull the required models:
+
    ```bash
    make pull-models
    ```
@@ -46,6 +50,6 @@ This project is set up to run with Docker and Docker Compose. This ensures a con
 
 ## Troubleshooting
 
-- **Database Connection**: If the backend fails to connect to MongoDB, ensure the `db` service is healthy (`docker-compose ps`).
+- **Database Connection**: If the backend fails to connect to MongoDB, ensure the `db` service is healthy (`docker compose ps`).
 - **Permissions**: If you encounter permission issues with `uploads/` or `logs/` folders, you may need to adjust their owners or run with `sudo` (not recommended).
 - **Network Issues**: The setup uses an internal network `app_net`. If you have conflicting networks, you may need to prune them: `docker network prune`.

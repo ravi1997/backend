@@ -127,16 +127,16 @@ git pull origin hotfix/rollback-deployment
 
 # Rebuild
 
-docker-compose build
+docker compose build
 
 # Deploy
 
-docker-compose down
-docker-compose up -d
+docker compose down
+docker compose up -d
 
 # Check status
 
-docker-compose ps
+docker compose ps
 
 ```
 
@@ -184,7 +184,7 @@ curl https://myapp.com/api/health
 
 # No errors in logs?
 
-docker-compose logs --tail=50 | grep -i error
+docker compose logs --tail=50 | grep -i error
 
 # or
 
@@ -216,7 +216,7 @@ sudo journalctl -u myapp -n 50 | grep -i error
 
 # Watch logs for 10-15 minutes
 
-docker-compose logs -f
+docker compose logs -f
 
 # or
 

@@ -21,7 +21,7 @@ Do NOT skip any section. Incomplete evidence leads to wrong diagnosis.
 
 # 1. Full build output
 
-docker-compose build 2>&1 | tee build.log
+docker compose build 2>&1 | tee build.log
 
 # OR
 
@@ -231,9 +231,9 @@ docker exec myapp env
 
 cat .env
 
-# 3. Check docker-compose env
+# 3. Check docker compose env
 
-docker-compose config | grep -A 10 "environment"
+docker compose config | grep -A 10 "environment"
 
 ```
 

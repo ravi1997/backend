@@ -324,7 +324,7 @@ ModuleNotFoundError: No module named 'flask'
 **Fast Diagnosis:**
 
 ```bash
-docker-compose config | grep -A 5 volumes
+docker compose config | grep -A 5 volumes
 docker run --rm <image> ls -la /app/node_modules
 ```
 
@@ -444,7 +444,7 @@ sudo netstat -tlnp | grep 3000
 
 **Prevention:**
 
-- Use docker-compose with unique port assignments
+- Use docker compose with unique port assignments
 - Document port usage in README
 - Use reverse proxy (Traefik, nginx) to avoid port conflicts
 
@@ -666,8 +666,8 @@ Connection refused errors on startup
 **Fast Diagnosis:**
 
 ```bash
-docker-compose logs
-docker-compose ps
+docker compose logs
+docker compose ps
 ```
 
 **Fix Steps:**
@@ -722,7 +722,7 @@ Application fails due to missing config
 
 ```bash
 ls -la .env
-docker-compose config | grep -A 10 environment
+docker compose config | grep -A 10 environment
 docker exec <container> env
 ```
 
@@ -794,7 +794,7 @@ docker volume inspect <volume-name>
 
 **Prevention:**
 
-- Always specify user in docker-compose for development
+- Always specify user in docker compose for development
 - Use consistent UID/GID across team
 - Document ownership requirements
 

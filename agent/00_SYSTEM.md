@@ -221,7 +221,7 @@ When given repo path(s), inspect files to pick stack automatically:
 - Node: package.json exists
 - Python: pyproject.toml OR requirements.txt OR Pipfile
 - Flutter: pubspec.yaml exists
-- Docker already exists: if Dockerfile/docker-compose exists, adapt and improve
+- Docker already exists: if Dockerfile/docker compose exists, adapt and improve
 
 Framework detection:
 

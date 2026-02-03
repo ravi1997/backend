@@ -1,8 +1,8 @@
 # Skill: Docker Compose Debugging
 
 **Purpose:** Debug Docker Compose issues
-**When to use:** When docker-compose commands fail or containers won't start
-**Prerequisites:** Docker and docker-compose installed
+**When to use:** When docker compose commands fail or containers won't start
+**Prerequisites:** Docker and docker compose installed
 **Estimated time:** 15-30 minutes
 
 ---
@@ -19,11 +19,11 @@
 
 # Check container status
 
-docker-compose ps
+docker compose ps
 
 # Check logs
 
-docker-compose logs service-name
+docker compose logs service-name
 
 # Check exit code
 
@@ -44,7 +44,7 @@ docker inspect container-name | grep ExitCode
 
 # Check env vars
 
-docker-compose config
+docker compose config
 
 # Check ports
 
@@ -60,7 +60,7 @@ sudo chown -R $USER:$USER ./volumes
 
 ### Issue 2: Build Failures
 
-**Symptoms:** `docker-compose build` fails
+**Symptoms:** `docker compose build` fails
 
 **Diagnosis:**
 
@@ -68,7 +68,7 @@ sudo chown -R $USER:$USER ./volumes
 
 # Build with verbose output
 
-docker-compose build --no-cache --progress=plain
+docker compose build --no-cache --progress=plain
 
 # Check disk space
 
@@ -94,7 +94,7 @@ docker system prune -a
 
 # Rebuild
 
-docker-compose build --no-cache
+docker compose build --no-cache
 
 ```
 
@@ -118,7 +118,7 @@ docker network inspect network-name
 
 # Test connectivity
 
-docker-compose exec service1 ping service2
+docker compose exec service1 ping service2
 
 ```
 
@@ -128,8 +128,8 @@ docker-compose exec service1 ping service2
 
 # Recreate network
 
-docker-compose down
-docker-compose up -d
+docker compose down
+docker compose up -d
 
 ```
 
@@ -153,7 +153,7 @@ docker volume inspect volume-name
 
 # Check permissions
 
-docker-compose exec service ls -la /mount/path
+docker compose exec service ls -la /mount/path
 
 ```
 
@@ -163,12 +163,12 @@ docker-compose exec service ls -la /mount/path
 
 # Fix ownership
 
-docker-compose exec service chown -R appuser:appuser /mount/path
+docker compose exec service chown -R appuser:appuser /mount/path
 
 # Or recreate volume
 
-docker-compose down -v
-docker-compose up -d
+docker compose down -v
+docker compose up -d
 
 ```
 
@@ -176,15 +176,15 @@ docker-compose up -d
 
 ## Quick Troubleshooting Checklist
 
-- [ ] Check logs: `docker-compose logs`
-- [ ] Check status: `docker-compose ps`
-- [ ] Check config: `docker-compose config`
+- [ ] Check logs: `docker compose logs`
+- [ ] Check status: `docker compose ps`
+- [ ] Check config: `docker compose config`
 - [ ] Check disk space: `df -h`
 - [ ] Check networks: `docker network ls`
 - [ ] Check volumes: `docker volume ls`
-- [ ] Restart: `docker-compose restart`
-- [ ] Rebuild: `docker-compose up -d --build`
-- [ ] Clean start: `docker-compose down && docker-compose up -d`
+- [ ] Restart: `docker compose restart`
+- [ ] Rebuild: `docker compose up -d --build`
+- [ ] Clean start: `docker compose down && docker compose up -d`
 
 ---
 

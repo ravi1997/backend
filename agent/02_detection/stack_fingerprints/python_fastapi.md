@@ -23,7 +23,7 @@ Identifies and configures for a FastAPI backend.
 - **User**: Run as non-root user (e.g., `USER appuser`).
 - **Port**: Expose `8000` (default uvicorn port).
 - **Healthcheck**: `CMD curl --fail http://localhost:8000/health || exit 1`.
-- **Hot Reload**: Mount code volume in docker-compose for local dev.
+- **Hot Reload**: Mount code volume in docker compose for local dev.
 
 ## GitHub Actions Baseline
 

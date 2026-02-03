@@ -85,7 +85,7 @@ Closes #
 ### DevOps
 
 - [ ] Docker build succeeds (if Dockerfile exists)
-- [ ] docker-compose up works (if docker-compose.yml exists)
+- [ ] docker compose up works (if docker-compose.yml exists)
 - [ ] CI/CD pipeline passes
 - [ ] No secrets or sensitive data committed
 

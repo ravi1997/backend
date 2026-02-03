@@ -22,7 +22,7 @@ echo ""
 
 echo "1. Docker Version:"
 docker --version
-docker-compose --version
+docker compose --version
 
 echo ""
 echo "2. Build Context Size:"
@@ -385,7 +385,7 @@ fi
 
 ### When to Run
 
-- docker-compose issues
+- docker compose issues
 - Service dependency problems
 - Configuration validation needed
 
@@ -397,42 +397,42 @@ echo "=== Docker Compose Diagnostics ==="
 echo ""
 
 echo "1. Compose Version:"
-docker-compose --version
+docker compose --version
 
 echo ""
 echo "2. Compose File Validation:"
-docker-compose config --quiet && echo "✓ Compose file is valid" || echo "✗ Compose file has errors"
+docker compose config --quiet && echo "✓ Compose file is valid" || echo "✗ Compose file has errors"
 
 echo ""
 echo "3. Rendered Compose Configuration:"
-docker-compose config
+docker compose config
 
 echo ""
 echo "4. Service Status:"
-docker-compose ps
+docker compose ps
 
 echo ""
 echo "5. Service Logs (last 50 lines each):"
-for service in $(docker-compose config --services); do
+for service in $(docker compose config --services); do
   echo "--- Service: $service ---"
-  docker-compose logs --tail 50 $service
+  docker compose logs --tail 50 $service
 done
 
 echo ""
 echo "6. Service Dependencies:"
-docker-compose config | grep -A 5 "depends_on:"
+docker compose config | grep -A 5 "depends_on:"
 
 echo ""
 echo "7. Service Healthchecks:"
-docker-compose config | grep -A 10 "healthcheck:"
+docker compose config | grep -A 10 "healthcheck:"
 
 echo ""
 echo "8. Service Networks:"
-docker-compose config | grep -A 5 "networks:"
+docker compose config | grep -A 5 "networks:"
 
 echo ""
 echo "9. Service Volumes:"
-docker-compose config | grep -A 5 "volumes:"
+docker compose config | grep -A 5 "volumes:"
 
 echo ""
 echo "10. Environment Variables:"
@@ -447,7 +447,7 @@ fi
 
 echo ""
 echo "11. Service Health Status:"
-for container in $(docker-compose ps -q); do
+for container in $(docker compose ps -q); do
   name=$(docker inspect $container | jq -r '.[0].Name')
   health=$(docker inspect $container | jq -r '.[0].State.Health.Status // "no healthcheck"')
   echo "  $name: $health"

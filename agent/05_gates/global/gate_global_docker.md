@@ -11,7 +11,7 @@ This gate validates Docker configuration across all stacks. It ensures:
 
 - Secure Dockerfile practices
 - Optimized image builds
-- Proper docker-compose setup
+- Proper docker compose setup
 - Security hardening
 
 ---
@@ -267,10 +267,10 @@ docker history myapp:latest
 ### Test docker-compose
 
 ```bash
-docker-compose up -d
-docker-compose ps
-docker-compose logs
-docker-compose down
+docker compose up -d
+docker compose ps
+docker compose logs
+docker compose down
 ```
 
 ---

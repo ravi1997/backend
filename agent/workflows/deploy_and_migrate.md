@@ -147,7 +147,7 @@ alembic upgrade head
 
 ## Step 4: Deploy & Verify (Universal)
 
-1. **Restart:** `systemctl restart` or `docker-compose up -d`.
+1. **Restart:** `systemctl restart` or `docker compose up -d`.
 2. **Health:** Check `/healthz`.
 3. **Logs:** Monitor for errors.
 

@@ -225,7 +225,7 @@ curl -I https://myapp.com
 # All services running?
 
 sudo systemctl status myapp
-docker-compose ps
+docker compose ps
 
 # No errors in logs?
 

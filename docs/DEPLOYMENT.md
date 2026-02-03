@@ -78,7 +78,7 @@ cp .env.example .env
 
 ## 4. Docker Deployment (Recommended)
 
-The project includes a `docker-compose.yml` for easy orchestration.
+The project includes a `docker compose.yml` for easy orchestration.
 
 ### Using Makefile
 
@@ -92,7 +92,7 @@ The `Makefile` simplifies common commands:
 ### Manual Commands
 
 ```bash
-docker-compose up --build -d
+docker compose up --build -d
 ```
 
 ---

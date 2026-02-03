@@ -296,7 +296,7 @@ Works for:
 # NEVER allowed in production:
 
 systemctl restart
-docker-compose down
+docker compose down
 rm -rf
 DROP TABLE
 git push origin main

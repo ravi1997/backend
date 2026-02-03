@@ -98,7 +98,7 @@ Agent MUST NOT perform these actions in production:
 - `DROP` statements
 - `TRUNCATE` statements
 - `systemctl stop/restart`
-- `docker-compose down`
+- `docker compose down`
 - `kubectl delete`
 
 ---
@@ -119,8 +119,8 @@ service stop
 
 # Docker
 
-docker-compose down
-docker-compose restart
+docker compose down
+docker compose restart
 docker stop
 docker rm
 

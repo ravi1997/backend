@@ -109,7 +109,7 @@ docker run -p [port]:[port] [image-name]
 ### Using Docker Compose
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### Manual Deployment

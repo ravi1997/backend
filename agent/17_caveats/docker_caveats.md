@@ -216,10 +216,10 @@ docker run --network myapp-network --name db postgres
 curl http://db:5432  # ✓ Works!
 ```
 
-### In docker-compose (automatic)
+### In docker compose (automatic)
 
 ```yaml
-# docker-compose automatically creates user-defined network
+# docker compose automatically creates user-defined network
 services:
   api:
     # Can reference other services by name
@@ -717,7 +717,7 @@ CMD ["node", "server.js"]
 
 ### The Problem
 
-Named volumes persist **even after `docker-compose down`**.
+Named volumes persist **even after `docker compose down`**.
 
 ### Why It's Dangerous
 
@@ -728,15 +728,15 @@ Named volumes persist **even after `docker-compose down`**.
 ### The Footgun
 
 ```bash
-docker-compose down
-docker-compose up  # ← Database still has old data!
+docker compose down
+docker compose up  # ← Database still has old data!
 ```
 
 ### The Right Way
 
 ```bash
 # Remove volumes when needed:
-docker-compose down -v  # ← Removes volumes
+docker compose down -v  # ← Removes volumes
 
 # Or remove specific volume:
 docker volume rm myapp_postgres_data
@@ -765,7 +765,7 @@ volumes:
 
 ### The Rule
 
-**Understand volume lifecycle. Use `docker-compose down -v` to clean state in development.**
+**Understand volume lifecycle. Use `docker compose down -v` to clean state in development.**
 
 ---
 

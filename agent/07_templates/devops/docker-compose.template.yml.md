@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This template provides a parameterized docker-compose configuration for local development with common service patterns.
+This template provides a parameterized docker compose configuration for local development with common service patterns.
 
 ## Parameters
 
