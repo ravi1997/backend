@@ -9,3 +9,8 @@ from .api import *
 from .analytics import *
 from .library import *
 from .permissions import *
+
+# M2 AI Feature Routes
+from .nlp_search import *
+from .summarization import *
+from .anomaly import *
