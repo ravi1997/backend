@@ -61,3 +61,5 @@
 - **Redis Integration**: Cache form schemas to reduce MongoDB load.
 - **Celery/RabbitMQ**: Move AI processing and heavy exports to background workers.
 - **API Versioning (v2)**: Introduce a breaking-change clean API if necessary.
+
+**M4 Details**: See [`plans/M4/`](plans/M4/) for comprehensive SRS specifications.
