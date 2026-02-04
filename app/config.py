@@ -67,6 +67,14 @@ class Config:
     LLM_PROVIDER = os.getenv("LLM_PROVIDER", "ollama")
     LLM_API_URL = os.getenv("LLM_API_URL", "http://ollama:11434/v1")
     LLM_MODEL = os.getenv("LLM_MODEL", "llama3")
+    OLLAMA_API_URL = os.getenv("OLLAMA_API_URL", "http://localhost:11434")
+    OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", LLM_MODEL)
+    OLLAMA_EMBEDDING_MODEL = os.getenv("OLLAMA_EMBEDDING_MODEL", "nomic-embed-text")
+    
+    # Ollama Connection Pool Settings
+    OLLAMA_POOL_SIZE = int(os.getenv("OLLAMA_POOL_SIZE", 5))
+    OLLAMA_POOL_TIMEOUT = int(os.getenv("OLLAMA_POOL_TIMEOUT", 30))
+    OLLAMA_CONNECTION_TIMEOUT = int(os.getenv("OLLAMA_CONNECTION_TIMEOUT", 10))
 
 class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.getenv("DEVELOPMENT_DATABASE_URI", "sqlite:///dev.db")

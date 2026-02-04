@@ -8,6 +8,7 @@ from flask_compress import Compress
 from flask_cors import CORS
 
 from app.routes import register_blueprints
+from app.services.ollama_service import OllamaService
 
 from .config import Config
 from .extensions import  mongo,jwt
@@ -132,6 +133,13 @@ def create_app(config_class=Config):
         app.logger.info("Blueprints registered.")
     except Exception as e:
         app.logger.exception("Error registering blueprints: %s", e)
+    
+    # Start Ollama periodic health checks
+    try:
+        OllamaService.start_periodic_health_checks(app)
+        app.logger.info("Ollama periodic health checks started.")
+    except Exception as e:
+        app.logger.warning("Failed to start Ollama periodic health checks: %s", e)
 
     @jwt.token_in_blocklist_loader
     def check_if_token_in_blocklist(jwt_header, jwt_payload):

@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required
 from app.models.Form import Form, FormResponse
 from app.routes.v1.form.helper import get_current_user, has_form_permission
 from app.services.ai_service import AIService
+from app.services.ollama_service import OllamaService
 from datetime import datetime, timezone
 import hashlib
 import math
@@ -11,6 +12,67 @@ import uuid
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 ai_bp = Blueprint("ai", __name__)
+
+@ai_bp.route("/health", methods=["GET"])
+def ai_health_check():
+    """
+    Health check endpoint for AI services.
+    
+    Returns overall AI service health status including Ollama model availability.
+    
+    Response format:
+    {
+        "status": "healthy" | "degraded" | "unavailable",
+        "ollama": {
+            "status": "healthy" | "degraded" | "unavailable",
+            "available": true,
+            "models": ["llama3.2", "nomic-embed-text"],
+            "default_model": "llama3.2",
+            "embedding_model": "nomic-embed-text",
+            "latency_ms": 45
+        },
+        "timestamp": "2026-02-04T10:00:00Z"
+    }
+    """
+    try:
+        # Get Ollama health status
+        ollama_health = OllamaService.health_check()
+        
+        # Determine overall status
+        if ollama_health.get("status") == "unavailable":
+            overall_status = "unavailable"
+        elif ollama_health.get("status") == "degraded":
+            overall_status = "degraded"
+        else:
+            overall_status = "healthy"
+        
+        # Build response
+        response = {
+            "status": overall_status,
+            "ollama": {
+                "status": ollama_health.get("status"),
+                "available": ollama_health.get("available", False),
+                "models": ollama_health.get("models", []),
+                "default_model": ollama_health.get("default_model"),
+                "embedding_model": ollama_health.get("embedding_model"),
+                "latency_ms": ollama_health.get("latency_ms")
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+        # Add error details if available
+        if "error" in ollama_health:
+            response["ollama"]["error"] = ollama_health["error"]
+        
+        return jsonify(response), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"AI health check error: {str(e)}")
+        return jsonify({
+            "status": "unavailable",
+            "error": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }), 503
 
 def simple_sentiment_analyzer(text: str) -> Tuple[str, int]:
     positive_words = {
@@ -363,12 +425,25 @@ def ai_powered_search(form_id: str) -> Tuple[Any, int]:
     - Sentiment Filtering (e.g., "unhappy", "satisfied", "positive", "negative")
     - Text Search across all response content
     - Combined Filters
+    - Cache bypass support (nocache parameter)
+    
+    Payload: {
+        "query": "search query text",
+        "nocache": false (optional, default: false)
+    }
     """
     try:
         data = request.get_json()
         query = data.get("query", "").lower()
+        nocache = data.get("nocache", False)
+        
         if not query:
             return jsonify({"error": "Search query is required"}), 400
+        
+        # Invalidate cache if nocache is true
+        if nocache:
+            from app.services.nlp_service import NLPSearchService
+            NLPSearchService.invalidate_cache(form_id=form_id, pattern="by_query", query=query)
 
         current_user = get_current_user()
         form = Form.objects.get(id=form_id)
@@ -1031,7 +1106,8 @@ def summarize_form_responses(form_id: str) -> Tuple[Any, int]:
     Payload: {
         "response_ids": ["id1", "id2", ...] (optional, defaults to all responses),
         "max_bullet_points": 3,
-        "include_sentiment": true
+        "include_sentiment": true,
+        "nocache": false (optional, default: false)
     }
     """
     try:
@@ -1039,6 +1115,12 @@ def summarize_form_responses(form_id: str) -> Tuple[Any, int]:
         response_ids = data.get("response_ids")
         max_bullets = data.get("max_bullet_points", 3)
         include_sentiment = data.get("include_sentiment", True)
+        nocache = data.get("nocache", False)
+        
+        # Invalidate cache if nocache is true
+        if nocache:
+            from app.services.summarization_service import SummarizationService
+            SummarizationService.invalidate_cache(form_id=form_id, pattern="by_form")
         
         current_user = get_current_user()
         form = Form.objects.get(id=form_id)
@@ -1462,4 +1544,144 @@ def export_form_ai_report(form_id: str) -> Tuple[Any, int]:
         return jsonify({"error": "Form not found"}), 404
     except Exception as e:
         current_app.logger.error(f"Export Report Error: {str(e)}")
+        return jsonify({"error": str(e)}), 400
+
+
+# --- Cache Invalidation Endpoints ---
+# Task: M2-INT-01b - Add cache invalidation rules
+
+
+@ai_bp.route("/<form_id>/cache/invalidate", methods=["POST"])
+@jwt_required()
+def invalidate_form_cache(form_id: str) -> Tuple[Any, int]:
+    """
+    Manual cache invalidation for a specific form.
+    
+    Allows selective cache invalidation based on pattern:
+    - all: Invalidate all cache for the form
+    - nlp_search: Invalidate NLP search cache only
+    - summarization: Invalidate summarization cache only
+    - by_query: Invalidate cache for a specific query (requires 'query' parameter)
+    
+    Payload: {
+        "pattern": "all" | "nlp_search" | "summarization" | "by_query",
+        "query": "search query text" (required for by_query pattern)
+    }
+    
+    Response: {
+        "form_id": "form-id",
+        "pattern": "all",
+        "keys_invalidated": 5,
+        "invalidated_at": "2026-02-04T10:00:00Z"
+    }
+    """
+    try:
+        data = request.get_json() or {}
+        pattern = data.get("pattern", "all")
+        query = data.get("query")
+        
+        current_user = get_current_user()
+        form = Form.objects.get(id=form_id)
+        if not has_form_permission(current_user, form, "edit"):
+            return jsonify({"error": "Unauthorized"}), 403
+        
+        total_invalidated = 0
+        
+        # Invalidate NLP search cache
+        if pattern in ["all", "nlp_search", "by_query"]:
+            from app.services.nlp_service import NLPSearchService
+            
+            if pattern == "by_query":
+                if not query:
+                    return jsonify({"error": "Query parameter required for by_query pattern"}), 400
+                invalidated = NLPSearchService.invalidate_cache(
+                    form_id=form_id,
+                    pattern="by_query",
+                    query=query
+                )
+            else:
+                invalidated = NLPSearchService.invalidate_cache(
+                    form_id=form_id,
+                    pattern="by_form"
+                )
+            total_invalidated += invalidated
+        
+        # Invalidate summarization cache
+        if pattern in ["all", "summarization"]:
+            from app.services.summarization_service import SummarizationService
+            
+            invalidated = SummarizationService.invalidate_cache(
+                form_id=form_id,
+                pattern="by_form"
+            )
+            total_invalidated += invalidated
+        
+        return jsonify({
+            "form_id": form_id,
+            "pattern": pattern,
+            "keys_invalidated": total_invalidated,
+            "invalidated_at": datetime.now(timezone.utc).isoformat()
+        }), 200
+        
+    except Form.DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+    except Exception as e:
+        current_app.logger.error(f"Cache Invalidation Error: {str(e)}")
+        return jsonify({"error": str(e)}), 400
+
+
+@ai_bp.route("/<form_id>/cache", methods=["DELETE"])
+@jwt_required()
+def clear_form_cache(form_id: str) -> Tuple[Any, int]:
+    """
+    Clear all cache for a specific form.
+    
+    This endpoint clears all cached data for a form including:
+    - NLP search results
+    - Semantic search results
+    - Summarization results
+    - Popular queries
+    - Executive summaries
+    
+    Response: {
+        "form_id": "form-id",
+        "keys_invalidated": 10,
+        "cleared_at": "2026-02-04T10:00:00Z"
+    }
+    """
+    try:
+        current_user = get_current_user()
+        form = Form.objects.get(id=form_id)
+        if not has_form_permission(current_user, form, "edit"):
+            return jsonify({"error": "Unauthorized"}), 403
+        
+        from app.services.nlp_service import NLPSearchService
+        from app.services.summarization_service import SummarizationService
+        
+        total_invalidated = 0
+        
+        # Clear all NLP search cache for this form
+        nlp_invalidated = NLPSearchService.invalidate_cache(
+            form_id=form_id,
+            pattern="by_form"
+        )
+        total_invalidated += nlp_invalidated
+        
+        # Clear all summarization cache for this form
+        summary_invalidated = SummarizationService.invalidate_cache(
+            form_id=form_id,
+            pattern="by_form"
+        )
+        total_invalidated += summary_invalidated
+        
+        return jsonify({
+            "form_id": form_id,
+            "keys_invalidated": total_invalidated,
+            "cleared_at": datetime.now(timezone.utc).isoformat()
+        }), 200
+        
+    except Form.DoesNotExist:
+        return jsonify({"error": "Form not found"}), 404
+    except Exception as e:
+        current_app.logger.error(f"Clear Cache Error: {str(e)}")
         return jsonify({"error": str(e)}), 400

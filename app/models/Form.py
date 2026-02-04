@@ -238,3 +238,173 @@ class CustomFieldTemplate(Document):
     category = StringField()
     question_data = EmbeddedDocumentField(Question)
     created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+
+
+class SearchHistory(Document):
+    """
+    Search History Model
+    
+    Stores user search queries for analytics and personalization.
+    Enables showing recent searches and tracking popular queries.
+    
+    Task: M2-EXT-02b - Persist user search history
+    """
+    meta = {
+        'collection': 'search_history',
+        'indexes': [
+            'user_id',
+            'form_id',
+            'timestamp',
+            ('user_id', 'form_id'),
+            ('user_id', 'timestamp'),
+            ('form_id', 'timestamp'),
+            ('user_id', 'form_id', 'timestamp')
+        ]
+    }
+    
+    id = UUIDField(primary_key=True, binary=False, default=uuid.uuid4)
+    user_id = StringField(required=True)
+    form_id = UUIDField(required=True, binary=False)
+    query = StringField(required=True)
+    timestamp = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    results_count = IntField(default=0)
+    
+    # Optional metadata about the search
+    parsed_intent = DictField()  # Stores parsed query details
+    search_type = StringField(default='nlp')  # 'nlp', 'semantic', 'keyword'
+    cached = BooleanField(default=False)
+
+
+class SummarySnapshot(Document):
+    """
+    Summary Snapshot Model
+    
+    Stores summary data snapshots for trend analysis across time periods.
+    Enables comparison of sentiment, themes, and response counts over time.
+    
+    Task: M2-EXT-03c - Add summary comparison across time periods
+    """
+    meta = {
+        'collection': 'summary_snapshots',
+        'indexes': [
+            'form_id',
+            'timestamp',
+            'period_start',
+            'period_end',
+            'created_by',
+            ('form_id', 'period_end'),
+            ('form_id', 'timestamp')
+        ]
+    }
+    
+    id = UUIDField(primary_key=True, binary=False, default=uuid.uuid4)
+    form_id = UUIDField(required=True, binary=False)
+    timestamp = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    
+    # Period range for this snapshot
+    period_start = DateTimeField(required=True)
+    period_end = DateTimeField(required=True)
+    period_label = StringField()  # e.g., "last 7 days", "2025-01-01 to 2025-01-31"
+    
+    # Complete summary data
+    summary_data = DictField(required=True)
+    
+    # Metadata
+    created_by = StringField(required=True)
+    response_count = IntField(default=0)
+    strategy_used = StringField()  # extractive, abstractive, hybrid
+    
+    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+
+
+class AnomalyThreshold(Document):
+    """
+    Anomaly Threshold Model
+    
+    Stores threshold configurations and history for anomaly detection.
+    Enables dynamic threshold calculation based on data distribution.
+    
+    Task: M2-EXT-04b - Add auto-thresholding for anomaly detection
+    """
+    meta = {
+        'collection': 'anomaly_thresholds',
+        'indexes': [
+            'form_id',
+            'timestamp',
+            'sensitivity',
+            'created_by',
+            ('form_id', 'timestamp'),
+            ('form_id', 'sensitivity'),
+            ('form_id', 'created_at')
+        ]
+    }
+    
+    id = UUIDField(primary_key=True, binary=False, default=uuid.uuid4)
+    form_id = UUIDField(required=True, binary=False)
+    timestamp = DateTimeField(default=lambda: datetime.now(timezone.utc))
+    
+    # Threshold configuration
+    thresholds = DictField(required=True)  # {z_score_2sigma, z_score_3sigma, z_score_4sigma, ...}
+    sensitivity = StringField(default='auto')  # "auto", "low", "medium", "high"
+    
+    # Baseline statistics used for calculation
+    baseline_stats = DictField()  # {avg_response_length, std_response_length, avg_sentiment_score, std_sentiment_score}
+    
+    # Metadata
+    created_by = StringField(required=True)
+    response_count = IntField(default=0)  # Number of responses used for baseline calculation
+    is_manual = BooleanField(default=False)  # Whether this was manually adjusted
+    manual_adjustment_reason = StringField()
+    
+    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
+
+
+class AnomalyBatchScan(Document):
+    """
+    Anomaly Batch Scan Model
+    
+    Stores batch scan information for anomaly detection.
+    Enables scheduled scans for large form response sets with progress tracking.
+    
+    Task: M2-EXT-04c - Add batch scanning for anomaly detection
+    """
+    meta = {
+        'collection': 'anomaly_batch_scans',
+        'indexes': [
+            'form_id',
+            'batch_id',
+            'status',
+            'created_by',
+            'started_at',
+            'completed_at',
+            ('form_id', 'batch_id'),
+            ('form_id', 'status'),
+            ('batch_id', 'status')
+        ]
+    }
+    
+    id = UUIDField(primary_key=True, binary=False, default=uuid.uuid4)
+    form_id = UUIDField(required=True, binary=False)
+    batch_id = StringField(required=True, unique=True)
+    
+    # Scan configuration
+    response_ids = ListField(StringField())  # List of response IDs to scan
+    scan_config = DictField()  # {detection_types, sensitivity, use_dynamic_thresholds}
+    
+    # Scan status
+    status = StringField(default='pending')  # "pending", "in_progress", "completed", "failed"
+    total_responses = IntField(default=0)
+    scanned_count = IntField(default=0)
+    results_count = IntField(default=0)
+    
+    # Scan results
+    results = DictField()  # Complete scan results
+    summary = DictField()  # Summary statistics
+    
+    # Metadata
+    created_by = StringField(required=True)
+    started_at = DateTimeField()
+    completed_at = DateTimeField()
+    error_message = StringField()
+    
+    created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
