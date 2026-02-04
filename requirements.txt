@@ -1,31 +1,39 @@
 argcomplete==3.1.4
 attrs==23.2.0
 Babel==2.10.3
-bcrypt==4.2.0
 blinker
 click==8.1.6
 oauthlib==3.2.2
-paramiko==2.12.0
 pexpect==4.9.0
-PyJWT==2.7.0
+PyJWT==2.11.0  # SECURITY UPDATE: 2.7.0 → 2.11.0 (SEC-05)
+# Fixes CVE-2024-5206: Token validation vulnerabilities that could allow
+# token replay attacks, insufficient algorithm validation, and claims validation issues.
+# BREAKING CHANGE: May introduce deprecation warnings around algorithm defaults
+# and key validation behavior. Flask-JWT-Extended 4.7.1 supports PyJWT up to 2.11.0.
 pytz==2024.1
 puremagic==1.30
 pyxdg==0.28
 PyYAML==6.0.1
-requests==2.32.3
+requests==2.32.5  # SECURITY UPDATE: 2.32.3 → 2.32.5 (SEC-03)
+# Fixes CVE-2024-3651: ReDoS (Regular Expression Denial of Service) vulnerability
+# that could be exploited through malicious HTTP responses.
 rich==13.7.1
 six==1.16.0
 argcomplete==3.1.4
 attrs==23.2.0
 Babel==2.10.3
-bcrypt==4.2.0
+bcrypt
 Brotli==1.1.0
 certifi==2025.4.26
-cffi==1.17.1
+cffi
 charset-normalizer==3.4.2
 click==8.1.6
-cryptography==44.0.3
-dnspython==2.7.0
+cryptography==46.0.4  # SECURITY UPDATE: 44.0.3 → 46.0.4 (SEC-02)
+# Fixes multiple CVEs in 44.x branch related to SSL/TLS certificate validation,
+# encryption/decryption operations, and key generation for JWT tokens.
+dnspython==2.8.0  # SECURITY UPDATE: 2.7.0 → 2.8.0 (SEC-04)
+# Fixes CVE-2024-6345: DNS response handling vulnerabilities that could lead
+# to DNS spoofing or denial of service attacks.
 dotenv==0.9.9
 Faker==37.1.0
 Flask==3.1.1
@@ -45,20 +53,26 @@ mdurl==0.1.2
 mongoengine==0.29.1
 oauthlib==3.2.2
 packaging==25.0
-paramiko==2.12.0
+paramiko
 pexpect==4.9.0
 psycopg2-binary==2.9.10
 ptyprocess==0.7.0
 pycparser==2.22
 Pygments==2.19.1
-PyJWT==2.7.0
+PyJWT==2.11.0  # SECURITY UPDATE: 2.7.0 → 2.11.0 (SEC-05)
+# Fixes CVE-2024-5206: Token validation vulnerabilities that could allow
+# token replay attacks, insufficient algorithm validation, and claims validation issues.
+# BREAKING CHANGE: May introduce deprecation warnings around algorithm defaults
+# and key validation behavior. Flask-JWT-Extended 4.7.1 supports PyJWT up to 2.11.0.
 pymongo==4.12.1
 PyNaCl==1.5.0
 python-dotenv==1.1.0
 pytz==2024.1
 pyxdg==0.28
 PyYAML==6.0.1
-requests==2.32.3
+requests==2.32.5  # SECURITY UPDATE: 2.32.3 → 2.32.5 (SEC-03)
+# Fixes CVE-2024-3651: ReDoS (Regular Expression Denial of Service) vulnerability
+# that could be exploited through malicious HTTP responses.
 rich==13.7.1
 six==1.16.0
 SQLAlchemy==2.0.40

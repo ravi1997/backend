@@ -15,9 +15,9 @@ COPY requirements.txt .
 # Try to install from wheels if they exist, otherwise use requirements.txt
 COPY wheels /wheels
 RUN if [ -d "/wheels" ] && [ "$(ls -A /wheels)" ]; then \
-        pip install --no-index --find-links=/wheels /wheels/*; \
+    pip install --find-links=/wheels -r requirements.txt; \
     else \
-        pip install -r requirements.txt; \
+    pip install -r requirements.txt; \
     fi
 
 # Copy the rest of the application
