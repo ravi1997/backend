@@ -13,7 +13,8 @@ import time
 
 from app.models.Form import FormResponse
 from app.services.anomaly_detection_service import AnomalyDetectionService
-from app.utils.auth import jwt_required, get_current_user
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from app.routes.v1.form.helper import get_current_user
 
 
 anomaly_bp = Blueprint('anomaly', __name__, url_prefix='/api/v1/ai/forms')

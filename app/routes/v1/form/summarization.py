@@ -14,7 +14,8 @@ import time
 from app.models.Form import FormResponse
 from app.services.summarization_service import SummarizationService
 from app.services.ollama_service import OllamaService
-from app.utils.auth import jwt_required, get_current_user
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from app.routes.v1.form.helper import get_current_user
 from app.utils.redis_client import redis_client
 
 
