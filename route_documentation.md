@@ -1258,3 +1258,562 @@ Search for submissions by specific question value across form history.
 * **Endpoint:** `/<form_id>/history`
 * **Method:** `GET`
 * **Params:** `question_id`, `primary_value`.
+
+---
+
+## 18. AI Services (M2 - AI-Driven Intelligence)
+
+**Base path:** `/form/api/v1/ai/forms/<form_id>`
+
+**Authentication:** JWT Required for all endpoints
+
+**Dependencies:**
+- Requires Ollama service running for semantic search and LLM features
+- Fallback to keyword-based search if Ollama unavailable
+
+---
+
+### 18.1 NLP Search Enhancement (T-M2-02)
+
+**Base path:** `/form/api/v1/ai/forms/<form_id>`
+
+#### 18.1.1 Natural Language Search
+
+Search form responses using natural language queries. Supports sentiment filtering, topic extraction, and semantic search.
+
+* **Endpoint:** `/nlp-search`
+* **Method:** `POST`
+* **Auth Required:** Yes
+
+**Input Schema:**
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `query` | string | Yes | Natural language search query (e.g., "Show me all users who were unhappy with delivery") |
+| `options.max_results` | integer | No | Maximum results to return (default: 50) |
+| `options.include_sentiment` | boolean | No | Include sentiment analysis in results (default: true) |
+| `options.semantic_search` | boolean | No | Use Ollama embeddings for semantic matching (default: true) |
+| `options.cache_results` | boolean | No | Cache results for 1 hour (default: true) |
+
+**Response Schema (Success):**
+
+```json
+{
+  "query": "Show me all users who were unhappy with delivery",
+  "parsed_intent": {
+    "original_query": "Show me all users who were unhappy with delivery",
+    "search_query": "users delivery",
+    "sentiment_filter": "negative",
+    "topic": "delivery",
+    "entities": ["delivery", "users"],
+    "requires_semantic": false
+  },
+  "results_count": 15,
+  "results": [
+    {
+      "response_id": "resp_123",
+      "data": {
+        "section_main": {
+          "q_satisfaction": "The delivery was terrible and arrived late"
+        }
+      },
+      "sentiment": {
+        "label": "negative",
+        "score": -3
+      },
+      "similarity_score": 0.92,
+      "highlighted_text": "The <mark>delivery</mark> was terrible and arrived late"
+    }
+  ],
+  "processing_time_ms": 245,
+  "cached": false
+}
+```
+
+**Example Request:**
+
+```bash
+curl -X POST http://localhost:5000/form/api/v1/ai/forms/123/nlp-search \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "Show me all users who were unhappy with delivery",
+    "options": {
+      "max_results": 50,
+      "include_sentiment": true,
+      "semantic_search": true,
+      "cache_results": true
+    }
+  }'
+```
+
+**Service Layer:** `app/services/nlp_service.py` - `NLPSearchService.parse_query()`, `NLPSearchService.semantic_search()`
+
+---
+
+#### 18.1.2 Semantic Search
+
+Pure semantic search using Ollama embeddings for similarity matching.
+
+* **Endpoint:** `/semantic-search`
+* **Method:** `POST`
+* **Auth Required:** Yes
+
+**Input Schema:**
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `query` | string | Yes | Search query for semantic matching |
+| `similarity_threshold` | float | No | Minimum similarity score 0-1 (default: 0.7) |
+| `max_results` | integer | No | Maximum results to return (default: 20) |
+
+**Response Schema (Success):**
+
+```json
+{
+  "query": "What are the main complaints about product quality?",
+  "embedding_model": "nomic-embed-text",
+  "results_count": 8,
+  "results": [
+    {
+      "response_id": "resp_456",
+      "data": {...},
+      "similarity_score": 0.85,
+      "highlighted_text": "...product <mark>quality</mark> was poor and items were damaged..."
+    }
+  ]
+}
+```
+
+**Example Request:**
+
+```bash
+curl -X POST http://localhost:5000/form/api/v1/ai/forms/123/semantic-search \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What are the main complaints about product quality?",
+    "similarity_threshold": 0.7,
+    "max_results": 20
+  }'
+```
+
+**Service Layer:** `app/services/nlp_service.py` - `NLPSearchService.semantic_search()`, `app/services/ollama_service.py` - `OllamaService.generate_embedding()`
+
+---
+
+#### 18.1.3 Search Statistics
+
+Get search-related statistics for a form.
+
+* **Endpoint:** `/search-stats`
+* **Method:** `GET`
+* **Auth Required:** Yes
+
+**Response Schema (Success):**
+
+```json
+{
+  "form_id": "form_123",
+  "total_responses": 250,
+  "indexed_responses": 250,
+  "ollama_available": true,
+  "ollama_models": ["llama3.2", "nomic-embed-text"],
+  "supported_query_types": ["sentiment", "topic", "semantic", "keyword", "time_based"],
+  "cache_ttl_seconds": 3600
+}
+```
+
+---
+
+### 18.2 Automated Summarization (T-M2-03)
+
+**Base path:** `/form/api/v1/ai/forms/<form_id>`
+
+#### 18.2.1 Generate Summary
+
+Automatically summarize form responses using extractive or abstractive methods.
+
+* **Endpoint:** `/summarize`
+* **Method:** `POST`
+* **Auth Required:** Yes
+
+**Input Schema:**
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `response_ids` | array | No | Specific response IDs to summarize (defaults to all) |
+| `strategy` | string | No | "extractive", "abstractive", or "hybrid" (default: "hybrid") |
+| `format` | string | No | "bullet_points" or "themes" (default: "bullet_points") |
+| `config.max_points` | integer | No | Maximum bullet points (default: 5) |
+| `config.focus_area` | string | No | Focus area filter: "all", "sentiment", "topics" |
+| `config.include_sentiment` | boolean | No | Include sentiment analysis (default: true) |
+| `config.include_quotes` | boolean | No | Include supporting quotes (default: true) |
+
+**Response Schema (Success):**
+
+```json
+{
+  "form_id": "form_123",
+  "responses_analyzed": 150,
+  "strategy_used": "hybrid",
+  "summary": {
+    "format": "bullet_points",
+    "bullet_points": [
+      {
+        "point": "Majority of customers (65%) mentioned slow delivery times",
+        "sentiment": "negative",
+        "supporting_count": 98,
+        "confidence": 0.85
+      },
+      {
+        "point": "Product quality received positive feedback (40 mentions)",
+        "sentiment": "positive",
+        "supporting_count": 40,
+        "confidence": 0.78
+      }
+    ],
+    "theme_analysis": {
+      "delivery": { "sentiment": "negative", "mentions": 98 },
+      "product_quality": { "sentiment": "positive", "mentions": 40 },
+      "customer_support": { "sentiment": "positive", "mentions": 25 }
+    }
+  },
+  "metadata": {
+    "processing_time_ms": 1250,
+    "model_used": "llama3.2",
+    "cached": false
+  }
+}
+```
+
+**Example Request:**
+
+```bash
+curl -X POST http://localhost:5000/form/api/v1/ai/forms/123/summarize \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "strategy": "hybrid",
+    "format": "bullet_points",
+    "config": {
+      "max_points": 5,
+      "focus_area": "all",
+      "include_sentiment": true
+    }
+  }'
+```
+
+**Service Layer:** `app/services/summarization_service.py` - `SummarizationService.hybrid_summarize()`, `SummarizationService.extractive_summarize()`
+
+---
+
+#### 18.2.2 Executive Summary
+
+Generate executive-level summary for leadership reporting.
+
+* **Endpoint:** `/executive-summary`
+* **Method:** `POST`
+* **Auth Required:** Yes
+
+**Input Schema:**
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `response_ids` | array | No | Specific response IDs (defaults to all) |
+| `audience` | string | No | "leadership", "operations", or "product" (default: "leadership") |
+| `tone` | string | No | "formal" or "concise" (default: "formal") |
+| `include_metrics` | boolean | No | Include metrics in summary (default: true) |
+
+**Response Schema (Success):**
+
+```json
+{
+  "form_id": "form_123",
+  "executive_summary": {
+    "overview": "Based on 150 responses, customer sentiment is mixed with 55% negative, 30% positive, and 15% neutral feedback.",
+    "key_findings": [
+      "Delivery performance is the primary driver of negative sentiment",
+      "Product quality consistently exceeds expectations",
+      "Customer support interactions show high satisfaction"
+    ],
+    "recommendations": [
+      "Prioritize delivery speed improvements",
+      "Maintain current product quality standards",
+      "Document support interaction best practices"
+    ],
+    "metrics": {
+      "total_responses": 150,
+      "avg_sentiment_score": -0.3,
+      "response_rate": 78
+    }
+  },
+  "generated_at": "2026-02-04T10:00:00Z"
+}
+```
+
+**Example Request:**
+
+```bash
+curl -X POST http://localhost:5000/form/api/v1/ai/forms/123/executive-summary \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "audience": "leadership",
+    "tone": "formal"
+  }'
+```
+
+**Service Layer:** `app/services/summarization_service.py` - `SummarizationService.generate_executive_summary()`
+
+---
+
+#### 18.2.3 Theme Summary
+
+Generate theme-based analysis of responses.
+
+* **Endpoint:** `/theme-summary`
+* **Method:** `POST`
+* **Auth Required:** Yes
+
+**Input Schema:**
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `themes` | array | No | Themes to analyze (default: ["delivery", "product", "support", "pricing"]) |
+| `include_quote_examples` | boolean | No | Include example quotes (default: true) |
+| `sentiment_per_theme` | boolean | No | Include sentiment per theme (default: true) |
+
+---
+
+### 18.3 Predictive Anomaly Detection (T-M2-04)
+
+**Base path:** `/form/api/v1/ai/forms/<form_id>`
+
+#### 18.3.1 Detect Anomalies
+
+Run anomaly detection on form responses to identify spam, outliers, duplicates, and impossible values.
+
+* **Endpoint:** `/detect-anomalies`
+* **Method:** `POST`
+* **Auth Required:** Yes
+
+**Input Schema:**
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `scan_type` | string | No | "full" or "incremental" (default: "full") |
+| `response_ids` | array | No | Specific response IDs to scan (defaults to all) |
+| `detection_types` | array | No | Types: ["spam", "outlier", "impossible_value", "duplicate"] |
+| `sensitivity` | string | No | "low", "medium", or "high" (default: "medium") |
+| `save_results` | boolean | No | Save results to database (default: false) |
+
+**Response Schema (Success):**
+
+```json
+{
+  "form_id": "form_123",
+  "scan_type": "full",
+  "responses_scanned": 250,
+  "anomalies_detected": 12,
+  "scan_duration_ms": 850,
+  "baseline": {
+    "avg_response_length": 150,
+    "std_response_length": 45,
+    "avg_sentiment_score": 0.3,
+    "std_sentiment_score": 1.2
+  },
+  "anomalies": [
+    {
+      "response_id": "resp_789",
+      "overall_score": 75,
+      "severity": "high",
+      "flags": [
+        {
+          "type": "spam",
+          "confidence": 0.85,
+          "description": "Spam patterns detected",
+          "details": {
+            "spam_score": 75,
+            "indicators": [
+              {"name": "spam_keyword", "description": "Contains spam keywords", "weight": 30},
+              {"name": "fast_submission", "description": "Submitted in under 2 seconds", "weight": 25}
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "summary_by_type": {
+    "spam": 5,
+    "outlier": 3,
+    "duplicate": 2,
+    "impossible_value": 1,
+    "pattern": 1
+  }
+}
+```
+
+**Example Request:**
+
+```bash
+curl -X POST http://localhost:5000/form/api/v1/ai/forms/123/detect-anomalies \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "scan_type": "full",
+    "detection_types": ["spam", "outlier", "duplicate"],
+    "sensitivity": "medium"
+  }'
+```
+
+**Service Layer:** `app/services/anomaly_detection_service.py` - `AnomalyDetectionService.run_full_detection()`, `AnomalyDetectionService.detect_spam()`, `AnomalyDetectionService.detect_outliers()`
+
+---
+
+#### 18.3.2 Get Anomaly Details
+
+Get detailed anomaly information for a specific response.
+
+* **Endpoint:** `/anomalies/<response_id>`
+* **Method:** `GET`
+* **Auth Required:** Yes
+
+**Response Schema (Success):**
+
+```json
+{
+  "response_id": "resp_789",
+  "anomaly_flags": {
+    "spam": {
+      "score": 75,
+      "indicators": [
+        {
+          "name": "spam_keyword",
+          "description": "Contains spam keywords",
+          "weight": 20
+        },
+        {
+          "name": "fast_submission",
+          "description": "Submitted in under 2 seconds",
+          "weight": 25
+        }
+      ],
+      "confidence": 0.85
+    },
+    "duplicate": null,
+    "outlier": null
+  },
+  "response_data": {...},
+  "review_status": "pending",
+  "suggested_actions": ["review", "flag_response", "ignore"]
+}
+```
+
+---
+
+#### 18.3.3 Anomaly Statistics
+
+Get anomaly detection statistics for a form.
+
+* **Endpoint:** `/anomaly-stats`
+* **Method:** `GET`
+* **Auth Required:** Yes
+
+**Response Schema (Success):**
+
+```json
+{
+  "form_id": "form_123",
+  "total_responses": 250,
+  "flagged_count": 12,
+  "flagged_percentage": 4.8,
+  "reviewed_count": 8,
+  "false_positive_rate": 0.15,
+  "detection_accuracy": 0.92,
+  "recent_scans": [
+    {
+      "scan_date": "2026-02-04",
+      "anomalies_found": 3,
+      "false_positives": 0
+    }
+  ]
+}
+```
+
+---
+
+#### 18.3.4 Submit Anomaly Feedback
+
+Submit feedback on anomaly detection results to improve accuracy.
+
+* **Endpoint:** `/anomalies/<response_id>/feedback`
+* **Method:** `POST`
+* **Auth Required:** Yes
+
+**Input Schema:**
+
+| Parameter | Type | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `feedback_type` | string | Yes | "false_positive" or "correct" |
+| `comment` | string | No | Optional comment |
+
+**Response Schema (Success):**
+
+```json
+{
+  "message": "Feedback recorded successfully",
+  "feedback_id": "fb_123",
+  "model_improvement": "This feedback will help improve future detection accuracy"
+}
+```
+
+---
+
+### 18.4 AI Health Check
+
+Check the health status of AI services including Ollama availability.
+
+* **Endpoint:** `/health`
+* **Method:** `GET`
+* **Auth Required:** No
+
+**Response Schema (Success):**
+
+```json
+{
+  "status": "healthy",
+  "ollama": {
+    "status": "healthy",
+    "available": true,
+    "models": ["llama3.2", "nomic-embed-text"],
+    "default_model": "llama3.2",
+    "embedding_model": "nomic-embed-text"
+  },
+  "timestamp": "2026-02-04T10:00:00Z"
+}
+```
+
+---
+
+## 19. Ollama Integration
+
+**Configuration:**
+
+Add these to your environment or config:
+
+| Variable | Description | Default |
+| :--- | :--- | :--- |
+| `OLLAMA_API_URL` | Ollama server URL | `http://localhost:11434` |
+| `OLLAMA_MODEL` | Default chat model | `llama3.2` |
+| `OLLAMA_EMBEDDING_MODEL` | Embedding model for semantic search | `nomic-embed-text` |
+
+**Requirements:**
+- Ollama must be running with models pulled
+- For semantic search: `ollama pull nomic-embed-text`
+- For summarization: `ollama pull llama3.2`
+
+**Rate Limiting:**
+- No explicit rate limiting at application level
+- Ollama server may have its own limits
+- Semantic search results are cached for 1 hour
