@@ -4326,26 +4326,26 @@ print(f"Cleaned up {cleaned_count} expired locks")
 
 ---
 
-## 21. SMS Gateway Service
+## 21. External SMS Gateway
 
 **Base path:** `/api/v1/sms`
 
-The SMS Gateway service provides pluggable SMS providers with automatic routing, retry logic, and delivery tracking.
+The SMS Gateway service provides a simple wrapper for sending SMS via the external AIIMS RPC API.
 
-### Supported Providers
+### Configuration
 
-| Provider | Type | Description |
-| :--- | :--- | :--- |
-| `twilio` | Twilio | Commercial SMS provider with delivery status tracking |
-| `sns` | AWS SNS | Amazon Simple Notification Service SMS |
-| `aws_sns` | AWS SNS | Enhanced AWS SNS implementation with boto3 |
-| `local_mock` | Mock | Testing provider that simulates SMS sending |
+The following environment variables must be set:
 
-### 21.1 Send SMS
+| Variable | Description |
+| :--- | :--- |
+| `SMS_API_URL` | External SMS API endpoint URL |
+| `SMS_API_TOKEN` | Authorization bearer token for the external API |
 
-Send an SMS message with automatic provider selection and retry.
+### 21.1 Send Single SMS
 
-* **Endpoint:** `/send`
+Send a single SMS message via the external API.
+
+* **Endpoint:** `/single`
 * **Method:** `POST`
 * **Auth Required:** Yes (JWT)
 
@@ -4353,35 +4353,49 @@ Send an SMS message with automatic provider selection and retry.
 
 | Parameter | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `to` | string | Yes | Recipient phone number (E.164 format preferred) |
-| `message` | string | Yes | SMS message content (max 1600 characters) |
-| `form_id` | string | No | Form ID that triggered this SMS |
-| `provider_id` | string | No | Specific provider to use |
-| `max_retries` | integer | No | Maximum retry attempts (default: 3) |
+| `mobile` | string | Yes | Recipient phone number |
+| `message` | string | Yes | SMS message content |
 
 **Example Request:**
 
 ```bash
-curl -X POST http://localhost:5000/api/v1/sms/send \
+curl -X POST http://localhost:5000/api/v1/sms/single \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{
-    "to": "+1234567890",
-    "message": "Your form has been submitted successfully.",
-    "form_id": "form_123"
+    "mobile": "9899378106",
+    "message": "Hello from AIIMS"
   }'
+```
+
+**Python Example:**
+
+```python
+import requests
+import json
+
+url = "https://rpcapplication.aiims.edu/services/api/v1/sms/single"
+Token = "9a6a4578-743a-4172-9e40-534c79d08eda"
+
+payload = json.dumps({
+  "mobile": "9899378106",
+  "message": "Hello from AIIMS"
+})
+headers = {
+  'Content-Type': 'application/json',
+  'Authorization': f'Bearer {Token}'
+}
+response = requests.request("POST", url, headers=headers, data=payload)
+print(response.text)
 ```
 
 **Response (Success):**
 
 ```json
 {
-  "status": "success",
-  "sms_id": "uuid-here",
-  "provider": "Twilio",
-  "message_id": "SM1234567890",
-  "status": "sent",
-  "attempt_count": 1
+  "success": true,
+  "message_id": "...",
+  "status_code": 200
 }
 ```
 
@@ -4389,308 +4403,19 @@ curl -X POST http://localhost:5000/api/v1/sms/send \
 
 ```json
 {
-  "status": "failed",
-  "sms_id": "uuid-here",
-  "error": "No SMS provider available",
-  "attempt_count": 3
+  "success": false,
+  "error": "Error message",
+  "status_code": 500
 }
 ```
 
 ---
 
-### 21.2 List Providers
+### 21.2 Send OTP
 
-List all configured SMS providers.
+Send an OTP (One-Time Password) via SMS.
 
-* **Endpoint:** `/providers`
-* **Method:** `GET`
-* **Auth Required:** Yes (JWT)
-
-**Example Request:**
-
-```bash
-curl -X GET http://localhost:5000/api/v1/sms/providers \
-  -H "Authorization: Bearer <token>"
-```
-
-**Response:**
-
-```json
-{
-  "providers": [
-    {
-      "provider_id": "twilio",
-      "provider_name": "Twilio",
-      "provider_type": "twilio",
-      "enabled": true,
-      "priority": 1,
-      "is_default": true
-    },
-    {
-      "provider_id": "local_mock",
-      "provider_name": "Local Mock",
-      "provider_type": "local_mock",
-      "enabled": true,
-      "priority": 100
-    }
-  ]
-}
-```
-
----
-
-### 21.3 Create Provider
-
-Create a new SMS provider configuration.
-
-* **Endpoint:** `/providers`
-* **Method:** `POST`
-* **Auth Required:** Yes (Admin)
-
-**Input Schema:**
-
-| Parameter | Type | Required | Description |
-| :--- | :--- | :--- | :--- |
-| `provider_id` | string | Yes | Unique provider identifier |
-| `provider_name` | string | Yes | Human-readable name |
-| `provider_type` | string | Yes | Provider type (twilio, sns, aws_sns, local_mock) |
-| `config` | object | Yes | Provider-specific configuration |
-| `priority` | integer | No | Provider priority (lower = higher priority) |
-| `description` | string | No | Provider description |
-
-**Twilio Configuration:**
-
-```json
-{
-  "config": {
-    "account_sid": "your_account_sid",
-    "auth_token": "your_auth_token",
-    "from_number": "+1234567890"
-  }
-}
-```
-
-**AWS SNS Configuration:**
-
-```json
-{
-  "config": {
-    "aws_access_key_id": "your_access_key",
-    "aws_secret_access_key": "your_secret_key",
-    "aws_region": "us-east-1",
-    "sender_id": "YourSenderID",
-    "sms_type": "Transactional"
-  }
-}
-```
-
-**Example Request:**
-
-```bash
-curl -X POST http://localhost:5000/api/v1/sms/providers \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "provider_id": "twilio",
-    "provider_name": "Twilio",
-    "provider_type": "twilio",
-    "config": {
-      "account_sid": "AC...",
-      "auth_token": "...",
-      "from_number": "+1234567890"
-    },
-    "priority": 1
-  }'
-```
-
----
-
-### 21.4 Update Provider
-
-Update an SMS provider configuration.
-
-* **Endpoint:** `/providers/<provider_id>`
-* **Method:** `PUT`
-* **Auth Required:** Yes (Admin)
-
-**Input Schema:**
-
-| Parameter | Type | Description |
-| :--- | :--- | :--- |
-| `config` | object | Provider configuration (optional) |
-| `enabled` | boolean | Enable/disable provider (optional) |
-| `priority` | integer | Provider priority (optional) |
-
-**Example Request:**
-
-```bash
-curl -X PUT http://localhost:5000/api/v1/sms/providers/twilio \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "enabled": true,
-    "priority": 1
-  }'
-```
-
----
-
-### 21.5 Delete Provider
-
-Delete an SMS provider configuration.
-
-* **Endpoint:** `/providers/<provider_id>`
-* **Method:** `DELETE`
-* **Auth Required:** Yes (Admin)
-
-**Example Request:**
-
-```bash
-curl -X DELETE http://localhost:5000/api/v1/sms/providers/twilio \
-  -H "Authorization: Bearer <token>"
-```
-
----
-
-### 21.6 Get Provider Status
-
-Get the status and health of a specific SMS provider.
-
-* **Endpoint:** `/providers/<provider_id>/status`
-* **Method:** `GET`
-* **Auth Required:** Yes (JWT)
-
-**Example Request:**
-
-```bash
-curl -X GET http://localhost:5000/api/v1/sms/providers/twilio/status \
-  -H "Authorization: Bearer <token>"
-```
-
-**Response:**
-
-```json
-{
-  "provider_id": "twilio",
-  "provider_name": "Twilio",
-  "provider_type": "twilio",
-  "enabled": true,
-  "available": true,
-  "info": {
-    "provider_type": "twilio",
-    "provider_name": "TwilioProvider",
-    "account_sid_masked": "AC..."
-  }
-}
-```
-
----
-
-### 21.7 Get Delivery History
-
-Get SMS delivery history with filtering and pagination.
-
-* **Endpoint:** `/deliveries`
-* **Method:** `GET`
-* **Auth Required:** Yes (JWT)
-
-**Query Parameters:**
-
-| Parameter | Type | Description |
-| :--- | :--- | :--- |
-| `form_id` | string | Filter by form ID |
-| `provider` | string | Filter by provider |
-| `status` | string | Filter by status (pending, sent, delivered, failed) |
-| `page` | integer | Page number (default: 1) |
-| `per_page` | integer | Items per page (default: 20, max: 100) |
-
-**Example Request:**
-
-```bash
-curl -X GET "http://localhost:5000/api/v1/sms/deliveries?page=1&per_page=20" \
-  -H "Authorization: Bearer <token>"
-```
-
-**Response:**
-
-```json
-{
-  "deliveries": [
-    {
-      "sms_id": "uuid-here",
-      "recipient_number": "+1234567890",
-      "message": "Your message",
-      "status": "delivered",
-      "provider": "twilio",
-      "attempt_count": 1,
-      "created_at": "2026-02-04T10:00:00Z"
-    }
-  ],
-  "total": 100,
-  "page": 1,
-  "per_page": 20,
-  "total_pages": 5
-}
-```
-
----
-
-### 21.8 Get Delivery Status
-
-Get the status of a specific SMS delivery.
-
-* **Endpoint:** `/deliveries/<sms_id>/status`
-* **Method:** `GET`
-* **Auth Required:** Yes (JWT)
-
-**Example Request:**
-
-```bash
-curl -X GET http://localhost:5000/api/v1/sms/deliveries/uuid-here/status \
-  -H "Authorization: Bearer <token>"
-```
-
-**Response:**
-
-```json
-{
-  "sms_id": "uuid-here",
-  "recipient_number": "+1234567890",
-  "message": "Your message",
-  "status": "delivered",
-  "provider": "twilio",
-  "provider_message_id": "SM1234567890",
-  "attempt_count": 1,
-  "sent_at": "2026-02-04T10:00:00Z",
-  "delivered_at": "2026-02-04T10:00:05Z",
-  "cost": 0.01
-}
-```
-
----
-
-### 21.9 Retry Delivery
-
-Retry a failed SMS delivery.
-
-* **Endpoint:** `/deliveries/<sms_id>/retry`
-* **Method:** `POST`
-* **Auth Required:** Yes (JWT)
-
-**Example Request:**
-
-```bash
-curl -X POST http://localhost:5000/api/v1/sms/deliveries/uuid-here/retry \
-  -H "Authorization: Bearer <token>"
-```
-
----
-
-### 21.10 Validate Phone Number
-
-Validate a phone number using available providers.
-
-* **Endpoint:** `/validate`
+* **Endpoint:** `/otp`
 * **Method:** `POST`
 * **Auth Required:** Yes (JWT)
 
@@ -4698,16 +4423,18 @@ Validate a phone number using available providers.
 
 | Parameter | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `phone_number` | string | Yes | Phone number to validate |
+| `mobile` | string | Yes | Recipient phone number |
+| `otp` | string | Yes | OTP code to send |
 
 **Example Request:**
 
 ```bash
-curl -X POST http://localhost:5000/api/v1/sms/validate \
+curl -X POST http://localhost:5000/api/v1/sms/otp \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{
-    "phone_number": "+1234567890"
+    "mobile": "9899378106",
+    "otp": "123456"
   }'
 ```
 
@@ -4715,21 +4442,19 @@ curl -X POST http://localhost:5000/api/v1/sms/validate \
 
 ```json
 {
-  "is_valid": true,
-  "formatted_number": "+1234567890",
-  "country_code": "1",
-  "carrier": "AT&T",
-  "validated_with": "Twilio"
+  "success": true,
+  "message_id": "...",
+  "status_code": 200
 }
 ```
 
 ---
 
-### 21.11 Test SMS
+### 21.3 Send Notification
 
-Send a test SMS using the default or specified provider.
+Send a notification via SMS.
 
-* **Endpoint:** `/test`
+* **Endpoint:** `/notify`
 * **Method:** `POST`
 * **Auth Required:** Yes (JWT)
 
@@ -4737,63 +4462,63 @@ Send a test SMS using the default or specified provider.
 
 | Parameter | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
-| `to` | string | Yes | Test recipient phone number |
-| `provider_id` | string | No | Specific provider to test |
+| `mobile` | string | Yes | Recipient phone number |
+| `title` | string | No | Notification title |
+| `body` | string | Yes | Notification body |
 
 **Example Request:**
 
 ```bash
-curl -X POST http://localhost:5000/api/v1/sms/test \
+curl -X POST http://localhost:5000/api/v1/sms/notify \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{
-    "to": "+1234567890"
+    "mobile": "9899378106",
+    "title": "Appointment Reminder",
+    "body": "Your appointment is tomorrow at 10 AM"
   }'
 ```
 
 ---
 
-### 21.12 Retry Logic
+### 21.4 Health Check
 
-The SMS service implements exponential backoff retry logic:
+Check the health status of the SMS service.
 
-| Attempt | Delay |
-| :--- | :--- |
-| 1 | 1 second |
-| 2 | 2 seconds |
-| 3 | 4 seconds |
-| 4 | 8 seconds |
-| 5 | 16 seconds |
+* **Endpoint:** `/health`
+* **Method:** `GET`
+* **Auth Required:** No
 
-Jitter is applied (0.5x to 1.5x of base delay) to prevent thundering herd.
+**Example Request:**
+
+```bash
+curl -X GET http://localhost:5000/api/v1/sms/health
+```
+
+**Response (Healthy):**
+
+```json
+{
+  "status": "healthy",
+  "service": "external_sms",
+  "api_url": "https://rpcapplication.aiims.edu/services/api/v1/sms/single"
+}
+```
+
+**Response (Unhealthy):**
+
+```json
+{
+  "status": "unhealthy",
+  "service": "external_sms",
+  "error": "SMS API not configured"
+}
+```
 
 ---
 
-### 21.13 Database Collections
+### 21.5 Service Layer
 
-| Collection | Description |
-| :--- | :--- |
-| `sms_deliveries` | SMS delivery tracking with status history |
-| `sms_providers` | SMS provider configurations |
+**Main Service:** [`app/services/external_sms_service.py`](app/services/external_sms_service.py) - `ExternalSMSService`
 
----
-
-### 21.14 Service Layer
-
-**Main Service:** [`app/services/sms/sms_service.py`](app/services/sms/sms_service.py) - `SMSService`
-
-**Provider Implementations:**
-
-| File | Provider |
-| :--- | :--- |
-| [`app/services/sms/providers/twilio_provider.py`](app/services/sms/providers/twilio_provider.py) | Twilio |
-| [`app/services/sms/providers/sns_provider.py`](app/services/sms/providers/sns_provider.py) | AWS SNS |
-| [`app/services/sms/providers/aws_sns_provider.py`](app/services/sms/providers/aws_sns_provider.py) | Enhanced AWS SNS |
-| [`app/services/sms/providers/local_mock_provider.py`](app/services/sms/providers/local_mock_provider.py) | Mock Provider |
-
-**Models:**
-
-| File | Model |
-| :--- | :--- |
-| [`app/models/SMSDelivery.py`](app/models/SMSDelivery.py) | SMSDelivery |
-| [`app/models/SMSProviderConfig.py`](app/models/SMSProviderConfig.py) | SMSProviderConfig |
+**Route:** [`app/routes/v1/sms_route.py`](app/routes/v1/sms_route.py)
