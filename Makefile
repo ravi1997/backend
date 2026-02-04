@@ -1,4 +1,4 @@
-.PHONY: build up up-dev down logs shell test clean help
+.PHONY: build up up-dev down restart restart-dev logs shell test clean help
 
 # Default target
 all: help
@@ -14,6 +14,10 @@ up-dev: ## Start the services in development mode with hot-reloading
 
 down: ## Stop all services
 	docker compose down
+
+restart: down up ## Restart all services
+
+restart-dev: down up-dev ## Restart all services in development mode
 
 logs: ## View logs from all services
 	docker compose logs -f backend
