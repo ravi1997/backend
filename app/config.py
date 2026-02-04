@@ -49,11 +49,12 @@ class Config:
     USER_ROLE = "user"
 
 
-    SMS_API_URL=os.getenv("SMS_API_URL","")
-    SMS_SENDER_ID=os.getenv("SMS_SENDER_ID","")
-    SMS_TEMPLATE_ID=os.getenv("SMS_TEMPLATE_ID","")
-    SMS_API_USERNAME=os.getenv("SMS_API_USERNAME","")
-    SMS_API_PASSWORD=os.getenv("SMS_API_PASSWORD","")
+    SMS_API_URL = os.getenv("SMS_API_URL", "")
+    SMS_API_TOKEN = os.getenv("SMS_API_TOKEN", "")
+    SMS_SENDER_ID = os.getenv("SMS_SENDER_ID", "")
+    SMS_TEMPLATE_ID = os.getenv("SMS_TEMPLATE_ID", "")
+    SMS_API_USERNAME = os.getenv("SMS_API_USERNAME", "")
+    SMS_API_PASSWORD = os.getenv("SMS_API_PASSWORD", "")
 
 
     EHOSPITAL_INIT_URL=os.getenv("EHOSPITAL_INIT_URL","")

@@ -10,7 +10,7 @@ from app.routes.v1.dashboard_route import dashboard_bp
 from app.routes.v1.dashboard_settings_route import dashboard_settings_bp
 from app.routes.v1.workflow_route import workflow_bp
 from app.routes.v1.webhooks import webhooks_bp
-from app.routes.v1.sms import sms_bp
+from app.routes.v1.sms_route import sms_bp
 
 def register_blueprints(app):
     app.register_blueprint(form_bp, url_prefix='/form/api/v1/form')
