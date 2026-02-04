@@ -1,6 +1,10 @@
 # Strategic Roadmap
 
-## Current Status: M1 COMPLETED ✅
+## Current Status: M2 & M3 COMPLETED ✅
+
+**Completed:** 2026-02-04
+
+## Milestone 1: Security Hardening (M1) ✅
 
 **Completed:** 2026-02-03
 
@@ -12,25 +16,45 @@
 
 ---
 
-## Phase 1: AI-Driven Intelligence (M2)
+## Milestone 2: AI-Driven Intelligence (M2) ✅
 
-**Current:** In Progress
+**Completed:** 2026-02-04
 
 **Goal**: Move from data collection to data insight.
 
-- **Enhanced Search**: Allow users to ask "Show me all users who were unhappy with the delivery" using NLP.
-- **Automated Summarization**: summarize hundreds of feedback responses into 3 bullet points.
-- **Predictive Anomaly**: Flag responses that look like spam or statistically impossible data.
+### Core Features
 
-## Phase 2: Enterprise Ecosystem (M3)
+- ✅ **Enhanced Search**: NLP-powered search with query parsing, semantic search, and intent extraction
+- ✅ **Automated Summarization**: Extractive and abstractive summarization of feedback responses
+- ✅ **Predictive Anomaly Detection**: Spam, outlier, and duplicate detection with auto-thresholding
+
+### Extensions
+
+- ✅ Ollama LLM integration with health checks, fallback models, and streaming support
+- ✅ NLP search enhancements: query suggestions, search history, advanced filters
+- ✅ Summarization enhancements: custom length, summary comparison across time periods
+- ✅ Anomaly detection enhancements: auto-thresholding, batch scanning
+
+### Infrastructure
+
+- ✅ Redis caching with cache invalidation and distributed locking
+- ✅ Ollama connection pooling for efficient resource utilization
+
+---
+
+## Milestone 3: Enterprise Ecosystem (M3) ✅
+
+**Completed:** 2026-02-04
 
 **Goal**: Integration and Reliability.
 
-- **Reliable Webhooks**: Ensure external systems receive data even if they are temporarily down.
-- **Global SMS**: Production-ready SMS drivers for OTP and notifications.
-- **Multi-Tenant Permissions**: Scale the user management for multi-department organizations.
+- ✅ **Reliable Webhooks**: Exponential backoff retry mechanism with dead letter queue support
+- ✅ **Global SMS**: External AIIMS API integration for OTP and notifications
+- ✅ **Dashboard Customization**: User preferences persistence for grid layouts and widgets
 
-## Phase 3: Scaling & Performance (Future)
+---
+
+## Milestone 4: Scaling & Performance (Future)
 
 **Goal**: High availability.
 
