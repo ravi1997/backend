@@ -13,7 +13,7 @@ def trigger_webhooks(form: Form, event: str, data: dict[str, Any]) -> None:
     data should be a JSON-serializable dictionary.
     
     Uses WebhookService for reliable delivery with exponential backoff retry logic.
-    All webhook attempts are logged to the webhook_logs collection.
+    All webhook attempts are logged to the webhook_deliveries collection.
     """
     if not form.webhooks:
         return
@@ -27,7 +27,7 @@ def trigger_webhooks(form: Form, event: str, data: dict[str, Any]) -> None:
     
     encoded_payload = json.dumps(payload).encode('utf-8')
 
-    for config in form.webhooks:
+    for idx, config in enumerate(form.webhooks):
         # Expected config format: {"url": "...", "events": ["submitted", "updated"], "secret": "..."}
         url = config.get("url")
         events = config.get("events", [])
@@ -52,12 +52,18 @@ def trigger_webhooks(form: Form, event: str, data: dict[str, Any]) -> None:
             ).hexdigest()
             headers["X-Form-Signature"] = f"sha256={signature}"
 
-        # Use WebhookService for reliable delivery with retry logic
+        # Use WebhookService for reliable delivery with enhanced retry logic
         try:
+            # Generate a unique webhook_id for this webhook configuration
+            webhook_id = f"{str(form.id)}_{idx}_{url}"
+            
             result = WebhookService.send_webhook(
                 url=url,
                 payload=payload,
-                max_retries=3,
+                webhook_id=webhook_id,
+                form_id=str(form.id),
+                created_by="system",  # System-triggered webhook
+                max_retries=5,  # Use enhanced retry logic with 5 retries
                 headers=headers,
                 timeout=10
             )
@@ -65,13 +71,18 @@ def trigger_webhooks(form: Form, event: str, data: dict[str, Any]) -> None:
             if result["status"] == "success":
                 current_app.logger.info(
                     f"Webhook delivered successfully to {url} for event {event}. "
-                    f"Attempt: {result['attempt_count']}, Log ID: {result['log_id']}"
+                    f"Attempt: {result['attempt_count']}, Delivery ID: {result['delivery_id']}"
+                )
+            elif result["status"] == "scheduled":
+                current_app.logger.info(
+                    f"Webhook scheduled for {result.get('next_retry_at')} to {url} for event {event}. "
+                    f"Delivery ID: {result['delivery_id']}"
                 )
             else:
                 current_app.logger.error(
                     f"Webhook failed to deliver to {url} for event {event}. "
                     f"Error: {result.get('error', 'Unknown error')}, "
-                    f"Log ID: {result['log_id']}"
+                    f"Delivery ID: {result['delivery_id']}"
                 )
         except Exception as e:
             current_app.logger.error(f"Failed to send webhook to {url}: {str(e)}")
