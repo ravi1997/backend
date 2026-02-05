@@ -661,8 +661,17 @@ class OllamaService:
                 latency_ms = cls._measure_latency()
                 
                 # Check model loading status
-                default_model_loaded = default_model in model_names
-                embedding_model_loaded = embedding_model in model_names
+                def is_model_loaded(check_model, loaded_names):
+                    if check_model in loaded_names:
+                        return True
+                    # If model doesn't have a tag, check for :latest
+                    if ":" not in check_model:
+                        if f"{check_model}:latest" in loaded_names:
+                            return True
+                    return False
+
+                default_model_loaded = is_model_loaded(default_model, model_names)
+                embedding_model_loaded = is_model_loaded(embedding_model, model_names)
                 
                 # Determine overall status
                 if latency_ms == -1:

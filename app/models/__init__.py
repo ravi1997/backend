@@ -7,5 +7,3 @@ from .Dashboard import Dashboard
 from .UserDashboardSettings import UserDashboardSettings
 from .WebhookLog import WebhookLog
 from .WebhookDelivery import WebhookDelivery
-from .SMSDelivery import SMSDelivery
-from .SMSProviderConfig import SMSProviderConfig

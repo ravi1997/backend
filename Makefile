@@ -30,6 +30,7 @@ test: ## Run tests inside the container
 
 pull-models: ## Pull Ollama models
 	docker compose exec ollama ollama pull llama3
+	docker compose exec ollama ollama pull nomic-embed-text
 
 clean: ## Remove all containers and volumes
 	docker compose down -v
