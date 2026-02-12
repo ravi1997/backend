@@ -15,6 +15,8 @@ ai_bp = Blueprint("ai", __name__)
 
 @ai_bp.route("/health", methods=["GET"])
 def ai_health_check():
+    logger = current_app.logger
+    logger.info("--- AI Health Check branch started ---")
     """
     Health check endpoint for AI services.
     
@@ -99,6 +101,8 @@ def simple_sentiment_analyzer(text: str) -> Tuple[str, int]:
 @ai_bp.route("/<form_id>/responses/<response_id>/analyze", methods=["POST"])
 @jwt_required()
 def analyze_response_ai(form_id: str, response_id: str) -> Tuple[Any, int]:
+    logger = current_app.logger
+    logger.info(f"--- Analyze Response AI branch started for form_id: {form_id}, response_id: {response_id} ---")
     """
     Perform AI tasks (Sentiment, PII detection) on a response.
     """
@@ -161,6 +165,8 @@ def analyze_response_ai(form_id: str, response_id: str) -> Tuple[Any, int]:
 @ai_bp.route("/<form_id>/responses/<response_id>/moderate", methods=["POST"])
 @jwt_required()
 def moderate_response_ai(form_id: str, response_id: str) -> Tuple[Any, int]:
+    logger = current_app.logger
+    logger.info(f"--- Moderate Response AI branch started for form_id: {form_id}, response_id: {response_id} ---")
     """
     Deep Content Moderation:
     - Extended PII (SSN, Credit Cards)
@@ -248,6 +254,8 @@ def moderate_response_ai(form_id: str, response_id: str) -> Tuple[Any, int]:
 @ai_bp.route("/generate", methods=["POST"])
 @jwt_required()
 def generate_form_ai() -> Tuple[Any, int]:
+    logger = current_app.logger
+    logger.info("--- Generate Form AI branch started ---")
     """
     AI Form Generation using local LLM.
     """
@@ -375,6 +383,8 @@ def get_ai_template(template_id: str) -> Tuple[Any, int]:
 @ai_bp.route("/<form_id>/sentiment", methods=["GET"])
 @jwt_required()
 def get_form_sentiment_trends(form_id: str) -> Tuple[Any, int]:
+    logger = current_app.logger
+    logger.info(f"--- Get Form Sentiment Trends branch started for form_id: {form_id} ---")
     """
     Get sentiment distribution and trends for all responses in a form.
     """
@@ -415,6 +425,8 @@ def get_form_sentiment_trends(form_id: str) -> Tuple[Any, int]:
 @ai_bp.route("/<form_id>/search", methods=["POST"])
 @jwt_required()
 def ai_powered_search(form_id: str) -> Tuple[Any, int]:
+    logger = current_app.logger
+    logger.info(f"--- AI Powered Search branch started for form_id: {form_id} ---")
     """
     AI-Powered Smart Search for form responses.
     Translates Natural Language queries into filters.
@@ -589,6 +601,8 @@ def ai_powered_search(form_id: str) -> Tuple[Any, int]:
 @ai_bp.route("/<form_id>/anomalies", methods=["POST"])
 @jwt_required()
 def detect_form_anomalies(form_id: str) -> Tuple[Any, int]:
+    logger = current_app.logger
+    logger.info(f"--- Detect Form Anomalies branch started for form_id: {form_id} ---")
     """
     Scans form responses for anomalies:
     1. Duplicate content (Spam detection)
@@ -688,6 +702,8 @@ def detect_form_anomalies(form_id: str) -> Tuple[Any, int]:
 @ai_bp.route("/<form_id>/anomaly-detect", methods=["POST"])
 @jwt_required()
 def detect_predictive_anomalies(form_id: str) -> Tuple[Any, int]:
+    logger = current_app.logger
+    logger.info(f"--- Detect Predictive Anomalies branch started for form_id: {form_id} ---")
     """
     Predictive Anomaly Detection for form responses.
     

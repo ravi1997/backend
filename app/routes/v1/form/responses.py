@@ -17,13 +17,168 @@ from app.utils.email_helper import send_email_notification
 from app.models.Workflow import FormWorkflow
 from app.utils.script_engine import execute_safe_script
 
+# -------------------- Workflow Action Executors --------------------
+
+def map_data_from_source(data_mapping, source_response, flat_answers):
+    """
+    Map data from source response to target form fields using data_mapping configuration.
+
+    Args:
+        data_mapping: Dict mapping target field IDs to source field paths
+        source_response: The source FormResponse object
+        flat_answers: Flattened response data dictionary
+
+    Returns:
+        Dict with mapped data for target form
+    """
+    mapped_data = {}
+
+    for target_field, source_path in data_mapping.items():
+        # Special fields
+        if source_path == 'id':
+            mapped_data[target_field] = str(source_response.id)
+        elif source_path == 'submitted_at':
+            mapped_data[target_field] = source_response.submitted_at.isoformat() if source_response.submitted_at else None
+        elif source_path == 'submitted_by':
+            mapped_data[target_field] = source_response.submitted_by
+        elif source_path == 'version':
+            mapped_data[target_field] = source_response.version
+        # Nested field access (e.g., "data.section.field")
+        elif '.' in source_path:
+            parts = source_path.split('.')
+            value = source_response.data
+            for part in parts:
+                if isinstance(value, dict):
+                    value = value.get(part)
+                else:
+                    value = None
+                    break
+            mapped_data[target_field] = value
+        # Direct field from flattened answers
+        else:
+            mapped_data[target_field] = flat_answers.get(source_path)
+
+    return mapped_data
+
+def execute_create_draft_action(action, source_response, flat_answers, current_user):
+    """
+    Execute create_draft workflow action.
+
+    Creates a draft response in the target form with data mapped from the source response.
+
+    Args:
+        action: WorkflowAction object
+        source_response: Source FormResponse object
+        flat_answers: Flattened response data
+        current_user: User executing the action
+
+    Returns:
+        str: ID of created draft response
+    """
+    from app.models.Form import Form, FormResponse
+
+    # Get target form
+    target_form = Form.objects(id=action.target_form_id).first()
+    if not target_form:
+        raise ValueError(f"Target form {action.target_form_id} not found")
+
+    # Map data from source to target
+    mapped_data = map_data_from_source(
+        action.data_mapping,
+        source_response,
+        flat_answers
+    )
+
+    # Determine who to assign the draft to
+    assigned_to = None
+    if action.assign_to_user_field:
+        # Check if it's a field name or a user ID
+        assigned_to = flat_answers.get(action.assign_to_user_field)
+        if not assigned_to:
+            # Might be a direct user ID
+            assigned_to = action.assign_to_user_field
+
+    # Create draft response in target form
+    # Group mapped data into the first section (simplified approach)
+    if target_form.versions and target_form.versions[-1].sections:
+        first_section_id = target_form.versions[-1].sections[0].id
+        structured_data = {first_section_id: mapped_data}
+    else:
+        structured_data = mapped_data
+
+    draft_response = FormResponse(
+        form=target_form.id,
+        submitted_by=assigned_to or str(current_user.id),
+        data=structured_data,
+        submitted_at=datetime.now(timezone.utc),
+        version=target_form.active_version or (target_form.versions[-1].version if target_form.versions else "1.0"),
+        is_draft=True,
+        metadata={
+            'created_by_workflow': True,
+            'source_form_id': str(source_response.form.id),
+            'source_response_id': str(source_response.id)
+        }
+    )
+    draft_response.save()
+
+    return str(draft_response.id)
+
+def execute_notify_action(action, source_response, flat_answers, source_form, current_user):
+    """
+    Execute notify_user workflow action.
+
+    Sends notification to specified user(s).
+
+    Args:
+        action: WorkflowAction object
+        source_response: Source FormResponse object
+        flat_answers: Flattened response data
+        source_form: Source Form object
+        current_user: User executing the action
+    """
+    from app.models.User import User
+
+    # Determine who to notify
+    notify_user_id = None
+    if action.assign_to_user_field:
+        # Check if it's a field name or a user ID
+        notify_user_id = flat_answers.get(action.assign_to_user_field)
+        if not notify_user_id:
+            # Might be a direct user ID
+            notify_user_id = action.assign_to_user_field
+
+    if not notify_user_id:
+        # No user specified, skip notification
+        current_app.logger.warning("No user specified for notification")
+        return
+
+    # Get user to notify
+    notify_user = User.objects(id=notify_user_id).first()
+    if not notify_user:
+        current_app.logger.warning(f"User {notify_user_id} not found for notification")
+        return
+
+    # Send notification email
+    if notify_user.email:
+        subject = f"Workflow Notification: {source_form.title}"
+        body = f"""
+        <h3>Workflow Action Required</h3>
+        <p>A form submission requires your attention.</p>
+        <p><strong>Form:</strong> {source_form.title}</p>
+        <p><strong>Submitted By:</strong> {current_user.username}</p>
+        <p><strong>Response ID:</strong> {source_response.id}</p>
+        <p><strong>Submitted At:</strong> {source_response.submitted_at}</p>
+        """
+        send_email_notification([notify_user.email], subject, body)
+
 # -------------------- Responses --------------------
 
 
 @form_bp.route("/<form_id>/responses", methods=["POST"])
 @jwt_required()
 def submit_response(form_id):
-    current_app.logger.info(f"Received submission for form_id: {form_id}")
+    logger = current_app.logger
+    logger.info(f"--- Submit Response branch started for form_id: {form_id} ---")
 
     # Check if the request contains file uploads
     if request.content_type and 'multipart/form-data' in request.content_type:
@@ -158,6 +313,7 @@ def submit_response(form_id):
                 send_email_notification(form.notification_emails, subject, body)
         
         msg = "Draft saved" if is_draft else "Response submitted"
+        logger.info(f"Response {response.id} successfully processed (is_draft={is_draft})")
         
         # -------------------- Workflow Evaluation --------------------
         workflow_action = None
@@ -189,9 +345,39 @@ def submit_response(form_id):
                             res = execute_safe_script(script, input_data=flat_answers, additional_globals=context)
                             
                             if res.get('result'):
-                                # Match
+                                # Match - Execute server-side actions and prepare client actions
                                 actions_payload = []
                                 for act in wf.actions:
+                                    # Execute server-side actions
+                                    if act.type == 'create_draft':
+                                        try:
+                                            # Execute create_draft action server-side
+                                            draft_id = execute_create_draft_action(
+                                                act, response, flat_answers, current_user
+                                            )
+                                            current_app.logger.info(
+                                                f"Created draft {draft_id} for workflow {wf.id}"
+                                            )
+                                        except Exception as e:
+                                            current_app.logger.error(
+                                                f"Failed to create draft: {str(e)}"
+                                            )
+
+                                    elif act.type == 'notify_user':
+                                        try:
+                                            # Execute notify action server-side
+                                            execute_notify_action(
+                                                act, response, flat_answers, form, current_user
+                                            )
+                                            current_app.logger.info(
+                                                f"Sent notification for workflow {wf.id}"
+                                            )
+                                        except Exception as e:
+                                            current_app.logger.error(
+                                                f"Failed to send notification: {str(e)}"
+                                            )
+
+                                    # Add action to payload for client
                                     action_data = {
                                         "type": act.type,
                                         "target_form_id": act.target_form_id,
@@ -199,7 +385,7 @@ def submit_response(form_id):
                                         "assign_to_user_field": act.assign_to_user_field
                                     }
                                     actions_payload.append(action_data)
-                                    
+
                                 workflow_action = {
                                     "workflow_id": str(wf.id),
                                     "workflow_name": wf.name,
@@ -210,6 +396,36 @@ def submit_response(form_id):
                              # Condition is True (default) -> Match
                              actions_payload = []
                              for act in wf.actions:
+                                # Execute server-side actions
+                                if act.type == 'create_draft':
+                                    try:
+                                        # Execute create_draft action server-side
+                                        draft_id = execute_create_draft_action(
+                                            act, response, flat_answers, current_user
+                                        )
+                                        current_app.logger.info(
+                                            f"Created draft {draft_id} for workflow {wf.id}"
+                                        )
+                                    except Exception as e:
+                                        current_app.logger.error(
+                                            f"Failed to create draft: {str(e)}"
+                                        )
+
+                                elif act.type == 'notify_user':
+                                    try:
+                                        # Execute notify action server-side
+                                        execute_notify_action(
+                                            act, response, flat_answers, form, current_user
+                                        )
+                                        current_app.logger.info(
+                                            f"Sent notification for workflow {wf.id}"
+                                        )
+                                    except Exception as e:
+                                        current_app.logger.error(
+                                            f"Failed to send notification: {str(e)}"
+                                        )
+
+                                # Add action to payload for client
                                 action_data = {
                                     "type": act.type,
                                     "target_form_id": act.target_form_id,
@@ -217,7 +433,7 @@ def submit_response(form_id):
                                     "assign_to_user_field": act.assign_to_user_field
                                 }
                                 actions_payload.append(action_data)
-                                
+
                              workflow_action = {
                                 "workflow_id": str(wf.id),
                                 "workflow_name": wf.name,
@@ -261,51 +477,61 @@ def submit_response(form_id):
         return jsonify(response_payload), 201
 
     except DoesNotExist:
-        current_app.logger.error(f"Form {form_id} not found.")
+        logger.warning(f"Submit Response failed: Form {form_id} not found")
         return jsonify({"error": "Form not found"}), 404
     except Exception as e:
-        current_app.logger.error(
-            f"Error submitting response: {str(e)}", exc_info=True)
+        logger.error(f"Error submitting response for form {form_id}: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 400
 
 @form_bp.route("/<form_id>/responses", methods=["GET"])
 @jwt_required()
 def list_responses(form_id):
+    logger = current_app.logger
+    logger.info(f"--- List Responses branch started for form_id: {form_id} ---")
     try:
-        form = Form.objects.get(id=form_id)
         current_user = get_current_user()
+        form = Form.objects.get(id=form_id)
         if not has_form_permission(current_user, form, "view"):
+            logger.warning(f"Unauthorized list responses attempt for form {form_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized to view responses"}), 403
 
         is_draft_filter = request.args.get("is_draft", "false").lower() == "true"
         responses = FormResponse.objects(form=form.id, deleted=False, is_draft=is_draft_filter)
         return jsonify([r.to_mongo().to_dict() for r in responses]), 200
     except DoesNotExist:
+        logger.warning(f"List Responses failed: Form {form_id} not found")
         return jsonify({"error": "Form not found"}), 404
 
 
 @form_bp.route("/<form_id>/responses/<response_id>", methods=["GET"])
 @jwt_required()
 def get_response(form_id, response_id):
+    logger = current_app.logger
+    logger.info(f"--- Get Response branch started for form_id: {form_id}, response_id: {response_id} ---")
     try:
         current_user = get_current_user()
         form = Form.objects.get(id=form_id)
         if not has_form_permission(current_user, form, "view"):
+            logger.warning(f"Unauthorized get response attempt for {response_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized to view this response"}), 403
 
         response = FormResponse.objects.get(id=response_id, form=form.id)
         return jsonify(response.to_mongo().to_dict()), 200
     except DoesNotExist:
+        logger.warning(f"Get Response failed: Form {form_id} or Response {response_id} not found")
         return jsonify({"error": "Response not found"}), 404
 
 # -------------------- Get History --------------------
 @form_bp.route("/<form_id>/responses/<response_id>/history", methods=["GET"])
 @jwt_required()
 def get_response_history(form_id, response_id):
+    logger = current_app.logger
+    logger.info(f"--- Get Response History branch started for response_id: {response_id} ---")
     try:
         current_user = get_current_user()
         form = Form.objects.get(id=form_id)
         if not has_form_permission(current_user, form, "view"):
+            logger.warning(f"Unauthorized history view attempt for response {response_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized"}), 403
             
         history = ResponseHistory.objects(response_id=response_id).order_by("-changed_at")
@@ -317,6 +543,8 @@ def get_response_history(form_id, response_id):
 @form_bp.route("/<form_id>/responses/<response_id>", methods=["PUT"])
 @jwt_required()
 def update_submission(form_id, response_id):
+    logger = current_app.logger
+    logger.info(f"--- Update Submission branch started for form_id: {form_id}, response_id: {response_id} ---")
     data = request.get_json()
     
     try:
@@ -338,6 +566,7 @@ def update_submission(form_id, response_id):
 
     try:
         if response.submitted_by != str(current_user.id):
+            logger.warning(f"Unauthorized update attempt for response {response_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized to update this submission"}), 403
             
         # 📜 History Tracking: Before
@@ -400,20 +629,24 @@ def update_submission(form_id, response_id):
         elif not is_target_draft:
             # Normal update trigger
             trigger_webhooks(form, "updated", clean_response_dict)
+        logger.info(f"Submission {response_id} updated successfully (is_draft={is_target_draft})")
         return jsonify({"message": "Response updated", "is_draft": is_target_draft}), 200
     except Exception as e:
-        current_app.logger.error(f"Error updating submission: {str(e)}", exc_info=True)
+        logger.error(f"Error updating submission {response_id}: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 400
 
 # -------------------- Update Response Status --------------------
 @form_bp.route("/<form_id>/responses/<response_id>/status", methods=["PATCH"])
 @jwt_required()
 def update_response_status(form_id, response_id):
+    logger = current_app.logger
+    logger.info(f"--- Update Response Status branch started for form_id: {form_id}, response_id: {response_id} ---")
     data = request.get_json()
     new_status = data.get("status")
     comment = data.get("comment", "")
     
     if new_status not in ["pending", "approved", "rejected"]:
+        logger.warning(f"Invalid status '{new_status}' provided for response {response_id}")
         return jsonify({"error": "Invalid status"}), 400
 
     try:
@@ -422,6 +655,7 @@ def update_response_status(form_id, response_id):
         
         # Only editors or creators (who are editors) can approve/reject
         if not has_form_permission(current_user, form, "edit"):
+            logger.warning(f"Unauthorized status update attempt for response {response_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized to change status"}), 403
 
         response = FormResponse.objects.get(id=response_id, form=form.id)
@@ -477,11 +711,13 @@ def update_response_status(form_id, response_id):
             """
             send_email_notification(form.notification_emails, subject, body)
 
+        logger.info(f"Response {response_id} status updated to {new_status} by user {current_user.id}")
         return jsonify({"message": f"Response status updated to {new_status}"}), 200
-
     except DoesNotExist:
+        logger.warning(f"Update status failed: Form {form_id} or Response {response_id} not found")
         return jsonify({"error": "Form or response not found"}), 404
     except Exception as e:
+        logger.error(f"Error updating status for response {response_id}: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 400
 
 
@@ -489,11 +725,14 @@ def update_response_status(form_id, response_id):
 @form_bp.route("/<form_id>/responses/<response_id>", methods=["DELETE"])
 @jwt_required()
 def delete_response(form_id, response_id):
+    logger = current_app.logger
+    logger.info(f"--- Delete Response branch started for id: {response_id} ---")
     try:
         form = Form.objects.get(id=form_id)
         response = FormResponse.objects.get(id=response_id, form=form.id)
         current_user = get_current_user()
         if not has_form_permission(current_user, form, "edit"):
+            logger.warning(f"Unauthorized delete attempt for response {response_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized to delete response"}), 403
         # 📜 History Tracking: Before
         data_before = response.to_mongo().to_dict()
@@ -517,19 +756,23 @@ def delete_response(form_id, response_id):
 
         # 🔔 Webhook
         trigger_webhooks(form, "deleted", {"response_id": str(response.id), "deleted_by": str(current_user.id)})
-
+        logger.info(f"Response {response_id} deleted successfully by user {current_user.id}")
         return jsonify({"message": "Response deleted"}), 200
     except DoesNotExist:
+        logger.warning(f"Delete Response failed: Form {form_id} or Response {response_id} not found")
         return jsonify({"error": "Form or response not found"}), 404
 
 # -------------------- Paginate Responses --------------------
 @form_bp.route("/<form_id>/responses/paginated", methods=["GET"])
 @jwt_required()
 def list_paginated_responses(form_id):
+    logger = current_app.logger
+    logger.info(f"--- List Paginated Responses branch started for form_id: {form_id} ---")
     try:
         form = Form.objects.get(id=form_id)
         current_user = get_current_user()
         if not has_form_permission(current_user, form, "view"):
+            logger.warning(f"Unauthorized list paginated responses attempt for form {form_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized"}), 403
 
         page = int(request.args.get("page", 1))
@@ -545,6 +788,7 @@ def list_paginated_responses(form_id):
             "responses": [r.to_mongo().to_dict() for r in responses]
         }), 200
     except DoesNotExist:
+        logger.warning(f"List Paginated Responses failed: Form {form_id} not found")
         return jsonify({"error": "Form not found"}), 404
 
 
@@ -552,19 +796,24 @@ def list_paginated_responses(form_id):
 @form_bp.route("/<form_id>/responses/<response_id>/archive", methods=["PATCH"])
 @jwt_required()
 def archive_response(form_id, response_id):
+    logger = current_app.logger
+    logger.info(f"--- Archive Response branch started for response_id: {response_id} ---")
     try:
         form = Form.objects.get(id=form_id)
         response = FormResponse.objects.get(id=response_id, form=form.id)
         current_user = get_current_user()
         if response.submitted_by != str(current_user.id) and not has_form_permission(current_user, form, "edit"):
+            logger.warning(f"Unauthorized archive attempt for response {response_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized to archive this response"}), 403
         response.update(
             set__deleted=True, 
             set__deleted_at=datetime.now(timezone.utc),
             set__deleted_by=str(current_user.id)
         )
+        logger.info(f"Response {response_id} archived successfully by user {current_user.id}")
         return jsonify({"message": "Response archived"}), 200
     except DoesNotExist:
+        logger.warning(f"Archive Response failed: Form {form_id} or Response {response_id} not found")
         return jsonify({"error": "Form or response not found"}), 404
 
 
@@ -572,11 +821,14 @@ def archive_response(form_id, response_id):
 @form_bp.route("/<form_id>/responses/<response_id>/restore", methods=["PATCH"])
 @jwt_required()
 def restore_response(form_id, response_id):
+    logger = current_app.logger
+    logger.info(f"--- Restore Response branch started for response_id: {response_id} ---")
     try:
         form = Form.objects.get(id=form_id)
         response = FormResponse.objects.get(id=response_id, form=form.id)
         current_user = get_current_user()
         if not has_form_permission(current_user, form, "edit"):
+            logger.warning(f"Unauthorized restore attempt for response {response_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized to restore this response"}), 403
         response.update(
             set__deleted=False,
@@ -595,14 +847,18 @@ def restore_response(form_id, response_id):
             version=response.version
         ).save()
 
+        logger.info(f"Response {response_id} restored successfully by user {current_user.id}")
         return jsonify({"message": "Response restored"}), 200
     except DoesNotExist:
+        logger.warning(f"Restore Response failed: Form {form_id} or Response {response_id} not found")
         return jsonify({"error": "Form or response not found"}), 404
 
 
 @form_bp.route("/<form_id>/responses/search", methods=["POST"])
 @jwt_required()
 def search_responses(form_id):
+    logger = current_app.logger
+    logger.info(f"--- Search Responses branch started for form_id: {form_id} ---")
     try:
         current_user = get_current_user()
         current_app.logger.info(
@@ -779,9 +1035,10 @@ def search_responses(form_id):
         }), 200
 
     except DoesNotExist:
+        logger.warning(f"Search Responses failed: Form or SavedSearch not found for form {form_id}")
         return jsonify({"error": "Form or SavedSearch not found"}), 404
     except Exception as e:
-        current_app.logger.error(f"Search error: {str(e)}", exc_info=True)
+        logger.error(f"Search error for form {form_id}: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 500
 
 
@@ -790,10 +1047,13 @@ def search_responses(form_id):
 @form_bp.route("/<form_id>/saved-search", methods=["POST"])
 @jwt_required()
 def create_saved_search(form_id):
+    logger = current_app.logger
+    logger.info(f"--- Create Saved Search branch started for form_id: {form_id} ---")
     try:
         form = Form.objects.get(id=form_id)
         current_user = get_current_user()
         if not has_form_permission(current_user, form, "view"):
+            logger.warning(f"Unauthorized saved search creation attempt for form {form_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized"}), 403
             
         data = request.get_json()

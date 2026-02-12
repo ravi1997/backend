@@ -9,6 +9,7 @@ from .api import *
 from .analytics import *
 from .library import *
 from .permissions import *
+from .validation import *
 
 # M2 AI Feature Routes
 from .nlp_search import *

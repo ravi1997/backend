@@ -36,8 +36,10 @@ def get_dashboard_settings():
     """
     try:
         user_id = get_jwt_identity()
+        logger.info(f"--- Get Dashboard Settings branch started for user: {user_id} ---")
         settings = DashboardService.get_or_create_settings(user_id)
         
+        logger.info(f"Successfully retrieved dashboard settings for user: {user_id}")
         return jsonify({
             'success': True,
             'settings': settings.to_dict()
@@ -76,9 +78,11 @@ def update_dashboard_settings():
     """
     try:
         user_id = get_jwt_identity()
+        logger.info(f"--- Update Dashboard Settings branch started for user: {user_id} ---")
         data = request.get_json()
         
         if not data:
+            logger.warning(f"Update failed: Missing request body for user: {user_id}")
             return jsonify({
                 'success': False,
                 'error': 'Request body is required'
@@ -86,13 +90,16 @@ def update_dashboard_settings():
         
         # Validate settings if provided
         if any(key in data for key in ['layout', 'widgets', 'theme']):
+            logger.debug(f"Validating dashboard settings for user: {user_id}")
             validation_result = DashboardService.validate_settings(data)
             if not validation_result['valid']:
+                logger.warning(f"Validation failed for dashboard settings update (user: {user_id}): {validation_result['errors']}")
                 return jsonify({
                     'success': False,
                     'error': 'Validation failed',
                     'details': validation_result['errors']
                 }), 400
+            logger.debug(f"Validation successful for user: {user_id}")
         
         # Update settings
         settings = DashboardService.save_settings(
@@ -105,6 +112,7 @@ def update_dashboard_settings():
             validate=False  # Already validated above
         )
         
+        logger.info(f"Dashboard settings updated successfully for user: {user_id}")
         return jsonify({
             'success': True,
             'message': 'Dashboard settings updated',
@@ -138,8 +146,10 @@ def reset_dashboard_settings():
     """
     try:
         user_id = get_jwt_identity()
+        logger.info(f"--- Reset Dashboard Settings branch started for user: {user_id} ---")
         settings = DashboardService.reset_to_defaults(user_id)
         
+        logger.info(f"Dashboard settings reset to defaults for user: {user_id}")
         return jsonify({
             'success': True,
             'message': 'Dashboard settings reset to defaults',
@@ -169,8 +179,10 @@ def get_available_widgets():
         401: Unauthorized
     """
     try:
+        logger.info("--- Get Available Widgets branch started ---")
         widgets = DashboardService.get_available_widgets()
         
+        logger.info(f"Successfully retrieved {len(widgets)} available widgets")
         return jsonify({
             'success': True,
             'widgets': widgets
@@ -205,15 +217,18 @@ def add_widget():
     """
     try:
         user_id = get_jwt_identity()
+        logger.info(f"--- Add Widget branch started for user: {user_id} ---")
         data = request.get_json()
         
         if not data:
+            logger.warning(f"Add widget failed: Missing request body for user: {user_id}")
             return jsonify({
                 'success': False,
                 'error': 'Request body is required'
             }), 400
         
         if 'type' not in data:
+            logger.warning(f"Add widget failed: Missing widget type for user: {user_id}")
             return jsonify({
                 'success': False,
                 'error': 'Widget type is required'
@@ -227,6 +242,7 @@ def add_widget():
             config=data.get('config')
         )
         
+        logger.info(f"Widget (type: {data['type']}) added successfully for user: {user_id}")
         return jsonify({
             'success': True,
             'message': 'Widget added successfully',
@@ -262,14 +278,17 @@ def remove_widget(widget_id):
     """
     try:
         user_id = get_jwt_identity()
+        logger.info(f"--- Remove Widget branch started for widget_id: {widget_id} (user: {user_id}) ---")
         removed = DashboardService.remove_widget(user_id, widget_id)
         
         if not removed:
+            logger.warning(f"Remove widget failed: Widget {widget_id} not found for user: {user_id}")
             return jsonify({
                 'success': False,
                 'error': 'Widget not found'
             }), 404
         
+        logger.info(f"Widget {widget_id} removed successfully for user: {user_id}")
         return jsonify({
             'success': True,
             'message': 'Widget removed successfully'
@@ -307,9 +326,11 @@ def update_widget(widget_id):
     """
     try:
         user_id = get_jwt_identity()
+        logger.info(f"--- Update Widget branch started for widget_id: {widget_id} (user: {user_id}) ---")
         data = request.get_json()
         
         if not data:
+            logger.warning(f"Update widget failed: Missing request body for user: {user_id}")
             return jsonify({
                 'success': False,
                 'error': 'Request body is required'
@@ -325,11 +346,13 @@ def update_widget(widget_id):
         )
         
         if not widget:
+            logger.warning(f"Update widget failed: Widget {widget_id} not found for user: {user_id}")
             return jsonify({
                 'success': False,
                 'error': 'Widget not found'
             }), 404
         
+        logger.info(f"Widget {widget_id} updated successfully for user: {user_id}")
         return jsonify({
             'success': True,
             'message': 'Widget updated successfully',
@@ -367,9 +390,11 @@ def update_widget_positions():
     """
     try:
         user_id = get_jwt_identity()
+        logger.info(f"--- Update Widget Positions branch started for user: {user_id} ---")
         data = request.get_json()
         
         if not data or 'positions' not in data:
+            logger.warning(f"Update positions failed: Missing data or 'positions' key for user: {user_id}")
             return jsonify({
                 'success': False,
                 'error': 'Positions data is required'
@@ -378,6 +403,7 @@ def update_widget_positions():
         positions = data['positions']
         
         if not isinstance(positions, dict):
+            logger.warning(f"Update positions failed: 'positions' is not a dictionary for user: {user_id}")
             return jsonify({
                 'success': False,
                 'error': 'Positions must be a dictionary'
@@ -385,6 +411,7 @@ def update_widget_positions():
         
         updated = DashboardService.update_widget_positions(user_id, positions)
         
+        logger.info(f"Successfully updated positions for {len(updated)} widgets (user: {user_id})")
         return jsonify({
             'success': True,
             'message': f'Updated positions for {len(updated)} widgets',
@@ -423,22 +450,27 @@ def update_layout():
     """
     try:
         user_id = get_jwt_identity()
+        logger.info(f"--- Update Layout branch started for user: {user_id} ---")
         data = request.get_json()
         
         if not data:
+            logger.warning(f"Update layout failed: Missing request body for user: {user_id}")
             return jsonify({
                 'success': False,
                 'error': 'Request body is required'
             }), 400
         
         # Validate layout
+        logger.debug(f"Validating layout for user: {user_id}")
         validation_result = DashboardService.validate_settings({'layout': data})
         if not validation_result['valid']:
+            logger.warning(f"Layout validation failed for user: {user_id}: {validation_result['errors']}")
             return jsonify({
                 'success': False,
                 'error': 'Validation failed',
                 'details': validation_result['errors']
             }), 400
+        logger.debug(f"Layout validation successful for user: {user_id}")
         
         settings = DashboardService.save_settings(
             user_id=user_id,
@@ -446,6 +478,7 @@ def update_layout():
             validate=False
         )
         
+        logger.info(f"Layout updated successfully for user: {user_id}")
         return jsonify({
             'success': True,
             'message': 'Layout updated',

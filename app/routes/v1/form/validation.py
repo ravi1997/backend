@@ -25,9 +25,74 @@ def prepare_eval_context(entries):
                 context[str(k)] = v
     return context
 
+import ast
+import operator as op
+
+# Safe operators for AST evaluation
+SAFE_OPERATORS = {
+    ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul,
+    ast.Div: op.truediv, ast.Pow: op.pow, ast.BitXor: op.xor,
+    ast.USub: op.neg, ast.UAdd: op.pos, ast.Not: op.not_,
+    ast.Eq: op.eq, ast.NotEq: op.ne, ast.Lt: op.lt,
+    ast.LtE: op.le, ast.Gt: op.gt, ast.GtE: op.ge,
+    ast.In: lambda x, y: x in y, ast.NotIn: lambda x, y: x not in y,
+    ast.Is: lambda x, y: x is y, ast.IsNot: lambda x, y: x is not y,
+}
+
+def safe_eval(expr, context):
+    """
+    Safely evaluate an expression string using the given context.
+    Uses AST parsing to avoid security risks of eval().
+    """
+    try:
+        # Parse the expression into an AST
+        tree = ast.parse(expr, mode='eval')
+        return _eval_node(tree.body, context)
+    except Exception as e:
+        # Log the error if needed, but return False/Error as per use case
+        # For condition evaluation, if it fails, it's usually False
+        raise ValueError(f"Safe eval failed: {e}")
+
+def _eval_node(node, context):
+    if isinstance(node, ast.Constant):  # Python 3.8+
+        return node.value
+    elif isinstance(node, ast.Name):
+        # Resolve variable from context
+        return context.get(node.id)
+    elif isinstance(node, ast.BinOp):
+        left = _eval_node(node.left, context)
+        right = _eval_node(node.right, context)
+        return SAFE_OPERATORS[type(node.op)](left, right)
+    elif isinstance(node, ast.UnaryOp):
+        operand = _eval_node(node.operand, context)
+        return SAFE_OPERATORS[type(node.op)](operand)
+    elif isinstance(node, ast.BoolOp):
+        if isinstance(node.op, ast.And):
+            for value in node.values:
+                if not _eval_node(value, context):
+                    return False
+            return True
+        elif isinstance(node.op, ast.Or):
+            for value in node.values:
+                if _eval_node(value, context):
+                    return True
+            return False
+    elif isinstance(node, ast.Compare):
+        left = _eval_node(node.left, context)
+        for operation, comparator in zip(node.ops, node.comparators):
+            right = _eval_node(comparator, context)
+            if not SAFE_OPERATORS[type(operation)](left, right):
+                return False
+            left = right
+        return True
+    elif isinstance(node, ast.List):
+        return [_eval_node(elt, context) for elt in node.elts]
+    
+    raise ValueError(f"Unsupported expression node: {type(node)}")
+
 def evaluate_condition(condition, context, logger=None):
     """
-    Evaluates a condition string against the context.
+    Evaluates a condition string against the context using safe_eval.
     Sanitizes UUIDs in the condition string to match sanitized context keys.
     """
     if not condition:
@@ -45,7 +110,7 @@ def evaluate_condition(condition, context, logger=None):
         if logger and safe_condition != condition:
             logger.debug(f"Sanitized condition: {condition} -> {safe_condition}")
 
-        return eval(safe_condition, {"__builtins__": {}}, context)
+        return safe_eval(safe_condition, context)
     except Exception as err:
         if logger:
             logger.warning(f"Eval failed: {condition}, error={err}")
@@ -244,6 +309,25 @@ def validate_form_submission(form, submitted_data, logger, is_draft=False):
                                 if "max_length" in rules and len(ans) > rules["max_length"]:
                                     msg = f"Maximum length is {rules['max_length']}"
                                     validation_errors.append({"id": qid, "error": msg})
+                                # Added Regex validation
+                                if "regex" in rules:
+                                    pattern = rules["regex"]
+                                    if not re.fullmatch(pattern, ans):
+                                        msg = rules.get("regex_error_message", f"Does not match required pattern: {pattern}")
+                                        validation_errors.append({"id": qid, "error": msg})
+                            # Added Number range validation
+                            elif question.field_type in ("number", "slider"):
+                                try:
+                                    num_val = float(ans)
+                                    if "min_value" in rules and num_val < rules["min_value"]:
+                                        msg = f"Value must be at least {rules['min_value']}"
+                                        validation_errors.append({"id": qid, "error": msg})
+                                    if "max_value" in rules and num_val > rules["max_value"]:
+                                        msg = f"Value must be at most {rules['max_value']}"
+                                        validation_errors.append({"id": qid, "error": msg})
+                                except (ValueError, TypeError):
+                                    msg = "Invalid numeric value"
+                                    validation_errors.append({"id": qid, "error": msg})
                             if question.field_type == "checkbox" and isinstance(ans, list):
                                 if "min_selections" in rules and len(ans) < rules["min_selections"]:
                                     msg = f"Select at least {rules['min_selections']} options"
@@ -251,8 +335,16 @@ def validate_form_submission(form, submitted_data, logger, is_draft=False):
                                 if "max_selections" in rules and len(ans) > rules["max_selections"]:
                                     msg = f"Select no more than {rules['max_selections']} options"
                                     validation_errors.append({"id": qid, "error": msg})
+                        except json.JSONDecodeError: # More specific exception handling
+                            msg = "Invalid JSON format for validation_rules"
+                            validation_errors.append({"id": qid, "error": msg})
+                            logger.error(f"{qid}: {msg}")
+                        except re.error as re_err: # Handle invalid regex patterns
+                            msg = f"Invalid regex pattern: {re_err}"
+                            validation_errors.append({"id": qid, "error": msg})
+                            logger.error(f"{qid}: {msg}")
                         except Exception as ve:
-                            msg = f"Invalid validation rules: {str(ve)}"
+                            msg = f"Error processing validation rules: {str(ve)}"
                             validation_errors.append({"id": qid, "error": msg})
                             logger.error(f"{qid}: {msg}")
             
@@ -301,3 +393,60 @@ def validate_form_submission(form, submitted_data, logger, is_draft=False):
                     validation_errors.append({"global": True, "error": f"Rule error: {err_msg}"})
 
     return validation_errors, cleaned_data
+
+from app.routes.v1.form import form_bp
+from flask import request, jsonify, current_app
+from flask_jwt_extended import jwt_required
+
+@form_bp.route("/conditions/evaluate", methods=["POST"])
+@jwt_required()
+def evaluate_conditions_endpoint():
+    """
+    Evaluate conditional logic for dynamic form behavior.
+    """
+    try:
+        data = request.get_json()
+        form_id = data.get("form_id")
+        conditions = data.get("conditions", []) # List of condition strings or objects
+        responses = data.get("responses", {})
+        
+        if not form_id:
+            return jsonify({"error": "form_id is required"}), 400
+            
+        # Prepare context from responses
+        # Assuming responses keys might need sanitization if they are UUIDs
+        context = prepare_eval_context([responses])
+        
+        visible_fields = []
+        required_fields = []
+        
+        # Determine strictness?
+        logger = current_app.logger
+        
+        # If the input provides specific conditions to test (e.g. "age > 18")
+        # useful for testing logic
+        results = {}
+        for cond in conditions:
+            # Check if cond is a dict (like {"field_id": "...", "condition": "..."}) or string
+            if isinstance(cond, str):
+                results[cond] = evaluate_condition(cond, context, logger)
+            elif isinstance(cond, dict) and 'condition' in cond:
+                c_str = cond['condition']
+                res = evaluate_condition(c_str, context, logger)
+                results[c_str] = res
+                
+        # Also, we might want to evaluate ALL form logic?
+        # The frontend often sends the current responses and expects to know 
+        # which fields should be visible/required based on the Form definition.
+        # But this endpoint payload "conditions": List suggests we just evaluate specific expressions.
+        # Or does it mean "Evaluate field conditions"?
+        # Let's support both or just return the results of the requested conditions.
+        
+        return jsonify({
+            "results": results,
+            "context_keys": list(context.keys()) # Debug info
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Condition evaluation error: {str(e)}")
+        return jsonify({"error": str(e)}), 400

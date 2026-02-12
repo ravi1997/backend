@@ -12,17 +12,22 @@ logger = logging.getLogger(__name__)
 
 def validate_condition_syntax(condition_str):
     """Basic syntax check for python condition string"""
+    logger.debug(f"Validating condition syntax for: {condition_str}")
     if not condition_str:
+        logger.debug("Empty condition string, considering valid")
         return True
     try:
         ast.parse(condition_str, mode='eval')
+        logger.debug("Condition syntax is valid")
         return True
-    except SyntaxError:
+    except SyntaxError as e:
+        logger.warning(f"Condition syntax is invalid: {condition_str}, Error: {e}")
         return False
 
 @workflow_bp.route('/', methods=['POST'])
 @require_roles('admin', 'superadmin')
 def create_workflow():
+    logger.info("--- Create Workflow branch started ---")
     try:
         data = request.get_json()
         current_user_id = get_jwt_identity()
@@ -30,11 +35,13 @@ def create_workflow():
         required_fields = ['name', 'trigger_form_id']
         for field in required_fields:
             if field not in data:
+                logger.warning(f"Create Workflow failed: Missing required field '{field}'")
                 return jsonify({'error': f'Missing required field: {field}'}), 400
                 
         # Validate Form (Existence Check)
         trigger_form = Form.objects(id=data['trigger_form_id']).first()
         if not trigger_form:
+             logger.warning(f"Create Workflow failed: Trigger form {data['trigger_form_id']} not found")
              return jsonify({'error': 'Trigger form not found'}), 404
              
         # Validate Condition Syntax
@@ -70,6 +77,7 @@ def create_workflow():
             created_by=current_user_id
         )
         workflow.save()
+        logger.info(f"Workflow created successfully: {workflow.name} (ID: {workflow.id})")
         
         return jsonify({'message': 'Workflow created', 'id': str(workflow.id)}), 201
 
@@ -79,13 +87,16 @@ def create_workflow():
 @workflow_bp.route('/', methods=['GET'])
 @require_roles('admin', 'superadmin')
 def list_workflows():
+    logger.info("--- List Workflows branch started ---")
     try:
         # Optional filter by trigger form
         trigger_form_id = request.args.get('trigger_form_id')
         
         if trigger_form_id:
+            logger.info(f"Filtering workflows by trigger_form_id: {trigger_form_id}")
             workflows = FormWorkflow.objects(trigger_form_id=trigger_form_id)
         else:
+            logger.info("Listing all workflows")
             workflows = FormWorkflow.objects()
             
         # Collect form IDs to fetch titles
@@ -118,9 +129,11 @@ def list_workflows():
 @workflow_bp.route('/<id>', methods=['GET'])
 @require_roles('admin', 'superadmin')
 def get_workflow(id):
+    logger.info(f"--- Get Workflow branch started for id: {id} ---")
     try:
         workflow = FormWorkflow.objects(id=id).first()
         if not workflow:
+            logger.warning(f"Get Workflow failed: ID {id} not found")
             return jsonify({'error': 'Workflow not found'}), 404
             
         actions_data = []
@@ -147,9 +160,11 @@ def get_workflow(id):
 @workflow_bp.route('/<id>', methods=['PUT'])
 @require_roles('admin', 'superadmin')
 def update_workflow(id):
+    logger.info(f"--- Update Workflow branch started for id: {id} ---")
     try:
         workflow = FormWorkflow.objects(id=id).first()
         if not workflow:
+            logger.warning(f"Update Workflow failed: ID {id} not found")
             return jsonify({'error': 'Workflow not found'}), 404
             
         data = request.get_json()
@@ -191,12 +206,15 @@ def update_workflow(id):
 @workflow_bp.route('/<id>', methods=['DELETE'])
 @require_roles('admin', 'superadmin')
 def delete_workflow(id):
+    logger.info(f"--- Delete Workflow branch started for id: {id} ---")
     try:
         workflow = FormWorkflow.objects(id=id).first()
         if not workflow:
+            logger.warning(f"Delete Workflow failed: ID {id} not found")
             return jsonify({'error': 'Workflow not found'}), 404
-            
+
         workflow.delete()
+        logger.info(f"Workflow {id} deleted successfully")
         return jsonify({'message': 'Workflow deleted'}), 200
     except Exception as e:
         return handle_error(e, logger)

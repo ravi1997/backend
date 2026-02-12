@@ -22,6 +22,7 @@ ADMIN_ROLE = Config.ADMIN_ROLE
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
+    current_app.logger.info("--- Register branch started ---")
     data = request.get_json()
     current_app.logger.info("Received registration data: %s", {k: v for k, v in data.items() if k != "password"})
 
@@ -60,6 +61,7 @@ def register():
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
+    current_app.logger.info("--- Login branch started ---")
     current_app.logger.info("Received login request")
     try:
         data = request.get_json(force=True)
@@ -184,6 +186,7 @@ def login():
 
 @auth_bp.route('/generate-otp', methods=['POST'])
 def generate_otp():
+    current_app.logger.info("--- Generate OTP branch started ---")
     try:
         data = request.get_json(force=True)
     except Exception:
@@ -192,10 +195,12 @@ def generate_otp():
     mobile = data.get("mobile")
 
     if not mobile:
+        current_app.logger.warning("OTP generation failed: Mobile number missing")
         return jsonify({"msg": "Mobile number required", "success": False}), 400
 
     user = User.objects(mobile=mobile).first()
     if not user:
+        current_app.logger.warning(f"OTP generation failed: User with mobile {mobile} not found")
         return jsonify({"msg": "User with this mobile not found", "success": False}), 404
 
     # Generate 6-digit OTP
@@ -205,6 +210,7 @@ def generate_otp():
     user.save()
 
     # TODO: Integrate SMS provider here to send OTP
+    current_app.logger.info(f"OTP generated successfully for {mobile}")
     current_app.logger.debug(f"[DEBUG] OTP for {mobile}: {otp_code}")  # Logging only for development
 
     return jsonify({"msg": "OTP sent successfully", "success": True}), 200
@@ -223,6 +229,7 @@ def _htmx_or_json_error(message, status):
 @auth_bp.route('/logout', methods=['POST'])
 @jwt_required()
 def logout():
+    current_app.logger.info("--- Logout branch started ---")
     jwt_payload = get_jwt()
     jti = jwt_payload["jti"]
     exp_timestamp = jwt_payload["exp"]

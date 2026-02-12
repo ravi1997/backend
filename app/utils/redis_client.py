@@ -1,66 +1,129 @@
 """
 Redis Client Wrapper
 
-Provides a simple in-memory cache interface that can be replaced with
-actual Redis when available. Used by M2 AI services for caching.
+Provides a Redis-compatible client with fallback to in-memory cache.
+Supports actual Redis when available, with comprehensive caching features.
 
 Task: T-M2-02, T-M2-03 - NLP Search & Summarization caching
 Task: M2-INT-01c - Add distributed locking for concurrent access
+Task: M4-01 - Redis Integration & Performance
 """
 
 from functools import lru_cache
-from typing import Any, Optional
+from typing import Any, Optional, Dict, List
 import hashlib
 import json
 import time
 import threading
+import logging
+from contextlib import contextmanager
 
-# Simple in-memory cache storage
+logger = logging.getLogger(__name__)
+
+# Simple in-memory cache storage (fallback when Redis unavailable)
 _memory_cache = {}
 
 # In-memory lock storage for distributed locking simulation
 _lock_storage = {}
 _lock_mutex = threading.Lock()
 
+# Cache statistics tracking
+_cache_stats = {
+    'hits': 0,
+    'misses': 0,
+    'errors': 0,
+    'evictions': 0,
+    'writes': 0
+}
+
 
 class RedisClient:
     """
-    In-memory Redis-compatible client.
+    Redis-compatible client with fallback to in-memory cache.
     
-    Replace with actual Redis client when Redis is available:
-    - Install: pip install redis
-    - Uncomment Redis implementation below
+    Supports actual Redis when available, with comprehensive caching features:
+    - Connection pooling
+    - Distributed locking
+    - Pipeline operations
+    - Graceful degradation to in-memory cache
     """
     
-    def __init__(self, host: str = "localhost", port: int = 6379, db: int = 0):
+    def __init__(self, host: str = "localhost", port: int = 6379, db: int = 0,
+                 password: Optional[str] = None, max_connections: int = 50,
+                 socket_timeout: int = 5, socket_connect_timeout: int = 5):
         self.host = host
         self.port = port
         self.db = db
+        self.password = password
+        self.max_connections = max_connections
+        self.socket_timeout = socket_timeout
+        self.socket_connect_timeout = socket_connect_timeout
+        
+        self._client = None
         self._connected = False
+        self._use_fallback = True  # Start with fallback enabled
+        
         # Distributed locking configuration
         self._locks = {}  # Track active locks for this instance
         self._lock_timeout = 30  # Default lock timeout in seconds
         self._lock_retry_max_attempts = 3  # Max retry attempts for lock acquisition
         self._lock_retry_backoff = 0.1  # Initial backoff in seconds
         self._lock_retry_backoff_multiplier = 2.0  # Backoff multiplier
+        
+        # Try to connect to Redis
+        self._initialize_redis()
+    
+    def _initialize_redis(self) -> None:
+        """Initialize Redis connection with fallback to in-memory cache."""
+        try:
+            import redis
+            from redis.connection import ConnectionPool
+            
+            # Create connection pool
+            pool = ConnectionPool(
+                host=self.host,
+                port=self.port,
+                db=self.db,
+                password=self.password,
+                max_connections=self.max_connections,
+                socket_timeout=self.socket_timeout,
+                socket_connect_timeout=self.socket_connect_timeout,
+                retry_on_timeout=True,
+                decode_responses=True
+            )
+            
+            self._client = redis.Redis(connection_pool=pool)
+            
+            # Test connection
+            self._client.ping()
+            self._connected = True
+            self._use_fallback = False
+            logger.info(f"Connected to Redis at {self.host}:{self.port}")
+            
+        except ImportError:
+            logger.warning("Redis package not installed, using in-memory fallback")
+            self._use_fallback = True
+        except Exception as e:
+            logger.warning(f"Failed to connect to Redis: {e}, using in-memory fallback")
+            self._use_fallback = True
     
     def connect(self) -> bool:
-        """Try to connect to Redis (placeholder)."""
-        # For production with Redis, uncomment below:
-        # try:
-        #     import redis
-        #     self._client = redis.Redis(host=self.host, port=self.port, db=self.db)
-        #     self._client.ping()
-        #     self._connected = True
-        #     return True
-        # except (ImportError, ConnectionError):
-        #     pass
-        self._connected = False
-        return False
+        """Try to connect to Redis (or reinitialize)."""
+        self._initialize_redis()
+        return self._connected
     
     def is_connected(self) -> bool:
         """Check if connected to Redis."""
-        return self._connected
+        if self._use_fallback:
+            return False
+        try:
+            if self._client:
+                self._client.ping()
+                return True
+        except Exception:
+            self._connected = False
+            self._use_fallback = True
+        return False
     
     def get(self, key: str) -> Optional[str]:
         """
@@ -72,14 +135,33 @@ class RedisClient:
         Returns:
             Cached value or None
         """
+        try:
+            if not self._use_fallback and self._client:
+                value = self._client.get(key)
+                if value is not None:
+                    _cache_stats['hits'] += 1
+                    return value
+                else:
+                    _cache_stats['misses'] += 1
+                    return None
+        except Exception as e:
+            logger.warning(f"Redis get failed for key '{key}': {e}, falling back to in-memory")
+            _cache_stats['errors'] += 1
+            self._use_fallback = True
+        
+        # Fallback to in-memory cache
         if key in _memory_cache:
             data = _memory_cache[key]
             # Check if expired
             if data.get('expires', float('inf')) > time.time():
+                _cache_stats['hits'] += 1
                 return data.get('value')
             else:
                 # Clean up expired entry
                 del _memory_cache[key]
+                _cache_stats['misses'] += 1
+        else:
+            _cache_stats['misses'] += 1
         return None
     
     def set(self, key: str, value: str, ttl: int = 3600) -> bool:
@@ -94,14 +176,36 @@ class RedisClient:
         Returns:
             True if successful
         """
+        try:
+            if not self._use_fallback and self._client:
+                self._client.setex(key, ttl, value)
+                _cache_stats['writes'] += 1
+                return True
+        except Exception as e:
+            logger.warning(f"Redis set failed for key '{key}': {e}, falling back to in-memory")
+            _cache_stats['errors'] += 1
+            self._use_fallback = True
+        
+        # Fallback to in-memory cache
         _memory_cache[key] = {
             'value': value,
             'expires': time.time() + ttl
         }
+        _cache_stats['writes'] += 1
         return True
     
     def delete(self, key: str) -> bool:
         """Delete key from cache."""
+        try:
+            if not self._use_fallback and self._client:
+                deleted = self._client.delete(key)
+                return deleted > 0
+        except Exception as e:
+            logger.warning(f"Redis delete failed for key '{key}': {e}, falling back to in-memory")
+            _cache_stats['errors'] += 1
+            self._use_fallback = True
+        
+        # Fallback to in-memory cache
         if key in _memory_cache:
             del _memory_cache[key]
             return True
@@ -109,11 +213,38 @@ class RedisClient:
     
     def clear(self) -> bool:
         """Clear all cached values."""
+        try:
+            if not self._use_fallback and self._client:
+                self._client.flushdb()
+                return True
+        except Exception as e:
+            logger.warning(f"Redis clear failed: {e}, falling back to in-memory")
+            _cache_stats['errors'] += 1
+            self._use_fallback = True
+        
+        # Fallback to in-memory cache
         _memory_cache.clear()
         return True
     
     def get_many(self, keys: list) -> dict:
         """Get multiple values."""
+        try:
+            if not self._use_fallback and self._client:
+                values = self._client.mget(keys)
+                result = {}
+                for key, value in zip(keys, values):
+                    if value is not None:
+                        result[key] = value
+                        _cache_stats['hits'] += 1
+                    else:
+                        _cache_stats['misses'] += 1
+                return result
+        except Exception as e:
+            logger.warning(f"Redis get_many failed: {e}, falling back to in-memory")
+            _cache_stats['errors'] += 1
+            self._use_fallback = True
+        
+        # Fallback to in-memory cache
         result = {}
         for key in keys:
             val = self.get(key)
@@ -123,13 +254,166 @@ class RedisClient:
     
     def set_many(self, mapping: dict, ttl: int = 3600) -> bool:
         """Set multiple values."""
+        try:
+            if not self._use_fallback and self._client:
+                pipe = self._client.pipeline()
+                for key, value in mapping.items():
+                    pipe.setex(key, ttl, value)
+                pipe.execute()
+                _cache_stats['writes'] += len(mapping)
+                return True
+        except Exception as e:
+            logger.warning(f"Redis set_many failed: {e}, falling back to in-memory")
+            _cache_stats['errors'] += 1
+            self._use_fallback = True
+        
+        # Fallback to in-memory cache
         for key, value in mapping.items():
             self.set(key, value, ttl)
         return True
     
     def ping(self) -> bool:
         """Check Redis connection."""
-        return self._connected
+        try:
+            if not self._use_fallback and self._client:
+                self._client.ping()
+                return True
+        except Exception:
+            self._connected = False
+            self._use_fallback = True
+        return False
+    
+    def invalidate_pattern(self, pattern: str) -> int:
+        """
+        Invalidate all keys matching pattern.
+        
+        Args:
+            pattern: Redis key pattern (e.g., "form:schema:*")
+            
+        Returns:
+            Number of keys deleted
+        """
+        try:
+            if not self._use_fallback and self._client:
+                keys = self._client.keys(pattern)
+                if keys:
+                    deleted = self._client.delete(*keys)
+                    _cache_stats['evictions'] += deleted
+                    return deleted
+                return 0
+        except Exception as e:
+            logger.warning(f"Redis invalidate_pattern failed: {e}, falling back to in-memory")
+            _cache_stats['errors'] += 1
+            self._use_fallback = True
+        
+        # Fallback to in-memory cache (simple pattern matching)
+        import fnmatch
+        keys_to_delete = [k for k in _memory_cache.keys() if fnmatch.fnmatch(k, pattern)]
+        for key in keys_to_delete:
+            del _memory_cache[key]
+        _cache_stats['evictions'] += len(keys_to_delete)
+        return len(keys_to_delete)
+    
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """
+        Get comprehensive cache statistics.
+        
+        Returns:
+            Dictionary with cache statistics
+        """
+        try:
+            if not self._use_fallback and self._client:
+                info = self._client.info('stats')
+                memory_info = self._client.info('memory')
+                
+                return {
+                    'backend': 'redis',
+                    'connected': True,
+                    'total_keys': info.get('keyspace_hits', 0) + info.get('keyspace_misses', 0),
+                    'hits': _cache_stats['hits'],
+                    'misses': _cache_stats['misses'],
+                    'hit_ratio': _cache_stats['hits'] / (_cache_stats['hits'] + _cache_stats['misses']) if (_cache_stats['hits'] + _cache_stats['misses']) > 0 else 0.0,
+                    'memory_used': memory_info.get('used_memory', 0),
+                    'memory_human': memory_info.get('used_memory_human', 'N/A'),
+                    'evictions': _cache_stats['evictions'],
+                    'writes': _cache_stats['writes'],
+                    'errors': _cache_stats['errors'],
+                    'fallback_mode': False
+                }
+        except Exception as e:
+            logger.warning(f"Redis get_cache_stats failed: {e}, using in-memory stats")
+            _cache_stats['errors'] += 1
+            self._use_fallback = True
+        
+        # Fallback to in-memory stats
+        return {
+            'backend': 'in_memory',
+            'connected': False,
+            'total_keys': len(_memory_cache),
+            'hits': _cache_stats['hits'],
+            'misses': _cache_stats['misses'],
+            'hit_ratio': _cache_stats['hits'] / (_cache_stats['hits'] + _cache_stats['misses']) if (_cache_stats['hits'] + _cache_stats['misses']) > 0 else 0.0,
+            'memory_used': sum(len(str(v['value'])) for v in _memory_cache.values()),
+            'memory_human': f"{sum(len(str(v['value'])) for v in _memory_cache.values())} bytes",
+            'evictions': _cache_stats['evictions'],
+            'writes': _cache_stats['writes'],
+            'errors': _cache_stats['errors'],
+            'fallback_mode': True
+        }
+    
+    def get_with_fallback(self, key: str, fallback_func, ttl: int = 300) -> Any:
+        """
+        Get from cache, fallback to DB if miss.
+        
+        Args:
+            key: Cache key
+            fallback_func: Function to call on cache miss
+            ttl: Time to live in seconds
+            
+        Returns:
+            Cached value or result of fallback function
+        """
+        value = self.get(key)
+        if value is not None:
+            try:
+                return json.loads(value)
+            except json.JSONDecodeError:
+                return value
+        
+        # Cache miss, call fallback function
+        value = fallback_func()
+        
+        # Cache the result
+        try:
+            if isinstance(value, (dict, list)):
+                self.set(key, json.dumps(value), ttl)
+            else:
+                self.set(key, str(value), ttl)
+        except Exception as e:
+            logger.warning(f"Failed to cache result for key '{key}': {e}")
+        
+        return value
+    
+    @contextmanager
+    def pipeline(self):
+        """
+        Context manager for pipeline operations.
+        
+        Yields:
+            Redis pipeline object or None if using fallback
+        """
+        if not self._use_fallback and self._client:
+            try:
+                pipe = self._client.pipeline()
+                yield pipe
+                pipe.execute()
+                return
+            except Exception as e:
+                logger.warning(f"Redis pipeline failed: {e}")
+                _cache_stats['errors'] += 1
+        
+        # Fallback: yield None, operations will be executed individually
+        yield None
     
     # ============ Distributed Locking Methods ============
     
@@ -397,17 +681,39 @@ def cache_result(ttl: int = 3600):
 
 
 # Connection helper
-def connect_redis(host: str = "localhost", port: int = 6379) -> bool:
+def connect_redis(host: str = "localhost", port: int = 6379, db: int = 0,
+                  password: Optional[str] = None, max_connections: int = 50) -> bool:
     """
     Connect to Redis server.
     
     Args:
         host: Redis host
         port: Redis port
+        db: Redis database number
+        password: Redis password (optional)
+        max_connections: Maximum connection pool size
         
     Returns:
         True if connected successfully
     """
     global redis_client
-    redis_client = RedisClient(host=host, port=port)
+    redis_client = RedisClient(
+        host=host,
+        port=port,
+        db=db,
+        password=password,
+        max_connections=max_connections
+    )
     return redis_client.connect()
+
+
+def reset_cache_stats() -> None:
+    """Reset cache statistics to zero."""
+    global _cache_stats
+    _cache_stats = {
+        'hits': 0,
+        'misses': 0,
+        'errors': 0,
+        'evictions': 0,
+        'writes': 0
+    }

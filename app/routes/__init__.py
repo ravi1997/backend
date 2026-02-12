@@ -13,9 +13,9 @@ from app.routes.v1.webhooks import webhooks_bp
 from app.routes.v1.sms_route import sms_bp
 
 def register_blueprints(app):
-    app.register_blueprint(form_bp, url_prefix='/form/api/v1/form')
+    app.register_blueprint(form_bp, url_prefix='/form/api/v1/forms')
     app.register_blueprint(library_bp, url_prefix='/form/api/v1/custom-fields')
-    app.register_blueprint(permissions_bp, url_prefix='/form/api/v1/form')
+    app.register_blueprint(permissions_bp, url_prefix='/form/api/v1/forms')
     app.register_blueprint(view_bp, url_prefix='/form/')
     app.register_blueprint(user_bp, url_prefix='/form/api/v1/user')
     app.register_blueprint(auth_bp, url_prefix='/form/api/v1/auth')

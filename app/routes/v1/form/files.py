@@ -53,3 +53,83 @@ def get_file(form_id, question_id, filename):
     except Exception as e:
         current_app.logger.error(f"Error serving file: {str(e)}")
         return jsonify({"error": "Error serving file"}), 500
+@form_bp.route("/upload", methods=["POST"])
+@jwt_required()
+def upload_file_endpoint():
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file part"}), 400
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "No selected file"}), 400
+            
+        # Use existing helper or save logic
+        # We need form_id to organize files, usually passed in form data?
+        # Or generic upload?
+        # api_endpoints.dart says: Body: FormData with file
+        # Doesn't explicitly say form_id is required, but usually is for organization.
+        # If not provided, maybe a temp folder?
+        form_id = request.form.get('form_id', 'common')
+        field_id = request.form.get('field_id', 'general')
+        
+        # We need to import save_uploaded_file from somewhere. 
+        # It's used in responses.py. imported from app.utils.file_handler
+        from app.utils.file_handler import save_uploaded_file
+        
+        file_info = save_uploaded_file(file, form_id, field_id)
+        
+        if file_info:
+            return jsonify({
+                "url": f"/form/api/v1/forms/{form_id}/files/{field_id}/{file_info['filename']}", # URL construction?
+                "filename": file_info['filename'],
+                "filepath": file_info['filepath'],
+                "size": file_info['size']
+            }), 201
+        else:
+            return jsonify({"error": "File upload failed"}), 500
+            
+    except Exception as e:
+        current_app.logger.error(f"Upload error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@form_bp.route("/signatures", methods=["POST"])
+@jwt_required()
+def upload_signature_endpoint():
+    try:
+        data = request.get_json()
+        signature_b64 = data.get("signature")
+        form_id = data.get("form_id")
+        
+        if not signature_b64 or not form_id:
+            return jsonify({"error": "signature and form_id required"}), 400
+            
+        # Decode and save
+        import base64
+        import uuid
+        import os
+        
+        # Remove header if present
+        if "," in signature_b64:
+            signature_b64 = signature_b64.split(",")[1]
+            
+        file_data = base64.b64decode(signature_b64)
+        filename = f"sig_{uuid.uuid4().hex}.png"
+        
+        upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
+        save_path = os.path.join(upload_folder, str(form_id), "signatures")
+        os.makedirs(save_path, exist_ok=True)
+        
+        filepath = os.path.join(save_path, filename)
+        with open(filepath, "wb") as f:
+            f.write(file_data)
+            
+        url = f"/form/api/v1/forms/{form_id}/files/signatures/{filename}" # Check consistency
+            
+        return jsonify({
+            "url": url,
+            "signature_id": filename
+        }), 201
+        
+    except Exception as e:
+        current_app.logger.error(f"Signature upload error: {str(e)}")
+        return jsonify({"error": str(e)}), 500

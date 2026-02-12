@@ -1,4 +1,4 @@
-from marshmallow import Schema, fields, validate, post_load
+from marshmallow import Schema, fields, validate, post_load, pre_load
 from uuid import UUID
 import uuid
 
@@ -8,15 +8,15 @@ from marshmallow import Schema, fields
 # --- ResponseTemplate Schema ---
 class ResponseTemplateSchema(Schema):
     name = fields.Str(required=True)
-    description = fields.Str()
-    structure = fields.Str()
-    tags = fields.List(fields.Str())
-    meta_data = fields.Dict()
+    description = fields.Str(allow_none=True)
+    structure = fields.Str(allow_none=True)
+    tags = fields.List(fields.Str(), allow_none=True)
+    meta_data = fields.Dict(allow_none=True)
 
 # --- Option Schema ---
 class OptionSchema(Schema):
     id = fields.UUID(required=True)
-    description = fields.Str()
+    description = fields.Str(allow_none=True)
     is_default = fields.Bool(load_default=False)
     is_disabled = fields.Bool(load_default=False)
     option_label = fields.Str(required=True)
@@ -29,10 +29,12 @@ class OptionSchema(Schema):
 class QuestionSchema(Schema):
     id = fields.UUID(required=True)
     label = fields.Str(required=True)
-    field_type = fields.Str(validate=validate.OneOf(FIELD_TYPE_CHOICES), required=True)
-    is_required = fields.Bool(load_default=False)
-    help_text = fields.Str()
-    default_value = fields.Str()
+    field_type = fields.Str(data_key="type", validate=validate.OneOf(FIELD_TYPE_CHOICES), required=True)
+    is_required = fields.Bool(data_key="isRequired", load_default=False)
+    is_read_only = fields.Bool(data_key="isReadOnly", load_default=False)
+    is_hidden = fields.Bool(data_key="isHidden", load_default=False)
+    help_text = fields.Str(data_key="helperText", allow_none=True)
+    default_value = fields.Str(allow_none=True)
     order = fields.Int()
     visibility_condition = fields.Str()
     validation_rules = fields.Str()
@@ -45,31 +47,52 @@ class QuestionSchema(Schema):
     visible_header = fields.Bool(load_default=False)
     visible_name = fields.Str()
     response_templates = fields.List(fields.Nested(ResponseTemplateSchema))
-    options = fields.List(fields.Nested(OptionSchema))
-    field_api_call = fields.Str(validate=validate.OneOf(FIELD_API_CALL_CHOICES))
-    custom_script = fields.Str()
-    meta_data = fields.Dict()
+    options = fields.List(fields.Nested(OptionSchema), allow_none=True)
+    field_api_call = fields.Str(validate=validate.OneOf(FIELD_API_CALL_CHOICES), allow_none=True)
+    custom_script = fields.Str(allow_none=True)
+    placeholder = fields.Str(allow_none=True)
+    meta_data = fields.Dict(allow_none=True)
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
+
+    class Meta:
+        unknown = "EXCLUDE"
+
+    @pre_load
+    def handle_localized_fields(self, data, **kwargs):
+        for field in ['label', 'helperText', 'placeholder']:
+            if field in data and isinstance(data[field], dict):
+                data[field] = data[field].get('en') or next(iter(data[field].values()), "")
+        return data
 
 # --- Section Schema ---
 class SectionSchema(Schema):
     id = fields.UUID(required=True)
     title = fields.Str(required=True)
-    description = fields.Str()
-    order = fields.Int()
-    visibility_condition = fields.Str()
-    validation_rules = fields.Str()
+    description = fields.Str(allow_none=True)
+    order = fields.Int(allow_none=True)
+    visibility_condition = fields.Str(allow_none=True)
+    validation_rules = fields.Str(allow_none=True)
     is_disabled = fields.Bool(load_default=False)
     ui = fields.Str(validate=validate.OneOf(ui_TYPE_CHOICES), load_default="flex")
     is_repeatable_section = fields.Bool(load_default=False)
     repeat_min = fields.Int(load_default=0)
-    repeat_max = fields.Int()
+    repeat_max = fields.Int(allow_none=True)
     questions = fields.List(fields.Nested(QuestionSchema))
     response_templates = fields.List(fields.Nested(ResponseTemplateSchema))
     meta_data = fields.Dict()
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
+
+    class Meta:
+        unknown = "EXCLUDE"
+
+    @pre_load
+    def handle_localized_fields(self, data, **kwargs):
+        for field in ['title', 'description']:
+            if field in data and isinstance(data[field], dict):
+                data[field] = data[field].get('en') or next(iter(data[field].values()), "")
+        return data
 
 # --- FormVersion Schema ---
 class FormVersionSchema(Schema):
@@ -82,7 +105,7 @@ class FormVersionSchema(Schema):
     translations = fields.Dict()
 
     class Meta:
-        unknown = "INCLUDE"
+        unknown = "EXCLUDE"
 
 # --- Form Schema ---
 class FormSchema(Schema):
@@ -106,7 +129,13 @@ class FormSchema(Schema):
     active_version = fields.Str()
 
     class Meta:
-        unknown = "INCLUDE"
+        unknown = "EXCLUDE"
+
+    @pre_load
+    def handle_localized_fields(self, data, **kwargs):
+        if 'title' in data and isinstance(data['title'], dict):
+            data['title'] = data['title'].get('en') or next(iter(data['title'].values()), "Untitled Form")
+        return data
 
 # --- FormResponse Schema ---
 class FormResponseSchema(Schema):

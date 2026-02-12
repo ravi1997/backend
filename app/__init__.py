@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 import logging
 from logging.handlers import RotatingFileHandler
 import os
@@ -123,9 +123,10 @@ def create_app(config_class=Config):
 
     Compress(app)
     CORS(app, 
+         origins=["http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:3000"],
          supports_credentials=True,
-         expose_headers=["Content-Type", "Authorization", "Set-Cookie"],
-         allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept"])
+         allow_headers=["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+         expose_headers=["Content-Type", "Authorization", "Set-Cookie"])
     app.logger.info("Middleware loaded: Compress, CORS")
 
     try:
@@ -146,6 +147,36 @@ def create_app(config_class=Config):
         jti = jwt_payload["jti"]
         token = TokenBlocklist.objects(jti=jti).first()
         return token is not None
+
+    @app.before_request
+    def log_request_info():
+        # Redact sensitive headers
+        sensitive_headers = {'Authorization', 'Cookie', 'X-CSRFToken'}
+        headers = {k: (v if k not in sensitive_headers else '***') for k, v in request.headers.items()}
+        
+        # Log the body always
+        try:
+            if request.is_json:
+                body = request.get_json(silent=True)
+            else:
+                body = request.get_data(as_text=True)
+        except Exception:
+            body = "Error reading body"
+        
+        app.logger.info(
+            "--- Incoming Request ---\n"
+            "Method: %s\n"
+            "Path: %s\n"
+            "Query Params: %s\n"
+            "Headers: %s\n"
+            "Body: %s\n"
+            "------------------------",
+            request.method,
+            request.path,
+            request.args.to_dict(),
+            headers,
+            body
+        )
 
     app.logger.info("✅ Flask app created successfully.")
     return app

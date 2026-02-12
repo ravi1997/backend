@@ -86,28 +86,8 @@ class WebhookService:
     ) -> Dict[str, Any]:
         """
         Send a webhook with exponential backoff retry logic.
-        
-        Args:
-            url: The webhook URL to send to
-            payload: The JSON payload to send
-            webhook_id: Unique identifier for the webhook configuration
-            form_id: ID of the form that triggered this webhook
-            created_by: User who triggered this webhook delivery
-            max_retries: Maximum number of retry attempts (default: 5)
-            headers: Optional custom headers
-            timeout: Request timeout in seconds (default: 10)
-            schedule_for: Optional datetime to schedule delivery for later
-        
-        Returns:
-            Dictionary with delivery status and details:
-            {
-                "status": "success" | "failed" | "scheduled",
-                "delivery_id": str,
-                "attempt_count": int,
-                "message": str,
-                "error": Optional[str]
-            }
         """
+        current_app.logger.info(f"--- send_webhook started for url: {url}, form_id: {form_id} ---")
         # Create initial delivery record
         delivery = WebhookDelivery(
             webhook_id=webhook_id,
@@ -146,6 +126,7 @@ class WebhookService:
         # Retry loop with exponential backoff and jitter
         for attempt in range(max_retries):
             attempt_num = attempt + 1
+            current_app.logger.debug(f"Webhook delivery attempt {attempt_num} for delivery_id {delivery.id}")
             delivery.attempt_count = attempt_num
             delivery.last_attempt_at = datetime.now(timezone.utc)
             
@@ -444,14 +425,8 @@ class WebhookService:
     def retry_webhook(delivery_id: str, reset_count: bool = False) -> Dict[str, Any]:
         """
         Retry a failed webhook delivery.
-        
-        Args:
-            delivery_id: The ID of the webhook delivery record
-            reset_count: Whether to reset the attempt count (default: False)
-        
-        Returns:
-            Dictionary with retry status and details
         """
+        current_app.logger.info(f"--- retry_webhook started for delivery_id: {delivery_id} ---")
         try:
             delivery = WebhookDelivery.objects.get(id=delivery_id)
             
@@ -501,13 +476,8 @@ class WebhookService:
     def cancel_webhook(delivery_id: str) -> Dict[str, Any]:
         """
         Cancel a pending or retrying webhook delivery.
-        
-        Args:
-            delivery_id: The ID of the webhook delivery record
-        
-        Returns:
-            Dictionary with cancellation status and details
         """
+        current_app.logger.info(f"--- cancel_webhook started for delivery_id: {delivery_id} ---")
         try:
             delivery = WebhookDelivery.objects.get(id=delivery_id)
             

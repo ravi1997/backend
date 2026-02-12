@@ -141,3 +141,149 @@ def form_submission_history(form_id):
     except Exception as e:
         current_app.logger.error(f"Error fetching form submission history: {str(e)}", exc_info=True)
         return jsonify({"error": "Internal server error"}), 500
+
+# -------------------- Workflow Next Action Check --------------------
+@form_bp.route("/<form_id>/next-action", methods=["GET"])
+@jwt_required()
+def check_next_action(form_id):
+    """
+    Check if any active workflows should be triggered for this form.
+    This endpoint is used by the frontend to determine the next action after form submission.
+
+    Query Parameters:
+    - response_id (optional): Check workflows for a specific response
+
+    Returns:
+    - workflow_action object if a workflow is triggered
+    - null if no workflow is triggered
+    """
+    current_app.logger.info(f"--- Check Next Action for form_id: {form_id} ---")
+    try:
+        from app.models.Workflow import FormWorkflow
+        from app.utils.script_engine import execute_safe_script
+
+        # Verify form exists
+        form = Form.objects(id=form_id).first()
+        if not form:
+            current_app.logger.warning(f"Check Next Action failed: Form {form_id} not found")
+            return jsonify({'error': 'Form not found'}), 404
+
+        # Get response_id from query params if provided
+        response_id = request.args.get('response_id')
+
+        if response_id:
+            # Check workflows for a specific response
+            response = FormResponse.objects(id=response_id, form=form.id).first()
+            if not response:
+                current_app.logger.warning(f"Check Next Action failed: Response {response_id} not found")
+                return jsonify({'error': 'Response not found'}), 404
+
+            submitted_data = response.data
+        else:
+            # No specific response - return available workflows for this form
+            workflows = FormWorkflow.objects(trigger_form_id=str(form.id), is_active=True)
+
+            workflow_list = []
+            for wf in workflows:
+                workflow_list.append({
+                    'id': str(wf.id),
+                    'name': wf.name,
+                    'description': wf.description,
+                    'condition': wf.trigger_condition
+                })
+
+            return jsonify({
+                'form_id': str(form.id),
+                'workflows': workflow_list,
+                'count': len(workflow_list)
+            }), 200
+
+        # Evaluate workflows for the specific response
+        workflows = FormWorkflow.objects(trigger_form_id=str(form.id), is_active=True)
+
+        # Flatten response data for easier access in condition evaluation
+        flat_answers = {}
+        for sid, s_val in submitted_data.items():
+            if isinstance(s_val, dict):
+                flat_answers.update(s_val)
+
+        for wf in workflows:
+            try:
+                # Evaluate condition
+                condition = wf.trigger_condition
+                if not condition or condition.strip() == "":
+                    condition = "True"
+
+                if condition != "True":
+                    # Wrap condition to result
+                    script = f"result = {condition}"
+                    context = {"answers": flat_answers, "data": flat_answers}
+
+                    res = execute_safe_script(script, input_data=flat_answers, additional_globals=context)
+
+                    if res.get('result'):
+                        # Match found
+                        actions_payload = []
+                        for act in wf.actions:
+                            action_data = {
+                                "type": act.type,
+                                "target_form_id": act.target_form_id,
+                                "data_mapping": act.data_mapping,
+                                "assign_to_user_field": act.assign_to_user_field
+                            }
+                            actions_payload.append(action_data)
+
+                        workflow_action = {
+                            "workflow_id": str(wf.id),
+                            "workflow_name": wf.name,
+                            "actions": actions_payload,
+                            "matched_condition": condition
+                        }
+
+                        current_app.logger.info(f"Workflow {wf.id} triggered for response {response_id}")
+                        return jsonify({
+                            'form_id': str(form.id),
+                            'response_id': response_id,
+                            'workflow_action': workflow_action
+                        }), 200
+                else:
+                    # Condition is True (always trigger)
+                    actions_payload = []
+                    for act in wf.actions:
+                        action_data = {
+                            "type": act.type,
+                            "target_form_id": act.target_form_id,
+                            "data_mapping": act.data_mapping,
+                            "assign_to_user_field": act.assign_to_user_field
+                        }
+                        actions_payload.append(action_data)
+
+                    workflow_action = {
+                        "workflow_id": str(wf.id),
+                        "workflow_name": wf.name,
+                        "actions": actions_payload,
+                        "matched_condition": "True (always)"
+                    }
+
+                    current_app.logger.info(f"Workflow {wf.id} triggered (always) for response {response_id}")
+                    return jsonify({
+                        'form_id': str(form.id),
+                        'response_id': response_id,
+                        'workflow_action': workflow_action
+                    }), 200
+
+            except Exception as e:
+                current_app.logger.warning(f"Error evaluating workflow {wf.id}: {e}")
+                continue
+
+        # No workflow triggered
+        current_app.logger.info(f"No workflows triggered for form {form_id}, response {response_id}")
+        return jsonify({
+            'form_id': str(form.id),
+            'response_id': response_id,
+            'workflow_action': None
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error checking next action: {str(e)}", exc_info=True)
+        return jsonify({"error": str(e)}), 400

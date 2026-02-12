@@ -77,6 +77,34 @@ class Config:
     OLLAMA_POOL_TIMEOUT = int(os.getenv("OLLAMA_POOL_TIMEOUT", 30))
     OLLAMA_CONNECTION_TIMEOUT = int(os.getenv("OLLAMA_CONNECTION_TIMEOUT", 10))
 
+    # Redis Configuration
+    REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+    REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+    REDIS_DB = int(os.getenv("REDIS_DB", 0))
+    REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
+    REDIS_MAX_MEMORY = os.getenv("REDIS_MAX_MEMORY", "256mb")
+    REDIS_MAX_CONNECTIONS = int(os.getenv("REDIS_MAX_CONNECTIONS", 50))
+    REDIS_SOCKET_TIMEOUT = int(os.getenv("REDIS_SOCKET_TIMEOUT", 5))
+    REDIS_SOCKET_CONNECT_TIMEOUT = int(os.getenv("REDIS_SOCKET_CONNECT_TIMEOUT", 5))
+    
+    # Cache Configuration
+    CACHE_ENABLED = os.getenv("CACHE_ENABLED", "true").lower() == "true"
+    CACHE_DEFAULT_TTL = int(os.getenv("CACHE_DEFAULT_TTL", 300))  # 5 minutes
+    CACHE_MAX_MEMORY_PERCENT = float(os.getenv("CACHE_MAX_MEMORY_PERCENT", 0.8))  # 80%
+    
+    # Cache Type TTLs (in seconds)
+    CACHE_TTL_FORM_SCHEMA = int(os.getenv("CACHE_TTL_FORM_SCHEMA", 3600))  # 1 hour
+    CACHE_TTL_USER_SESSION = int(os.getenv("CACHE_TTL_USER_SESSION", 1800))  # 30 minutes
+    CACHE_TTL_QUERY_RESULT = int(os.getenv("CACHE_TTL_QUERY_RESULT", 300))  # 5 minutes
+    CACHE_TTL_DASHBOARD_WIDGET = int(os.getenv("CACHE_TTL_DASHBOARD_WIDGET", 120))  # 2 minutes
+    CACHE_TTL_API_RESPONSE = int(os.getenv("CACHE_TTL_API_RESPONSE", 60))  # 1 minute
+    
+    # Cache Size Limits
+    CACHE_MAX_ENTRIES_FORM_SCHEMA = int(os.getenv("CACHE_MAX_ENTRIES_FORM_SCHEMA", 1000))
+    CACHE_MAX_ENTRIES_USER_SESSION = int(os.getenv("CACHE_MAX_ENTRIES_USER_SESSION", 5000))
+    CACHE_MAX_ENTRIES_QUERY_RESULT = int(os.getenv("CACHE_MAX_ENTRIES_QUERY_RESULT", 10000))
+    CACHE_MAX_ENTRIES_DASHBOARD_WIDGET = int(os.getenv("CACHE_MAX_ENTRIES_DASHBOARD_WIDGET", 5000))
+
 class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.getenv("DEVELOPMENT_DATABASE_URI", "sqlite:///dev.db")
     MY_ENVIRONMENT = "DEVELOPMENT"

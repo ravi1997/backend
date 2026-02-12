@@ -62,6 +62,9 @@ class Question(EmbeddedDocument):
 
     field_api_call = StringField(choices=FIELD_API_CALL_CHOICES)
     custom_script = StringField()  # Custom script for field behavior
+    placeholder = StringField()
+    is_read_only = BooleanField(default=False)
+    is_hidden = BooleanField(default=False)
 
     meta_data = DictField()
     required_condition = StringField()  # Field-level required condition

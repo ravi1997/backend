@@ -26,6 +26,8 @@ def create_form():
     data = request.get_json()
     current_user = get_current_user()
     try:
+        logger = current_app.logger
+        logger.info("--- Create Form branch started ---")
         current_app.logger.info(f"User {current_user.username} (ID: {current_user.id}) is attempting to create a form with data: {data}")
         
         # Manually parse dates
@@ -36,11 +38,11 @@ def create_form():
                 except ValueError:
                     pass # Let MongoEngine handle or raise error if invalid format
 
-        # Filter fields that exist in Form model
-        valid_fields = set(Form._fields.keys())
-        filtered_data = {k: v for k, v in data.items() if k in valid_fields}
-
-        form = Form(**filtered_data)
+        # Use FormSchema to clean and map data
+        # partial=True allows missing fields (like id if it was missing, though it shouldn't be)
+        clean_data = FormSchema().load(data, partial=True)
+        
+        form = Form(**clean_data)
         form.created_by = str(current_user.id)
         form.editors = [str(current_user.id)]
         if form.versions:
@@ -48,7 +50,7 @@ def create_form():
         form.save()
         
         current_app.logger.info(f"Form {form.id} created successfully by user {current_user.username} (ID: {current_user.id})")
-        return jsonify({"message": "Form created", "form_id": str(form.id)}), 201
+        return jsonify({"message": "Form created", "form": FormSchema().dump(form)}), 201
     
     except Exception as e:
         error_trace = traceback.format_exc()
@@ -59,6 +61,8 @@ def create_form():
 @form_bp.route("/", methods=["GET"])
 @jwt_required()
 def list_forms():
+    logger = current_app.logger
+    logger.info("--- List Forms branch started ---")
     current_user = get_current_user()
     
     is_template = request.args.get('is_template', 'false').lower() == 'true'
@@ -76,13 +80,16 @@ def list_forms():
     # Usually "Forms" list implies real forms. "Templates" implies templates.
     # But let's support filtering. 
     if is_template:
+        logger.debug("Filtering for templates only")
         query['is_template'] = True
     else:
+        logger.debug("Listing all forms (no template filter)")
         # If not asking for templates, maybe show non-templates? 
         # Or show all? Let's show all for backward compatibility, unless specified.
         # SRS D.1 says "Form Templates" is a feature.
         pass
 
+    logger.info(f"Executing list forms query for user: {current_user.id}")
     forms = Form.objects(__raw__=query)
     result = []
     for f in forms:
@@ -96,16 +103,20 @@ def list_forms():
 @form_bp.route("/<form_id>", methods=["GET"])
 @jwt_required()
 def get_form(form_id):
+    logger = current_app.logger
+    logger.info(f"--- Get Form branch started for id: {form_id} ---")
     try:
         form = Form.objects.get(id=form_id)
         current_user = get_current_user()
         if not has_form_permission(current_user, form, "view"):
+            logger.warning(f"Unauthorized view attempt for form {form_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized"}), 403
 
         # Check Scheduled status for non-editors
         now = datetime.now(timezone.utc)
         is_editor = has_form_permission(current_user, form, "edit") 
         if form.publish_at and now < form.publish_at.replace(tzinfo=timezone.utc) and not is_editor:
+                logger.warning(f"Form {form_id} is scheduled for later publication {form.publish_at} - access denied for non-editor {current_user.id}")
                 return jsonify({"error": "Form is not yet available"}), 403
 
         lang = request.args.get("lang")
@@ -137,31 +148,53 @@ def get_form(form_id):
 @form_bp.route("/<form_id>", methods=["PUT"])
 @jwt_required()
 def update_form(form_id):
+    logger = current_app.logger
+    logger.info(f"--- Update/Upsert Form branch started for id: {form_id} ---")
     data = request.get_json()
+    current_user = get_current_user()
     try:
-        form = Form.objects.get(id=form_id)
-        current_user = get_current_user()
-        if not has_form_permission(current_user, form, "edit"):
-            return jsonify({"error": "Unauthorized to edit"}), 403
-        # Filter fields that exist in Form model
-        valid_fields = set(Form._fields.keys())
-        filtered_data = {k: v for k, v in data.items() if k in valid_fields}
-        
-        form.update(**filtered_data)
-        return jsonify({"message": "Form updated"}), 200
-    except DoesNotExist:
-        return jsonify({"error": "Form not found"}), 404
+        # Use FormSchema to clean and map data
+        clean_data = FormSchema().load(data, partial=True)
+
+        try:
+            form = Form.objects.get(id=form_id)
+            if not has_form_permission(current_user, form, "edit"):
+                logger.warning(f"Unauthorized edit attempt for form {form_id} by user {current_user.id}")
+                return jsonify({"error": "Unauthorized to edit"}), 403
+            
+            # Use update with the cleaned data
+            form.update(**clean_data)
+            logger.info(f"Form {form_id} updated successfully")
+            return jsonify({"message": "Form updated", "form": FormSchema().dump(form.reload())}), 200
+        except DoesNotExist:
+            # Upsert: Create if not exists
+            logger.info(f"Form {form_id} not found, creating new via PUT")
+            # Ensure ID is set correctly from the path
+            clean_data['id'] = form_id
+            form = Form(**clean_data)
+            form.created_by = str(current_user.id)
+            form.editors = [str(current_user.id)]
+            if form.versions:
+                form.active_version = form.versions[-1].version
+            form.save()
+            logger.info(f"Form {form_id} created successfully via upsert")
+            return jsonify({"message": "Form created", "form": FormSchema().dump(form)}), 201
+            
     except Exception as e:
+        logger.error(f"Error in update/upsert for form {form_id}: {str(e)}")
         return jsonify({"error": str(e)}), 400
 
 
 @form_bp.route("/<form_id>/translations", methods=["POST"])
 @jwt_required()
 def update_form_translations(form_id):
+    logger = current_app.logger
+    logger.info(f"--- Update Form Translations branch started for id: {form_id} ---")
     try:
         form = Form.objects.get(id=form_id)
         current_user = get_current_user()
         if not has_form_permission(current_user, form, "edit"):
+            logger.warning(f"Unauthorized translation update attempt for form {form_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized"}), 403
             
         data = request.get_json()
@@ -196,25 +229,33 @@ def update_form_translations(form_id):
 @jwt_required()
 @require_roles(Role.ADMIN.value, Role.SUPERADMIN.value)
 def delete_form(form_id):
+    logger = current_app.logger
+    logger.info(f"--- Delete Form branch started for id: {form_id} ---")
     try:
         form = Form.objects.get(id=form_id)
         # Delete all associated responses
+        logger.info(f"Deleting associated responses for form {form_id}")
         FormResponse.objects(form=form.id).delete()
         
         form.delete()
+        logger.info(f"Form {form_id} deleted successfully")
         return jsonify({"message": "Form deleted"}), 200
     except DoesNotExist:
+        logger.warning(f"Delete Form failed: ID {form_id} not found")
         return jsonify({"error": "Form not found"}), 404
 # -------------------- Cloning --------------------
 
 @form_bp.route("/<form_id>/clone", methods=["POST"])
 @jwt_required()
 def clone_form(form_id):
+    logger = current_app.logger
+    logger.info(f"--- Clone Form branch started for id: {form_id} ---")
     try:
         current_user = get_current_user()
         original_form = Form.objects.get(id=form_id)
         
         if not has_form_permission(current_user, original_form, "view"):
+            logger.warning(f"Unauthorized clone attempt for form {form_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized to clone"}), 403
             
         data = request.get_json() or {}
@@ -270,10 +311,11 @@ def clone_form(form_id):
         }), 201
         
     except DoesNotExist:
+        logger.warning(f"Clone Form failed: ID {form_id} not found")
         return jsonify({"error": "Form not found"}), 404
     except Exception as e:
         error_trace = traceback.format_exc()
-        current_app.logger.error(f"Clone error: {str(e)}\n{error_trace}")
+        current_app.logger.error(f"Clone error for form {form_id}: {str(e)}\n{error_trace}")
         return jsonify({"error": str(e)}), 400
 
 
@@ -282,11 +324,14 @@ def clone_form(form_id):
 @form_bp.route("/<form_id>/reorder-sections", methods=["PATCH"])
 @jwt_required()
 def reorder_sections(form_id):
+    logger = current_app.logger
+    logger.info(f"--- Reorder Sections branch started for id: {form_id} ---")
     try:
         current_user = get_current_user()
         form = Form.objects.get(id=form_id)
         
         if not has_form_permission(current_user, form, "edit"):
+            logger.warning(f"Unauthorized reorder sections attempt for form {form_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized to edit form"}), 403
             
         data = request.get_json()
@@ -329,6 +374,7 @@ def reorder_sections(form_id):
         
         return jsonify({"message": "Sections reordered successfully"}), 200
     except DoesNotExist:
+        logger.warning(f"Reorder sections failed: Form ID {form_id} not found")
         return jsonify({"error": "Form not found"}), 404
     except Exception as e:
         current_app.logger.error(f"Reorder sections error: {str(e)}")
@@ -623,17 +669,14 @@ def update_form_version(form_id, v_str):
 @form_bp.route("/<form_id>/publish", methods=["POST"])
 @jwt_required()
 def publish_form(form_id):
-    """
-    M-12 Publishing Logic
-    1. Sets status to published (isPublished = True)
-    2. Snapshots current version
-    3. Prepares next version (increments semver)
-    """
+    logger = current_app.logger
+    logger.info(f"--- Publish Form branch started for id: {form_id} ---")
     try:
         current_user = get_current_user()
         form = Form.objects.get(id=form_id)
         
         if not has_form_permission(current_user, form, "edit"):
+            logger.warning(f"Unauthorized publish attempt for form {form_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized to publish"}), 403
 
         if not form.versions:
@@ -693,6 +736,7 @@ def publish_form(form_id):
             push__versions=new_v_dict
         )
         
+        logger.info(f"Form {form_id} published successfully. Next draft version: {new_version_str}")
         return jsonify({
             "message": "Form published", 
             "published_version": latest.version,
@@ -700,6 +744,54 @@ def publish_form(form_id):
         }), 200
 
     except DoesNotExist:
+        logger.warning(f"Publish Form failed: ID {form_id} not found")
         return jsonify({"error": "Form not found"}), 404
     except Exception as e:
+        logger.error(f"Publish Form error for {form_id}: {str(e)}", exc_info=True)
         return jsonify({"error": str(e)}), 400
+
+# -------------------- Templates --------------------
+
+@form_bp.route("/templates", methods=["GET"])
+@jwt_required()
+def list_form_templates():
+    logger = current_app.logger
+    current_user = get_current_user()
+    
+    # List all templates available to user
+    query = {'is_template': True}
+    
+    # Filter: created by user OR user is editor OR (optional) public templates
+    # For now, consistency with list_forms
+    query[''] = [
+        {'created_by': str(current_user.id)},
+        {'editors': str(current_user.id)}
+    ]
+    
+    forms = Form.objects(__raw__=query)
+    result = []
+    for f in forms:
+        item = f.to_mongo().to_dict()
+        if '_id' in item:
+            item['id'] = str(item.pop('_id'))
+        result.append(item)
+    return jsonify(result), 200
+
+@form_bp.route("/templates/<template_id>", methods=["GET"])
+@jwt_required()
+def get_form_template_endpoint(template_id):
+    try:
+        current_user = get_current_user()
+        form = Form.objects.get(id=template_id, is_template=True)
+        
+        if not has_form_permission(current_user, form, "view"):
+             return jsonify({"error": "Unauthorized"}), 403
+             
+        # Helper to convert to dict
+        item = form.to_mongo().to_dict()
+        if '_id' in item:
+            item['id'] = str(item.pop('_id'))
+            
+        return jsonify(item), 200
+    except DoesNotExist:
+        return jsonify({"error": "Template not found"}), 404

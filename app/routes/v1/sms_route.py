@@ -25,7 +25,9 @@ def require_auth(f):
     def decorated_function(*args, **kwargs):
         # Check if user is authenticated (simplified - adapt to your auth system)
         if not hasattr(g, 'current_user') and not g.get('is_authenticated'):
+            logger.warning("SMS auth check failed: Authentication required")
             return jsonify({"error": "Authentication required"}), 401
+        logger.info("SMS auth check successful")
         return f(*args, **kwargs)
     return decorated_function
 
@@ -50,9 +52,11 @@ def send_single_sms():
         }
     """
     try:
+        logger.info("--- Send Single SMS branch started ---")
         data = request.get_json()
         
         if not data:
+            logger.warning("Send SMS failed: Request body missing")
             return jsonify({"error": "Request body is required"}), 400
         
         mobile = data.get("mobile")
@@ -60,24 +64,29 @@ def send_single_sms():
         
         # Validate required fields
         if not mobile:
+            logger.warning("Send SMS failed: Mobile number missing")
             return jsonify({"error": "mobile field is required"}), 400
         if not message:
+            logger.warning("Send SMS failed: Message content missing")
             return jsonify({"error": "message field is required"}), 400
         
         # Validate mobile format (basic validation)
         if not isinstance(mobile, str):
+            logger.debug(f"Converting mobile to string: {mobile}")
             mobile = str(mobile)
         
         mobile = mobile.strip()
         if len(mobile) < 10 or len(mobile) > 15:
+            logger.warning(f"Send SMS failed: Invalid mobile format '{mobile}'")
             return jsonify({"error": "Invalid mobile number format"}), 400
         
         # Send SMS via external service
+        logger.debug(f"Calling external SMS service for {mobile}")
         sms_service = get_sms_service()
         result = sms_service.send_sms(mobile, message)
         
         if result.success:
-            logger.info(f"SMS sent successfully to {mobile}")
+            logger.info(f"SMS sent successfully to {mobile} (MessageID: {result.message_id})")
             return jsonify({
                 "success": True,
                 "message_id": result.message_id,
@@ -116,9 +125,11 @@ def send_otp():
         }
     """
     try:
+        logger.info("--- Send OTP SMS branch started ---")
         data = request.get_json()
         
         if not data:
+            logger.warning("Send OTP failed: Request body missing")
             return jsonify({"error": "Request body is required"}), 400
         
         mobile = data.get("mobile")
@@ -126,16 +137,19 @@ def send_otp():
         
         # Validate required fields
         if not mobile:
+            logger.warning("Send OTP failed: Mobile number missing")
             return jsonify({"error": "mobile field is required"}), 400
         if not otp:
+            logger.warning("Send OTP failed: OTP missing")
             return jsonify({"error": "otp field is required"}), 400
         
         # Send OTP via external service
+        logger.debug(f"Calling external SMS service (OTP) for {mobile}")
         sms_service = get_sms_service()
         result = sms_service.send_otp(mobile, otp)
         
         if result.success:
-            logger.info(f"OTP sent successfully to {mobile}")
+            logger.info(f"OTP sent successfully to {mobile} (MessageID: {result.message_id})")
             return jsonify({
                 "success": True,
                 "message_id": result.message_id,
@@ -175,9 +189,11 @@ def send_notification():
         }
     """
     try:
+        logger.info("--- Send Notification branch started ---")
         data = request.get_json()
         
         if not data:
+            logger.warning("Send notification failed: Request body missing")
             return jsonify({"error": "Request body is required"}), 400
         
         mobile = data.get("mobile")
@@ -186,16 +202,19 @@ def send_notification():
         
         # Validate required fields
         if not mobile:
+            logger.warning("Send notification failed: Mobile number missing")
             return jsonify({"error": "mobile field is required"}), 400
         if not body:
+            logger.warning("Send notification failed: Body content missing")
             return jsonify({"error": "body field is required"}), 400
         
         # Send notification via external service
+        logger.debug(f"Calling external SMS service (Notification) for {mobile}")
         sms_service = get_sms_service()
         result = sms_service.send_notification(mobile, title, body)
         
         if result.success:
-            logger.info(f"Notification sent successfully to {mobile}")
+            logger.info(f"Notification sent successfully to {mobile} (MessageID: {result.message_id})")
             return jsonify({
                 "success": True,
                 "message_id": result.message_id,
@@ -223,16 +242,19 @@ def health_check():
     This endpoint checks if the external SMS API is reachable.
     """
     try:
+        logger.info("--- SMS Health Check branch started ---")
         sms_service = get_sms_service()
         # Just check if we can make a request (without sending actual SMS)
         # For now, just return success if the service is configured
         if sms_service.api_url and sms_service.api_token:
+            logger.info("SMS service is healthy and configured")
             return jsonify({
                 "status": "healthy",
                 "service": "external_sms",
                 "api_url": sms_service.api_url
             }), 200
         else:
+            logger.error("SMS service is unhealthy: API not configured")
             return jsonify({
                 "status": "unhealthy",
                 "service": "external_sms",
