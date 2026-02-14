@@ -13,11 +13,10 @@ services:
       - ./uploads:/app/uploads
       - ./logs:/app/logs
 
-    # dev command: gunicorn reload (keeps your gunicorn flow)
+    # dev command: Using flask run for better hot-reloading in dev
     command: >
-      gunicorn
-      --bind 0.0.0.0:5000
-      --workers 1
+      flask run
+      --host 0.0.0.0
+      --port 5000
       --reload
-      --reload-extra-file /app/.env
-      run:app
+      --debugger

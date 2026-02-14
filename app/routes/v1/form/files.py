@@ -1,7 +1,7 @@
 from app.routes.v1.form.helper import get_current_user, has_form_permission
 from app.routes.v1.form import form_bp
 from flask import current_app, request, jsonify, send_file
-from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
+from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity, jwt_required
 from mongoengine import DoesNotExist
 from app.models import Form
 from app.models.User import Role
@@ -53,8 +53,9 @@ def get_file(form_id, question_id, filename):
     except Exception as e:
         current_app.logger.error(f"Error serving file: {str(e)}")
         return jsonify({"error": "Error serving file"}), 500
-@form_bp.route("/upload", methods=["POST"])
+
 @jwt_required()
+@form_bp.route("/upload", methods=["POST"])
 def upload_file_endpoint():
     try:
         if 'file' not in request.files:

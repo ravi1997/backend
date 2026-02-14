@@ -653,30 +653,52 @@ class OllamaService:
                     timeout=10
                 )
                 response.raise_for_status()
+                latency_ms = int((time.time() - start_time) * 1000)
+                
                 result = response.json()
                 models = result.get("models", [])
-                model_names = [m.get("name", "") for m in models]
                 
-                # Measure latency
-                latency_ms = cls._measure_latency()
+                # Extract both 'name' and 'model' fields (some Ollama versions use different fields)
+                model_names = []
+                for m in models:
+                    if m.get("name"):
+                        model_names.append(m.get("name"))
+                    if m.get("model") and m.get("model") != m.get("name"):
+                        model_names.append(m.get("model"))
                 
                 # Check model loading status
                 def is_model_loaded(check_model, loaded_names):
+                    if not check_model or not loaded_names:
+                        return False
+                        
+                    # 1. Exact match
                     if check_model in loaded_names:
                         return True
-                    # If model doesn't have a tag, check for :latest
+                        
+                    # 2. Add :latest if not present and check
                     if ":" not in check_model:
                         if f"{check_model}:latest" in loaded_names:
                             return True
+                    
+                    # 3. Strip :latest if present and check
+                    if check_model.endswith(":latest"):
+                        base = check_model[:-7]
+                        if base in loaded_names:
+                            return True
+                            
+                    # 4. Check base names (e.g. llama3 matches llama3:8b)
+                    check_base = check_model.split(":")[0]
+                    for name in loaded_names:
+                        if name.split(":")[0] == check_base:
+                            return True
+                            
                     return False
 
                 default_model_loaded = is_model_loaded(default_model, model_names)
                 embedding_model_loaded = is_model_loaded(embedding_model, model_names)
                 
                 # Determine overall status
-                if latency_ms == -1:
-                    status = "unavailable"
-                elif latency_ms > cls.LATENCY_WARNING_THRESHOLD:
+                if latency_ms > cls.LATENCY_WARNING_THRESHOLD:
                     status = "degraded"
                 elif not default_model_loaded:
                     status = "degraded"

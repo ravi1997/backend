@@ -282,12 +282,18 @@ def generate_form_ai() -> Tuple[Any, int]:
 @jwt_required()
 def get_field_suggestions() -> Tuple[Any, int]:
     """
-    Simulated AI Field Suggestions.
+    AI Field Suggestions based on current form context.
     """
     try:
         data = request.get_json()
-        theme = data.get("theme", "").lower()
+        current_form = data.get("current_form")
         
+        if current_form:
+            result = AIService.get_suggestions(current_form)
+            return jsonify(result), 200
+        
+        # Fallback to simulated suggestions if form context is missing
+        theme = data.get("theme", "").lower()
         suggestions = []
         if "feedback" in theme or "survey" in theme:
             suggestions = [
@@ -306,11 +312,30 @@ def get_field_suggestions() -> Tuple[Any, int]:
             ]
 
         return jsonify({
-            "theme": theme,
             "suggestions": suggestions
         }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+@ai_bp.route("/<form_id>/validate-design", methods=["POST"])
+@jwt_required()
+def validate_form_design(form_id: str) -> Tuple[Any, int]:
+    """
+    Analyzes the form design for UX/logical issues.
+    """
+    try:
+        data = request.get_json()
+        form_data = data.get("form")
+        
+        if not form_data:
+            return jsonify({"error": "Form data is required"}), 400
+            
+        result = AIService.analyze_form(form_data)
+        return jsonify(result), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Validate Form Design Error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 @ai_bp.route("/templates", methods=["GET"])
 @jwt_required()

@@ -8,7 +8,8 @@ from app.schemas.user_schema import UserSchema
 from marshmallow import ValidationError
 from flask_jwt_extended import (
     create_access_token, jwt_required,
-    get_jwt, set_access_cookies, unset_jwt_cookies
+    get_jwt, set_access_cookies, unset_jwt_cookies,
+    create_refresh_token, get_jwt_identity
 )
 from app.utils.decorator import require_roles
 
@@ -140,12 +141,18 @@ def login():
 
     # --- Issue JWT ---
     access_token = create_access_token(identity=str(user.id), additional_claims={"roles": user.roles})
+    refresh_token = create_refresh_token(identity=str(user.id))
+    
     user.last_login = datetime.now(timezone.utc)
     user.reset_failed_logins()
     user.save()
     current_app.logger.info(f"Issued JWT for user {user.username} (ID: {user.id}), roles: {user.roles}")
 
-    resp = jsonify(access_token=access_token, success=True)
+    resp = jsonify(
+        access_token=access_token, 
+        refresh_token=refresh_token,
+        success=True
+    )
     set_access_cookies(resp, access_token)
 
     if request.headers.get("HX-Request"):
@@ -223,6 +230,19 @@ def _htmx_or_json_error(message, status):
     return jsonify({"msg": message, "success": False}), status
 
 
+
+@auth_bp.route('/refresh', methods=['POST'])
+@jwt_required(refresh=True)
+def refresh():
+    current_user_id = get_jwt_identity()
+    user = User.objects(id=current_user_id).first()
+    if not user:
+        return jsonify(message="User not found"), 404
+        
+    access_token = create_access_token(identity=str(user.id), additional_claims={"roles": user.roles})
+    resp = jsonify(access_token=access_token, success=True)
+    set_access_cookies(resp, access_token)
+    return resp, 200
 
 # -------------------- LOGOUT --------------------
 

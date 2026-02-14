@@ -156,10 +156,15 @@ def create_app(config_class=Config):
         
         # Log the body always
         try:
-            if request.is_json:
+            if request.method == 'OPTIONS':
+                body = "OPTIONS request (no body)"
+            elif request.is_json:
                 body = request.get_json(silent=True)
+                if body is None:
+                    # Fallback if get_json returns None (e.g. empty body)
+                    body = request.get_data(as_text=True) or "Empty JSON Body"
             else:
-                body = request.get_data(as_text=True)
+                body = request.get_data(as_text=True) or "Empty Body"
         except Exception:
             body = "Error reading body"
         

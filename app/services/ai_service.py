@@ -94,55 +94,115 @@ class AIService:
             raise e
 
     @staticmethod
+    def analyze_form(form_data):
+        """
+        Analyzes a form structure for design issues and suggests improvements.
+        """
+        api_url = current_app.config.get("LLM_API_URL")
+        model = current_app.config.get("LLM_MODEL")
+        
+        system_prompt = """
+        You are a UX Expert and AI Form Builder assistant. Analyze the given form structure (JSON) and provide:
+        1. A list of potential issues (e.g., vague labels, missing help text, too many fields).
+        2. Strategic suggestions for improvement.
+        3. A score from 0-100 for the overall design quality.
+        
+        Return ONLY a JSON object:
+        {
+          "score": 85,
+          "issues": [
+            {"type": "clarity", "field_id": "optional_id", "message": "Description of the issue"}
+          ],
+          "suggestions": [
+            "Specific improvement suggestion"
+          ]
+        }
+        """
+        
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": json.dumps(form_data)}
+            ],
+            "stream": False,
+            "temperature": 0.4
+        }
+        
+        try:
+            response = requests.post(api_url + "/chat/completions", json=payload, timeout=60)
+            response.raise_for_status()
+            result = response.json()
+            content = result['choices'][0]['message']['content']
+            
+            json_str = AIService._extract_json(content)
+            return json.loads(json_str)
+        except Exception as e:
+            current_app.logger.error(f"Form Analysis Error: {str(e)}")
+            # Return a basic fallback analysis if AI fails
+            return {
+                "score": 0,
+                "issues": [{"type": "error", "message": f"AI analysis failed: {str(e)}"}],
+                "suggestions": ["Please try again later."]
+            }
+
+    @staticmethod
+    def get_suggestions(current_form):
+        """
+        Provides suggestions for new fields based on current form content.
+        """
+        api_url = current_app.config.get("LLM_API_URL")
+        model = current_app.config.get("LLM_MODEL")
+        
+        system_prompt = """
+        You are an AI Form Builder. Based on the current form structure, suggest 3-5 additional fields that would be useful.
+        Return ONLY a JSON object:
+        {
+          "suggestions": [
+            {"label": "Suggested Label", "field_type": "short_text/number/dropdown/...", "reason": "Why this is useful"}
+          ]
+        }
+        """
+        
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": json.dumps(current_form)}
+            ],
+            "stream": False,
+            "temperature": 0.7
+        }
+        
+        try:
+            response = requests.post(api_url + "/chat/completions", json=payload, timeout=60)
+            response.raise_for_status()
+            result = response.json()
+            content = result['choices'][0]['message']['content']
+            
+            json_str = AIService._extract_json(content)
+            return json.loads(json_str)
+        except Exception as e:
+            current_app.logger.error(f"Suggestions Error: {str(e)}")
+            return {"suggestions": []}
+
+    @staticmethod
     def _extract_json(text):
         """
         Extracts JSON from a string that might contain markdown blocks.
         """
+        if not text:
+            return "{}"
+            
         # Try to find content between ```json and ```
-        match = re.search(r'```json\s*(.*?)\s*```', text, re.DOTALL)
+        match = re.search(r'```(?:json)?\s*(.*?)\s*```', text, re.DOTALL)
         if match:
-            return match.group(1)
+            return match.group(1).strip()
         
         # Fallback: try to find anything between the first { and last }
-        match = re.search(r'\{.*\}', text, re.DOTALL)
-        if match:
-            return match.group(0)
+        start = text.find('{')
+        end = text.rfind('}')
+        if start != -1 and end != -1:
+            return text[start:end+1]
         
-        return text
-
-    @staticmethod
-    def _post_process_form(form_data):
-        """
-        Adds UUIDs and ensures order indices are correct.
-        """
-        if "sections" not in form_data:
-            form_data["sections"] = []
-            
-        for s_idx, section in enumerate(form_data["sections"]):
-            section["id"] = str(uuid.uuid4())
-            section["order_index"] = s_idx
-            
-            if "questions" not in section:
-                section["questions"] = []
-                
-            for q_idx, question in enumerate(section["questions"]):
-                question["id"] = str(uuid.uuid4())
-                question["order_index"] = q_idx
-                
-                # Normalize field types if LLM used synonyms
-                type_map = {
-                    "input": "short_text",
-                    "textarea": "long_text",
-                    "paragraph": "long_text",
-                    "select": "dropdown",
-                    "boolean": "radio",
-                    "checkboxes": "checkbox"
-                }
-                if question.get("field_type") in type_map:
-                    question["field_type"] = type_map[question["field_type"]]
-                
-                if "options" in question and question["options"]:
-                    for option in question["options"]:
-                        option["id"] = str(uuid.uuid4())
-                        if "option_value" not in option:
-                            option["option_value"] = option.get("option_label", "").lower().replace(" ", "_")
+        return text.strip()
