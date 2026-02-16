@@ -181,7 +181,7 @@ def update_form(form_id):
             return jsonify({"message": "Form created", "form": FormSchema().dump(form)}), 201
             
     except Exception as e:
-        logger.error(f"Error in update/upsert for form {form_id}: {str(e)}")
+        logger.error(f"Error in update/upsert for form {form_id}: {str(e)}\n{traceback.format_exc()}")
         return jsonify({"error": str(e)}), 400
 
 

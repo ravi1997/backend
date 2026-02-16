@@ -22,7 +22,7 @@ class OptionSchema(Schema):
     option_label = fields.Str(required=True)
     option_value = fields.Str(required=True)
     order = fields.Int(load_default=0)
-    followup_visibility_condition = fields.Str()
+    followup_visibility_condition = fields.Str(allow_none=True)
     created_at = fields.DateTime(dump_only=True)
 
 # --- Question Schema ---
