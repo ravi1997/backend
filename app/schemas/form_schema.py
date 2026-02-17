@@ -29,7 +29,7 @@ class OptionSchema(Schema):
 class QuestionSchema(Schema):
     id = fields.UUID(required=True)
     label = fields.Str(required=True)
-    field_type = fields.Str(data_key="type", validate=validate.OneOf(FIELD_TYPE_CHOICES), required=True)
+    field_type = fields.Str(data_key="field_type", validate=validate.OneOf(FIELD_TYPE_CHOICES), required=True)
     is_required = fields.Bool(data_key="isRequired", load_default=False)
     is_read_only = fields.Bool(data_key="isReadOnly", load_default=False)
     is_hidden = fields.Bool(data_key="isHidden", load_default=False)
