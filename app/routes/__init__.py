@@ -13,11 +13,16 @@ from app.routes.v1.webhooks import webhooks_bp
 from app.routes.v1.form.translation import translation_bp
 from app.routes.v1.sms_route import sms_bp
 from app.routes.v1.analytics_route import analytics_bp
+from app.routes.v1.external_api_route import external_api_bp
+from app.routes.v1.form.advanced_responses import advanced_responses_bp
+from app.routes.v1.admin.user_mgmt import user_mgmt_bp
+
 
 def register_blueprints(app):
     app.register_blueprint(form_bp, url_prefix='/form/api/v1/forms')
     app.register_blueprint(translation_bp, url_prefix='/form/api/v1/forms/translations')
     app.register_blueprint(library_bp, url_prefix='/form/api/v1/custom-fields')
+    app.register_blueprint(library_bp, url_prefix='/form/api/v1/templates', name='form_templates')
     app.register_blueprint(permissions_bp, url_prefix='/form/api/v1/forms')
     app.register_blueprint(view_bp, url_prefix='/form/')
     app.register_blueprint(user_bp, url_prefix='/form/api/v1/user')
@@ -29,4 +34,8 @@ def register_blueprints(app):
     app.register_blueprint(webhooks_bp, url_prefix='/api/v1/webhooks')
     app.register_blueprint(sms_bp, url_prefix='/api/v1/sms')
     app.register_blueprint(analytics_bp, url_prefix='/form/api/v1/analytics')
-    app.logger.info("Blueprints registered: form, user, auth, ai, dashboards, dashboard_settings, workflows, webhooks, sms, analytics")
+    app.register_blueprint(external_api_bp, url_prefix='/form/api/v1/external')
+    app.register_blueprint(advanced_responses_bp, url_prefix='/form/api/v1/forms')
+    app.register_blueprint(user_mgmt_bp, url_prefix='/api/v1/admin/users')
+    app.logger.info("Blueprints registered: form, user, auth, ai, dashboards, dashboard_settings, workflows, webhooks, sms, analytics, external_api, advanced_responses")
+
