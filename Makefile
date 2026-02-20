@@ -9,7 +9,7 @@ build: ## Build the docker image
 up: ## Start the services in production mode
 	docker compose up -d
 
-up-dev: ## Start the services in development mode with hot-reloading
+up-dev: 
 	docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
 down: ## Stop all services

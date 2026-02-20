@@ -16,6 +16,9 @@ from app.routes.v1.analytics_route import analytics_bp
 from app.routes.v1.external_api_route import external_api_bp
 from app.routes.v1.form.advanced_responses import advanced_responses_bp
 from app.routes.v1.admin.user_mgmt import user_mgmt_bp
+from app.routes.v1.admin.system_settings_route import system_settings_bp
+from app.routes.v1.form.summarization import summarization_bp
+from app.routes.v1.form.nlp_search import nlp_search_bp
 
 
 def register_blueprints(app):
@@ -37,5 +40,8 @@ def register_blueprints(app):
     app.register_blueprint(external_api_bp, url_prefix='/form/api/v1/external')
     app.register_blueprint(advanced_responses_bp, url_prefix='/form/api/v1/forms')
     app.register_blueprint(user_mgmt_bp, url_prefix='/api/v1/admin/users')
-    app.logger.info("Blueprints registered: form, user, auth, ai, dashboards, dashboard_settings, workflows, webhooks, sms, analytics, external_api, advanced_responses")
+    app.register_blueprint(system_settings_bp, url_prefix='/api/v1/admin/system-settings')
+    app.register_blueprint(summarization_bp) # prefix is defined in the blueprint
+    app.register_blueprint(nlp_search_bp) # prefix is defined in the blueprint
+    app.logger.info("Blueprints registered: form, user, auth, ai, dashboards, dashboard_settings, workflows, webhooks, sms, analytics, external_api, advanced_responses, system_settings")
 
