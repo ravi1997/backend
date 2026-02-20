@@ -491,12 +491,27 @@ def list_responses(form_id):
     try:
         current_user = get_current_user()
         form = Form.objects.get(id=form_id)
-        if not has_form_permission(current_user, form, "view"):
+        if not has_form_permission(current_user, form, "view_responses"):
             logger.warning(f"Unauthorized list responses attempt for form {form_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized to view responses"}), 403
 
         is_draft_filter = request.args.get("is_draft", "false").lower() == "true"
-        responses = FormResponse.objects(form=form.id, deleted=False, is_draft=is_draft_filter)
+        query_filter = Q(form=form.id) & Q(deleted=False) & Q(is_draft=is_draft_filter)
+        
+        # Apply Visibility Policy
+        policy = getattr(form, 'access_policy', None)
+        if policy and not current_user.is_superadmin_check() and str(form.created_by) != str(current_user.id):
+            if policy.response_visibility == 'own_only':
+                query_filter &= Q(submitted_by=str(current_user.id))
+            elif policy.response_visibility == 'department_only':
+                user_dept = getattr(current_user, 'department', None)
+                if user_dept:
+                    dept_user_ids = [str(u.id) for u in User.objects(department=user_dept)]
+                    query_filter &= Q(submitted_by__in=dept_user_ids)
+                else:
+                    query_filter &= Q(submitted_by=str(current_user.id))
+
+        responses = FormResponse.objects(query_filter)
         return jsonify([r.to_mongo().to_dict() for r in responses]), 200
     except DoesNotExist:
         logger.warning(f"List Responses failed: Form {form_id} not found")
@@ -511,11 +526,23 @@ def get_response(form_id, response_id):
     try:
         current_user = get_current_user()
         form = Form.objects.get(id=form_id)
-        if not has_form_permission(current_user, form, "view"):
+        if not has_form_permission(current_user, form, "view_responses"):
             logger.warning(f"Unauthorized get response attempt for {response_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized to view this response"}), 403
 
         response = FormResponse.objects.get(id=response_id, form=form.id)
+        
+        # Check specific visibility
+        policy = getattr(form, 'access_policy', None)
+        if policy and not current_user.is_superadmin_check() and str(form.created_by) != str(current_user.id):
+            if policy.response_visibility == 'own_only' and response.submitted_by != str(current_user.id):
+                 return jsonify({"error": "Unauthorized to view this response"}), 403
+            if policy.response_visibility == 'department_only':
+                user_dept = getattr(current_user, 'department', None)
+                submitter = User.objects(id=response.submitted_by).first()
+                if not user_dept or not submitter or submitter.department != user_dept:
+                    return jsonify({"error": "Unauthorized to view this response"}), 403
+
         return jsonify(response.to_mongo().to_dict()), 200
     except DoesNotExist:
         logger.warning(f"Get Response failed: Form {form_id} or Response {response_id} not found")
@@ -771,7 +798,7 @@ def list_paginated_responses(form_id):
     try:
         form = Form.objects.get(id=form_id)
         current_user = get_current_user()
-        if not has_form_permission(current_user, form, "view"):
+        if not has_form_permission(current_user, form, "view_responses"):
             logger.warning(f"Unauthorized list paginated responses attempt for form {form_id} by user {current_user.id}")
             return jsonify({"error": "Unauthorized"}), 403
 
@@ -779,9 +806,24 @@ def list_paginated_responses(form_id):
         limit = int(request.args.get("limit", 10))
         skip = (page - 1) * limit
         is_draft_filter = request.args.get("is_draft", "false").lower() == "true"
-        responses = FormResponse.objects(form=form.id, deleted=False, is_draft=is_draft_filter).skip(skip).limit(limit)
-        query = FormResponse.objects(form=form.id, deleted=False, is_draft=is_draft_filter)
-        total = query.count()
+        
+        query_filter = Q(form=form.id) & Q(deleted=False) & Q(is_draft=is_draft_filter)
+        
+        # Apply Visibility Policy
+        policy = getattr(form, 'access_policy', None)
+        if policy and not current_user.is_superadmin_check() and str(form.created_by) != str(current_user.id):
+            if policy.response_visibility == 'own_only':
+                query_filter &= Q(submitted_by=str(current_user.id))
+            elif policy.response_visibility == 'department_only':
+                user_dept = getattr(current_user, 'department', None)
+                if user_dept:
+                    dept_user_ids = [str(u.id) for u in User.objects(department=user_dept)]
+                    query_filter &= Q(submitted_by__in=dept_user_ids)
+                else:
+                    query_filter &= Q(submitted_by=str(current_user.id))
+
+        responses = FormResponse.objects(query_filter).skip(skip).limit(limit)
+        total = FormResponse.objects(query_filter).count()
         return jsonify({
             "total": total,
             "page": page,

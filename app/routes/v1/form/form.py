@@ -122,7 +122,15 @@ def get_form(form_id):
         lang = request.args.get("lang")
         version_req = request.args.get("v")
         
-        form_dict = form.to_mongo().to_dict()
+        # form_dict = form.to_mongo().to_dict() # Legacy manual handling
+        # Use Schema for consistent serialization
+        # Use Schema for consistent serialization
+        try:
+            form_dict = FormSchema().dump(form)
+            logger.info("Form dump successful")
+        except Exception as dump_err:
+            logger.error(f"Form dump failed: {dump_err}")
+            return jsonify({"error": f"Serialization error: {str(dump_err)}"}), 500
         
         # If version explicitly requested, filter version list to only show that one
         if version_req:
@@ -132,12 +140,13 @@ def get_form(form_id):
             else:
                 return jsonify({"error": "Version not found"}), 404
         elif form.active_version:
-            # Fallback to active version in the list? 
-            # Or just show all (current behavior)?
-            # Usually for preview/submit we want specific one.
-            pass
+             # Logic to show only active version? 
+             # Existing logic seemed to passthrough. 
+             # If we want to return full history, we keep it.
+             pass
 
         if lang:
+            pass # apply_translations expects dict, works on schema output too if keys match
             form_dict = apply_translations(form_dict, lang)
 
         return jsonify(form_dict), 200
@@ -523,31 +532,90 @@ def create_new_version(form_id):
         data = request.get_json()
         new_v_str = data.get("version")
         sections_data = data.get("sections")
-        
-        if not new_v_str or not sections_data:
-            return jsonify({"error": "Missing version string or sections"}), 400
+        bump_type = data.get("type", "patch") # patch, minor, major
+
+        if not sections_data:
+            return jsonify({"error": "Missing sections"}), 400
             
+        # Determine Version String
+        if not new_v_str:
+            # Auto-calculate based on active version or last version
+            last_version = form.versions[-1].version if form.versions else "0.0.0"
+            if form.active_version:
+                last_version = form.active_version
+            
+            v_parts = last_version.split('.')
+            if len(v_parts) < 3:
+                 # Normalize to x.y.z
+                 while len(v_parts) < 3:
+                     v_parts.append('0')
+            
+            try:
+                major = int(v_parts[0])
+                minor = int(v_parts[1])
+                patch = int(v_parts[2])
+                
+                if bump_type == 'major':
+                    major += 1
+                    minor = 0
+                    patch = 0
+                elif bump_type == 'minor':
+                    minor += 1
+                    patch = 0
+                else: # patch
+                    patch += 1
+                    
+                new_v_str = f"{major}.{minor}.{patch}"
+            except Exception as e:
+                # Fallback if version string is non-numeric
+                current_app.logger.warning(f"Failed to parse version {last_version}, appending .1")
+                new_v_str = f"{last_version}.1"
+
         # Check if version string already exists
         if any(v.version == new_v_str for v in form.versions):
             return jsonify({"error": f"Version {new_v_str} already exists"}), 400
             
-        from app.schemas.form_schema import FormVersionSchema
-        from app.models.Form import FormVersion
+        # Manually construct to avoid Schema issues if not passing strict schema
+        # Or use Schema load if robust
+        # Let's trust the input structure matches for now, key parts:
         
-        version_dict = FormVersionSchema().load(data)
-        # FormVersionSchema load returns a dict, if we want the actual model we might need to instantiate or use it directly
-        # Actually our schema is configured to return dict or objects based on meta. We'll use dict and cast if needed or just use current pattern.
-        # Let's check how other routes do it. Usually they use data directly for EmbeddedDocument if structure matches.
+        # IMPORT SCHEMA
+        from app.schemas.form_schema import FormVersionSchema
+        
+        new_version_data = {
+            "version": new_v_str,
+            "created_by": str(current_user.id),
+            "sections": sections_data, # Expects list of dicts/objects
+            "status": "active" 
+        }
+        
+        # Load through schema to handle field mapping
+        # This will convert camelCase (from frontend) into snake_case (for backend model)
+        # And filter out unknown fields if configured to exclude
+        try:
+            version_dict = FormVersionSchema().load(new_version_data)
+        except ValidationError as err:
+            current_app.logger.error(f"Version Schema Validation Error: {err.messages}")
+            return jsonify({"error": "Invalid version data", "details": err.messages}), 400
+        
+        # Ensure created_at is set (schema dump_only might skip it depending on config)
+        version_dict['created_at'] = datetime.now(timezone.utc)
         
         form.update(push__versions=version_dict)
         
         # Reload to handle activation
         form.reload()
-        if data.get("activate", False):
+        
+        # Auto-activate unless specified otherwise
+        should_activate = data.get("activate", True) 
+        if should_activate:
             form.active_version = new_v_str
             form.save()
             
-        return jsonify({"message": f"Version {new_v_str} created"}), 201
+        return jsonify({
+            "message": f"Version {new_v_str} created",
+            "version": new_v_str
+        }), 201
         
     except DoesNotExist:
         return jsonify({"error": "Form not found"}), 404
@@ -608,11 +676,32 @@ def get_form_version(form_id, v_str):
         if not has_form_permission(current_user, form, "view"):
             return jsonify({"error": "Unauthorized"}), 403
 
-        version = next((v for v in form.versions if v.version == v_str), None)
-        if not version:
+        target_version = next((v for v in form.versions if v.version == v_str), None)
+        if not target_version:
             return jsonify({"error": "Version not found"}), 404
 
-        return jsonify(version.to_mongo().to_dict()), 200
+        # Return full form structure but with specific version
+        # This matches what get_form?v=... does
+        form_dict = FormSchema().dump(form)
+        
+        # Filter versions to only show the requested one
+        # Manually find the dumped version object that matches
+        target_v_dump = next((v for v in form_dict.get("versions", []) if v["version"] == v_str), None)
+        
+        if target_v_dump:
+            form_dict["versions"] = [target_v_dump]
+        else:
+             # Should not happen if target_version was found, but safe fallback
+             return jsonify({"error": "Version serialization error"}), 500
+
+        # Apply translations if needed (optional, logic reuse from get_form?)
+        # For now, let's keep it simple. If translation is needed, it should be query param.
+        lang = request.args.get("lang")
+        if lang:
+             from app.routes.v1.form.helper import apply_translations
+             form_dict = apply_translations(form_dict, lang)
+
+        return jsonify(form_dict), 200
     except DoesNotExist:
         return jsonify({"error": "Form not found"}), 404
     except Exception as e:
