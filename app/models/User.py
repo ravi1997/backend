@@ -60,6 +60,7 @@ class User(Document):
     email = EmailField()
     employee_id = StringField(max_length=30)
     mobile = StringField(max_length=15)
+    department = StringField()
     user_type = StringField(required=True, choices=[e.value for e in UserType])
     password_hash = StringField(max_length=255)
     password_expiration = DateTimeField()
@@ -260,6 +261,7 @@ class User(Document):
             'email': self.email,
             'employee_id': self.employee_id,
             'mobile': self.mobile,
+            'department': self.department,
             'is_active': self.is_active,
             'is_admin': self.is_admin,
             'is_email_verified': self.is_email_verified,
