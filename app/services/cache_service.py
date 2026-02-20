@@ -32,29 +32,30 @@ class CacheService:
     """
     
     # Cache type configurations
+    # Cache type configurations
     CACHE_TYPES = {
         'form_schema': {
-            'ttl': config.CACHE_TTL_FORM_SCHEMA,
-            'max_entries': config.CACHE_MAX_ENTRIES_FORM_SCHEMA,
+            'ttl': config.Config.CACHE_TTL_FORM_SCHEMA,
+            'max_entries': config.Config.CACHE_MAX_ENTRIES_FORM_SCHEMA,
             'prefix': 'form:schema'
         },
         'user_session': {
-            'ttl': config.CACHE_TTL_USER_SESSION,
-            'max_entries': config.CACHE_MAX_ENTRIES_USER_SESSION,
+            'ttl': config.Config.CACHE_TTL_USER_SESSION,
+            'max_entries': config.Config.CACHE_MAX_ENTRIES_USER_SESSION,
             'prefix': 'user:session'
         },
         'query_result': {
-            'ttl': config.CACHE_TTL_QUERY_RESULT,
-            'max_entries': config.CACHE_MAX_ENTRIES_QUERY_RESULT,
+            'ttl': config.Config.CACHE_TTL_QUERY_RESULT,
+            'max_entries': config.Config.CACHE_MAX_ENTRIES_QUERY_RESULT,
             'prefix': 'query:result'
         },
         'dashboard_widget': {
-            'ttl': config.CACHE_TTL_DASHBOARD_WIDGET,
-            'max_entries': config.CACHE_MAX_ENTRIES_DASHBOARD_WIDGET,
+            'ttl': config.Config.CACHE_TTL_DASHBOARD_WIDGET,
+            'max_entries': config.Config.CACHE_MAX_ENTRIES_DASHBOARD_WIDGET,
             'prefix': 'dashboard:widget'
         },
         'api_response': {
-            'ttl': config.CACHE_TTL_API_RESPONSE,
+            'ttl': config.Config.CACHE_TTL_API_RESPONSE,
             'max_entries': 10000,
             'prefix': 'api:response'
         }
@@ -68,7 +69,7 @@ class CacheService:
             redis_client: Redis client instance (uses global if not provided)
         """
         self.redis = redis_client or redis_client
-        self._cache_enabled = config.CACHE_ENABLED
+        self._cache_enabled = config.Config.CACHE_ENABLED
         
         logger.info(f"CacheService initialized (enabled: {self._cache_enabled})")
     
