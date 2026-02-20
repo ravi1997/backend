@@ -13,6 +13,27 @@ class ResponseTemplateSchema(Schema):
     tags = fields.List(fields.Str(), allow_none=True)
     meta_data = fields.Dict(allow_none=True)
 
+# --- AccessPolicy Schema ---
+class AccessPolicySchema(Schema):
+    can_view_responses = fields.List(fields.Str(), data_key="canViewResponses")
+    can_edit_responses = fields.List(fields.Str(), data_key="canEditResponses")
+    can_delete_responses = fields.List(fields.Str(), data_key="canDeleteResponses")
+    response_visibility = fields.Str(data_key="responseVisibility", validate=validate.OneOf(('all', 'own_only', 'department_only')))
+    
+    can_create_versions = fields.List(fields.Str(), data_key="canCreateVersions")
+    can_edit_design = fields.List(fields.Str(), data_key="canEditDesign")
+    can_clone_form = fields.List(fields.Str(), data_key="canCloneForm")
+    
+    can_manage_access = fields.List(fields.Str(), data_key="canManageAccess")
+    can_view_audit_logs = fields.List(fields.Str(), data_key="canViewAuditLogs")
+    can_delete_form = fields.List(fields.Str(), data_key="canDeleteForm")
+    
+    form_visibility = fields.Str(data_key="formVisibility", validate=validate.OneOf(('public', 'private', 'restricted')))
+    allowed_departments = fields.List(fields.Str(), data_key="allowedDepartments")
+
+    class Meta:
+        unknown = "EXCLUDE"
+
 # --- Option Schema ---
 class OptionSchema(Schema):
     id = fields.UUID(required=True)
@@ -34,7 +55,8 @@ class QuestionSchema(Schema):
     is_read_only = fields.Bool(data_key="isReadOnly", load_default=False)
     is_hidden = fields.Bool(data_key="isHidden", load_default=False)
     help_text = fields.Str(data_key="helperText", allow_none=True)
-    default_value = fields.Str(allow_none=True)
+    default_value = fields.Str(data_key="defaultValue", allow_none=True)
+    variable_name = fields.Str(data_key="variableName", allow_none=True)
     order = fields.Int()
     visibility_condition = fields.Str()
     validation_rules = fields.Str()
@@ -49,9 +71,43 @@ class QuestionSchema(Schema):
     response_templates = fields.List(fields.Nested(ResponseTemplateSchema))
     options = fields.List(fields.Nested(OptionSchema), allow_none=True)
     field_api_call = fields.Str(validate=validate.OneOf(FIELD_API_CALL_CHOICES), allow_none=True)
-    custom_script = fields.Str(allow_none=True)
+    custom_script = fields.Str(data_key="customScript", allow_none=True)
     placeholder = fields.Str(allow_none=True)
-    meta_data = fields.Dict(allow_none=True)
+    
+    # Validation
+    min_length = fields.Int(data_key="minLength", allow_none=True)
+    max_length = fields.Int(data_key="maxLength", allow_none=True)
+    min_value = fields.Str(data_key="minValue", allow_none=True)
+    max_value = fields.Str(data_key="maxValue", allow_none=True)
+    validation_regex = fields.Str(data_key="validationRegex", allow_none=True)
+    custom_error_message = fields.Str(data_key="customErrorMessage", allow_none=True)
+    is_unique = fields.Bool(data_key="isUnique", load_default=False, allow_none=True)
+    requires_confirmation = fields.Bool(data_key="requiresConfirmation", load_default=False, allow_none=True)
+    
+    # Specifics
+    input_mask = fields.Str(data_key="inputMask", allow_none=True)
+    min_word_count = fields.Int(data_key="minWordCount", allow_none=True)
+    max_word_count = fields.Int(data_key="maxWordCount", allow_none=True)
+    
+    date_min = fields.Str(data_key="dateMin", allow_none=True)
+    date_max = fields.Str(data_key="dateMax", allow_none=True)
+    disable_past_dates = fields.Bool(data_key="disablePastDates", load_default=False, allow_none=True)
+    disable_future_dates = fields.Bool(data_key="disableFutureDates", load_default=False, allow_none=True)
+    disable_weekends = fields.Bool(data_key="disableWeekends", load_default=False, allow_none=True)
+    
+    allowed_file_types = fields.List(fields.Str(), data_key="allowedFileTypes", allow_none=True)
+    max_files = fields.Int(data_key="maxFiles", allow_none=True)
+    max_file_size = fields.Int(data_key="maxFileSize", allow_none=True)
+    
+    min_selection = fields.Int(data_key="minSelection", allow_none=True)
+    max_selection = fields.Int(data_key="maxSelection", allow_none=True)
+    
+    conditional_logic = fields.Dict(data_key="conditionalLogic", allow_none=True)
+    action_config = fields.Dict(data_key="actionConfig", allow_none=True)
+    style = fields.Dict(allow_none=True)
+    
+    # Map 'metadata' from frontend back to 'meta_data' in backend if needed, or unify
+    meta_data = fields.Dict(data_key="metadata", allow_none=True)
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
 
@@ -126,6 +182,7 @@ class FormSchema(Schema):
     editors = fields.List(fields.Str())
     uiers = fields.List(fields.Str())
     submitters = fields.List(fields.Str())
+    access_policy = fields.Nested(AccessPolicySchema, data_key="accessPolicy")
     active_version = fields.Str()
 
     class Meta:

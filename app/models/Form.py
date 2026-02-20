@@ -9,13 +9,33 @@ from datetime import datetime, timezone
 
 from app.models.enumerations import FIELD_API_CALL_CHOICES, FIELD_TYPE_CHOICES,FORM_STATUS_CHOICES,ui_TYPE_CHOICES
 
-# --- Response Template model ---
 class ResponseTemplate(EmbeddedDocument):
     name = StringField(required=True)
     description = StringField()
     structure = StringField()  # JSON schema or HTML maybe, depending on use case
     tags = ListField(StringField())  # Tags for categorization
     meta_data = DictField()
+
+class AccessPolicy(EmbeddedDocument):
+    # Response Controls
+    can_view_responses = ListField(StringField())  # User IDs or Role Names
+    can_edit_responses = ListField(StringField())
+    can_delete_responses = ListField(StringField())
+    response_visibility = StringField(choices=('all', 'own_only', 'department_only'), default='all')
+    
+    # Form Modification Controls
+    can_create_versions = ListField(StringField())
+    can_edit_design = ListField(StringField())
+    can_clone_form = ListField(StringField())
+    
+    # Management & Admin Controls
+    can_manage_access = ListField(StringField())
+    can_view_audit_logs = ListField(StringField())
+    can_delete_form = ListField(StringField())
+    
+    # Visibility Scope
+    form_visibility = StringField(choices=('public', 'private', 'restricted'), default='private')
+    allowed_departments = ListField(StringField())
 
 class ApprovalStep(EmbeddedDocument):
     id = UUIDField(default=uuid.uuid4, binary=False)
@@ -42,6 +62,7 @@ class Question(EmbeddedDocument):
     help_text = StringField()
     default_value = StringField()
     order = IntField()
+    variable_name = StringField()
     visibility_condition = StringField()
     validation_rules = StringField()
     required_condition = StringField()  # Condition to make internal field mandatory
@@ -68,6 +89,46 @@ class Question(EmbeddedDocument):
 
     meta_data = DictField()
     required_condition = StringField()  # Field-level required condition
+
+    # Validation & Constraints
+    min_length = IntField()
+    max_length = IntField()
+    min_value = StringField() # String to support dates or number references
+    max_value = StringField()
+    regex = StringField() # Legacy
+    validation_regex = StringField()
+    custom_error_message = StringField()
+    is_unique = BooleanField(default=False)
+    requires_confirmation = BooleanField(default=False)
+    
+    # Text/Input specific
+    input_mask = StringField()
+    min_word_count = IntField()
+    max_word_count = IntField()
+    
+    # Date specific
+    date_min = StringField()
+    date_max = StringField()
+    disable_past_dates = BooleanField(default=False)
+    disable_future_dates = BooleanField(default=False)
+    disable_weekends = BooleanField(default=False)
+    
+    # File specific
+    allowed_file_types = ListField(StringField())
+    max_files = IntField()
+    max_file_size = IntField() # In MB or KB? Backend usually expects bytes but frontend specific.
+    
+    # Selection specific
+    min_selection = IntField()
+    max_selection = IntField()
+    
+    # Logic & Actions
+    conditional_logic = DictField() # For advanced logic beyond visibility
+    action_config = DictField() # For button actions etc
+    
+    # Styling
+    style = DictField() # JSON blob for custom styles
+
 
     created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
     updated_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
@@ -150,6 +211,7 @@ class Form(Document):
     title_i18n = DictField()  # {'en': 'Title', 'es': 'Título'}
     style = DictField()       # JSON bucket for styling
     workflows = DictField()   # JSON bucket for workflow rules
+    access_policy = EmbeddedDocumentField(AccessPolicy, default=AccessPolicy)
     
     @property
     def is_published(self):
@@ -239,7 +301,9 @@ class CustomFieldTemplate(Document):
     user_id = StringField(required=True)
     name = StringField(required=True)
     category = StringField()
-    question_data = EmbeddedDocumentField(Question)
+    template_type = StringField(default='question', choices=('question', 'section', 'workflow', 'form'))
+    data = DictField()  # The raw JSON representing the template
+    question_data = EmbeddedDocumentField(Question) # Legacy support
     created_at = DateTimeField(default=lambda: datetime.now(timezone.utc))
 
 
